@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}预约提醒 - {{ app_name }}{% endblock %}
+
+{% block header_subtitle %}
+<p>您的预约即将开始</p>
+{% endblock %}
+
+{% block content %}
+<h2>您好，{{ patient_name }}</h2>
+
+<p>这是一封友好的提醒邮件，告知您与 <strong>{{ doctor_name }}</strong> 医生的预约将在 <strong>{{ reminder_type }}</strong> 后开始。</p>
+
+<div class="info-box" style="text-align: center;">
+    <p style="font-size: 14px; color: #6B7280; margin: 0;">预约时间</p>
+    <p style="font-size: 24px; font-weight: 600; color: #1F2937; margin: 8px 0;">{{ appointment_time }}</p>
+</div>
+
+<h3 style="font-size: 16px; color: #374151; margin: 30px 0 15px 0;">预约前准备建议：</h3>
+
+<ul style="color: #4B5563; margin: 0; padding-left: 20px;">
+    <li>回顾您最近的情绪和睡眠记录</li>
+    <li>准备您想与医生讨论的问题</li>
+    <li>确保您处于安静、私密的环境中</li>
+    <li>如有需要，准备好您正在服用的药物清单</li>
+</ul>
+
+<div class="alert alert-info" style="margin-top: 30px;">
+    <strong>需要取消或改期？</strong>
+    如果您无法按时参加预约，请尽早通过 {{ app_name }} 应用或直接联系您的医生进行取消或改期。
+</div>
+
+<p style="font-size: 14px; color: #6B7280; margin-top: 30px;">
+    我们期待为您提供支持。如有任何问题，请随时联系我们。
+</p>
+{% endblock %}
+
+{% block footer_extra %}
+<p style="margin-top: 12px; font-size: 11px;">
+    祝您身心健康 💙
+</p>
+{% endblock %}

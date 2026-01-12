@@ -1,0 +1,37 @@
+{
+  "export_info": {
+    "export_id": "edf08dc2-b4bc-449b-b8c4-c960958315f7",
+    "patient_id": "ab9d43ff-2cfa-4577-8de6-ec95dbd39028",
+    "export_format": "JSON",
+    "exported_at": "2026-01-05T02:08:42.720828",
+    "date_range": {
+      "from": null,
+      "to": null
+    }
+  },
+  "profile": {
+    "first_name": "Export",
+    "last_name": "TestPatient",
+    "date_of_birth": "1990-05-15",
+    "gender": null,
+    "phone": null,
+    "address": null,
+    "city": null,
+    "country": null,
+    "preferred_language": "en",
+    "emergency_contact": null,
+    "emergency_phone": null,
+    "emergency_contact_relationship": null,
+    "current_medications": null,
+    "medical_conditions": null,
+    "allergies": null,
+    "therapy_history": null,
+    "mental_health_goals": null,
+    "support_system": null,
+    "created_at": "2026-01-05T02:08:42.710614"
+  },
+  "checkins": [],
+  "assessments": [],
+  "ai_conversations": [],
+  "doctor_messages": []
+}

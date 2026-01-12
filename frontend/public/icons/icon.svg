@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e0e7ff;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGradient)"/>
+
+  <!-- Heart shape -->
+  <path d="M256 420c-8 0-16-3-22-8l-130-120c-50-46-50-122 0-168 24-22 56-34 88-34 34 0 66 14 90 38l-4 4 4-4c24-24 56-38 90-38 32 0 64 12 88 34 50 46 50 122 0 168l-130 120c-6 5-14 8-22 8h-52zm-64-290c-22 0-44 8-60 24-36 34-36 88 0 122l120 110 120-110c36-34 36-88 0-122-16-16-38-24-60-24-24 0-46 10-62 28l-20 22-20-22c-16-18-38-28-62-28h44z" fill="url(#heartGradient)"/>
+
+  <!-- Heart center filled -->
+  <path d="M256 380l-110-102c-36-34-36-88 0-122 32-30 84-30 116 0l-6 6 6-6c32-30 84-30 116 0 36 34 36 88 0 122L256 380z" fill="url(#heartGradient)" opacity="0.9"/>
+
+  <!-- Pulse line -->
+  <path d="M140 256h60l20-40 30 80 30-80 20 40h72"
+        fill="none"
+        stroke="#3b82f6"
+        stroke-width="12"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- Small shield/protection symbol -->
+  <path d="M256 160c-30 0-55 10-55 10v50s25 30 55 45c30-15 55-45 55-45v-50s-25-10-55-10z"
+        fill="none"
+        stroke="#ffffff"
+        stroke-width="6"
+        opacity="0.3"/>
+</svg>

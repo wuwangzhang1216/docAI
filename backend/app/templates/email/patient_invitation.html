@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}欢迎加入 {{ app_name }}{% endblock %}
+
+{% block header_subtitle %}
+<p>您的心理健康支持平台</p>
+{% endblock %}
+
+{% block content %}
+<h2>您好，{{ patient_name }}</h2>
+
+<p>您的医生 <strong>{{ doctor_name }}</strong> 已在 {{ app_name }} 平台为您创建了账户。</p>
+
+<p>{{ app_name }} 是一个专注于心理健康的支持平台，可以帮助您：</p>
+<ul style="color: #4B5563; margin: 16px 0; padding-left: 20px;">
+    <li>追踪每日情绪变化</li>
+    <li>与AI助手进行支持性对话</li>
+    <li>完成心理健康评估</li>
+    <li>与您的医生保持联系</li>
+</ul>
+
+<p>您可以使用以下信息登录：</p>
+
+<div class="info-box">
+    <p><strong>登录邮箱：</strong> {{ email }}</p>
+    <p><strong>临时密码：</strong> {{ temp_password }}</p>
+</div>
+
+<div class="alert alert-warning">
+    <strong>安全提示</strong>
+    首次登录后，系统会要求您立即修改密码以保护您的账户安全。
+</div>
+
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{ login_url }}" class="button">立即登录</a>
+</p>
+
+<p style="font-size: 14px; color: #6B7280;">
+    如果您没有请求此账户，请忽略此邮件或联系您的医生。
+</p>
+{% endblock %}
+
+{% block footer_extra %}
+<p style="margin-top: 12px; font-size: 11px;">
+    您的数据安全是我们的首要任务。所有信息都经过加密存储。
+</p>
+{% endblock %}

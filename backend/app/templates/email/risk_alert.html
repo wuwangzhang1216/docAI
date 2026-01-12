@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}紧急风险警报 - {{ app_name }}{% endblock %}
+
+{% block header_subtitle %}
+<p style="color: #FEE2E2;">需要您立即关注</p>
+{% endblock %}
+
+{% block content %}
+<style>
+    .header {
+        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%) !important;
+    }
+</style>
+
+<div class="alert alert-danger">
+    <strong>风险级别：{{ risk_level }}</strong>
+    系统检测到需要您立即关注的风险事件
+</div>
+
+<p>尊敬的 <strong>{{ doctor_name }}</strong> 医生，</p>
+
+<p>{{ app_name }} 的AI风险检测系统检测到您的患者存在潜在风险，请尽快审核并采取必要措施。</p>
+
+<table class="info-table">
+    <tr>
+        <td>患者姓名</td>
+        <td><strong>{{ patient_name }}</strong></td>
+    </tr>
+    <tr>
+        <td>风险类型</td>
+        <td>{{ risk_type }}</td>
+    </tr>
+    <tr>
+        <td>检测时间</td>
+        <td>{{ detected_at }}</td>
+    </tr>
+    {% if trigger_text %}
+    <tr>
+        <td>触发内容</td>
+        <td style="font-style: italic; color: #6B7280;">"{{ trigger_text }}"</td>
+    </tr>
+    {% endif %}
+</table>
+
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{ dashboard_url }}" class="button button-danger">立即查看详情</a>
+</p>
+
+<div class="alert alert-info">
+    <strong>处理建议</strong>
+    <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+        <li>尽快查看患者的完整对话记录</li>
+        <li>评估患者的当前风险状态</li>
+        <li>如有必要，直接联系患者或其紧急联系人</li>
+        <li>在系统中标记已审核并添加处理备注</li>
+    </ul>
+</div>
+
+<p style="font-size: 12px; color: #6B7280; margin-top: 30px;">
+    此警报由 {{ app_name }} 的AI风险检测系统自动生成。系统会持续监测患者的对话内容，
+    并在检测到潜在风险时立即通知您。请注意，AI检测可能存在误报，请结合临床判断进行评估。
+</p>
+{% endblock %}
+
+{% block footer_extra %}
+<p style="margin-top: 12px; font-size: 11px; color: #DC2626;">
+    紧急情况请直接拨打危机干预热线或联系当地急救服务
+</p>
+{% endblock %}

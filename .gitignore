@@ -1,0 +1,104 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ===== Virtual Environments =====
+venv/
+ENV/
+env/
+.venv/
+
+# ===== Testing =====
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# ===== Node.js =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# ===== Next.js =====
+.next/
+out/
+next-env.d.ts
+
+# ===== Build Artifacts =====
+*.tsbuildinfo
+*.map
+dist/
+build/
+
+# ===== Environment & Secrets =====
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+
+# ===== Database =====
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== IDE & Editors =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ===== OS Files =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ===== MinIO (Local Development) =====
+minio/data/
+minio/minio.exe
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Misc =====
+.cache/
+*.bak
+*.tmp
+*.temp
