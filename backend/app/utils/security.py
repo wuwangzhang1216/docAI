@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, Tuple
 from uuid import uuid4
+
+from jose import JWTError, jwt
 from passlib.context import CryptContext
-from jose import jwt, JWTError
 
 from app.config import settings
-
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -27,7 +27,7 @@ def get_token_expiration(token: str) -> Optional[datetime]:
             token,
             settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM],
-            options={"verify_exp": False}
+            options={"verify_exp": False},
         )
         exp = payload.get("exp")
         if exp:
@@ -52,7 +52,7 @@ def get_token_jti(token: str) -> Optional[str]:
             token,
             settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM],
-            options={"verify_exp": False}
+            options={"verify_exp": False},
         )
         return payload.get("jti")
     except JWTError:
@@ -74,7 +74,7 @@ def get_token_claims(token: str) -> Optional[Dict[str, Any]]:
             token,
             settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM],
-            options={"verify_exp": False}
+            options={"verify_exp": False},
         )
         return payload
     except JWTError:
@@ -91,10 +91,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(
-    data: Dict[str, Any],
-    expires_delta: Optional[timedelta] = None
-) -> str:
+def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     """
     Create a JWT access token.
 
@@ -115,11 +112,7 @@ def create_access_token(
     # Add jti (JWT ID) for token uniqueness and potential revocation tracking
     to_encode.update({"exp": expire, "jti": str(uuid4())})
 
-    encoded_jwt = jwt.encode(
-        to_encode,
-        settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM
-    )
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
     return encoded_jwt
 
@@ -137,9 +130,5 @@ def decode_token(token: str) -> Dict[str, Any]:
     Raises:
         JWTError: If token is invalid or expired
     """
-    payload = jwt.decode(
-        token,
-        settings.SECRET_KEY,
-        algorithms=[settings.ALGORITHM]
-    )
+    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     return payload

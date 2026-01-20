@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Optional
+
 from pydantic import BaseModel, EmailStr, Field
 
 from app.models.connection_request import ConnectionStatus
@@ -9,12 +10,14 @@ from app.models.connection_request import ConnectionStatus
 
 class ConnectionRequestCreate(BaseModel):
     """Schema for creating a connection request (doctor sends to patient)."""
+
     patient_email: EmailStr = Field(..., description="Email of the patient to connect with")
     message: Optional[str] = Field(None, max_length=500, description="Optional message to the patient")
 
 
 class ConnectionRequestResponse(BaseModel):
     """Schema for connection request response (doctor's view)."""
+
     id: str
     doctor_id: str
     patient_id: str
@@ -32,6 +35,7 @@ class ConnectionRequestResponse(BaseModel):
 
 class PatientConnectionRequestView(BaseModel):
     """Schema for connection request (patient's view)."""
+
     id: str
     doctor_id: str
     doctor_name: str
@@ -45,6 +49,7 @@ class PatientConnectionRequestView(BaseModel):
 
 class DoctorPublicInfo(BaseModel):
     """Public information about a doctor (visible to patients)."""
+
     id: str
     full_name: str
     specialty: Optional[str]
@@ -56,6 +61,7 @@ class DoctorPublicInfo(BaseModel):
 
 class ConnectionRequestStatusResponse(BaseModel):
     """Response for connection request status changes."""
+
     status: str
     request_id: str
     message: Optional[str] = None

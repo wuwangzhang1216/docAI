@@ -1,28 +1,28 @@
 """
 Data export service for patient data portability.
 """
-import json
+
 import csv
-import io
 import hashlib
-import secrets
+import io
+import json
 import logging
+import secrets
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 from zipfile import ZipFile
 
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
-from app.models.patient import Patient
-from app.models.checkin import DailyCheckin
 from app.models.assessment import Assessment
+from app.models.checkin import DailyCheckin
 from app.models.conversation import Conversation
-from app.models.messaging import DoctorPatientThread, DirectMessage
-from app.models.data_export import DataExportRequest, ExportStatus, ExportFormat
-
+from app.models.data_export import DataExportRequest, ExportFormat, ExportStatus
+from app.models.messaging import DirectMessage, DoctorPatientThread
+from app.models.patient import Patient
 
 logger = logging.getLogger(__name__)
 
@@ -51,17 +51,22 @@ class DataExportService:
         cutoff = datetime.utcnow() - timedelta(hours=self.EXPORT_COOLDOWN_HOURS)
 
         result = await db.execute(
-            select(DataExportRequest).where(
+            select(DataExportRequest)
+            .where(
                 and_(
                     DataExportRequest.patient_id == patient_id,
                     DataExportRequest.created_at > cutoff,
-                    DataExportRequest.status.in_([
-                        ExportStatus.PENDING.value,
-                        ExportStatus.PROCESSING.value,
-                        ExportStatus.COMPLETED.value,
-                    ])
+                    DataExportRequest.status.in_(
+                        [
+                            ExportStatus.PENDING.value,
+                            ExportStatus.PROCESSING.value,
+                            ExportStatus.COMPLETED.value,
+                        ]
+                    ),
                 )
-            ).order_by(DataExportRequest.created_at.desc()).limit(1)
+            )
+            .order_by(DataExportRequest.created_at.desc())
+            .limit(1)
         )
         recent_request = result.scalar_one_or_none()
 
@@ -127,9 +132,7 @@ class DataExportService:
         Can be adapted to run in a background worker later.
         """
         # Get export request
-        result = await db.execute(
-            select(DataExportRequest).where(DataExportRequest.id == export_request_id)
-        )
+        result = await db.execute(select(DataExportRequest).where(DataExportRequest.id == export_request_id))
         export_request = result.scalar_one_or_none()
 
         if not export_request:
@@ -208,9 +211,9 @@ class DataExportService:
                 "export_format": export_request.export_format,
                 "exported_at": datetime.utcnow().isoformat(),
                 "date_range": {
-                    "from": export_request.date_from.isoformat() if export_request.date_from else None,
-                    "to": export_request.date_to.isoformat() if export_request.date_to else None,
-                }
+                    "from": (export_request.date_from.isoformat() if export_request.date_from else None),
+                    "to": (export_request.date_to.isoformat() if export_request.date_to else None),
+                },
             }
         }
 
@@ -218,15 +221,13 @@ class DataExportService:
 
         # Profile
         if export_request.include_profile:
-            result = await db.execute(
-                select(Patient).where(Patient.id == patient_id)
-            )
+            result = await db.execute(select(Patient).where(Patient.id == patient_id))
             patient = result.scalar_one_or_none()
             if patient:
                 data["profile"] = {
                     "first_name": patient.first_name,
                     "last_name": patient.last_name,
-                    "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None,
+                    "date_of_birth": (patient.date_of_birth.isoformat() if patient.date_of_birth else None),
                     "gender": patient.gender,
                     "phone": patient.phone,
                     "address": patient.address,
@@ -242,7 +243,7 @@ class DataExportService:
                     "therapy_history": patient.therapy_history,
                     "mental_health_goals": patient.mental_health_goals,
                     "support_system": patient.support_system,
-                    "created_at": patient.created_at.isoformat() if patient.created_at else None,
+                    "created_at": (patient.created_at.isoformat() if patient.created_at else None),
                 }
 
         # Checkins
@@ -259,7 +260,7 @@ class DataExportService:
             data["checkins"] = [
                 {
                     "id": c.id,
-                    "checkin_date": c.checkin_date.isoformat() if c.checkin_date else None,
+                    "checkin_date": (c.checkin_date.isoformat() if c.checkin_date else None),
                     "mood_score": c.mood_score,
                     "sleep_hours": c.sleep_hours,
                     "sleep_quality": c.sleep_quality,
@@ -339,7 +340,7 @@ class DataExportService:
                         "sender_type": m.sender_type,
                         "content": m.content,
                         "message_type": m.message_type,
-                        "created_at": m.created_at.isoformat() if m.created_at else None,
+                        "created_at": (m.created_at.isoformat() if m.created_at else None),
                     }
                     for m in messages
                 ]
@@ -352,15 +353,18 @@ class DataExportService:
         """Generate JSON export file."""
         content = json.dumps(data, ensure_ascii=False, indent=2)
         file_name = f"export_{patient_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
-        return content.encode('utf-8'), file_name
+        return content.encode("utf-8"), file_name
 
     def _generate_csv(self, data: Dict[str, Any], patient_id: str) -> tuple[bytes, str]:
         """Generate CSV export as a ZIP file containing multiple CSVs."""
         zip_buffer = io.BytesIO()
 
-        with ZipFile(zip_buffer, 'w') as zip_file:
+        with ZipFile(zip_buffer, "w") as zip_file:
             # Export info
-            zip_file.writestr("export_info.json", json.dumps(data.get("export_info", {}), ensure_ascii=False, indent=2))
+            zip_file.writestr(
+                "export_info.json",
+                json.dumps(data.get("export_info", {}), ensure_ascii=False, indent=2),
+            )
 
             # Profile
             if "profile" in data:
@@ -411,9 +415,9 @@ class DataExportService:
         # In production, use reportlab or similar for proper PDF generation
         from reportlab.lib import colors
         from reportlab.lib.pagesizes import A4
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
         from reportlab.lib.units import inch
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4)
@@ -422,49 +426,59 @@ class DataExportService:
 
         # Title
         title_style = ParagraphStyle(
-            'Title',
-            parent=styles['Heading1'],
+            "Title",
+            parent=styles["Heading1"],
             fontSize=18,
             spaceAfter=20,
         )
         story.append(Paragraph("患者数据导出报告", title_style))
-        story.append(Paragraph(f"导出时间: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}", styles['Normal']))
+        story.append(
+            Paragraph(
+                f"导出时间: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}",
+                styles["Normal"],
+            )
+        )
         story.append(Spacer(1, 20))
 
         # Profile summary
         if "profile" in data:
-            story.append(Paragraph("个人资料", styles['Heading2']))
+            story.append(Paragraph("个人资料", styles["Heading2"]))
             profile = data["profile"]
-            story.append(Paragraph(f"姓名: {profile.get('first_name', '')} {profile.get('last_name', '')}", styles['Normal']))
-            if profile.get('date_of_birth'):
-                story.append(Paragraph(f"出生日期: {profile['date_of_birth']}", styles['Normal']))
+            story.append(
+                Paragraph(
+                    f"姓名: {profile.get('first_name', '')} {profile.get('last_name', '')}",
+                    styles["Normal"],
+                )
+            )
+            if profile.get("date_of_birth"):
+                story.append(Paragraph(f"出生日期: {profile['date_of_birth']}", styles["Normal"]))
             story.append(Spacer(1, 15))
 
         # Checkins summary
         if "checkins" in data:
             checkins = data["checkins"]
-            story.append(Paragraph(f"打卡记录统计 (共 {len(checkins)} 条)", styles['Heading2']))
+            story.append(Paragraph(f"打卡记录统计 (共 {len(checkins)} 条)", styles["Heading2"]))
             if checkins:
-                avg_mood = sum(c.get('mood_score', 0) for c in checkins) / len(checkins)
-                story.append(Paragraph(f"平均心情分数: {avg_mood:.1f}/10", styles['Normal']))
+                avg_mood = sum(c.get("mood_score", 0) for c in checkins) / len(checkins)
+                story.append(Paragraph(f"平均心情分数: {avg_mood:.1f}/10", styles["Normal"]))
             story.append(Spacer(1, 15))
 
         # Assessments summary
         if "assessments" in data:
             assessments = data["assessments"]
-            story.append(Paragraph(f"评估记录 (共 {len(assessments)} 次)", styles['Heading2']))
+            story.append(Paragraph(f"评估记录 (共 {len(assessments)} 次)", styles["Heading2"]))
             story.append(Spacer(1, 15))
 
         # Conversations summary
         if "ai_conversations" in data:
             conversations = data["ai_conversations"]
-            story.append(Paragraph(f"AI对话记录 (共 {len(conversations)} 次)", styles['Heading2']))
+            story.append(Paragraph(f"AI对话记录 (共 {len(conversations)} 次)", styles["Heading2"]))
             story.append(Spacer(1, 15))
 
         # Messages summary
         if "doctor_messages" in data:
             messages = data["doctor_messages"]
-            story.append(Paragraph(f"医生消息记录 (共 {len(messages)} 条)", styles['Heading2']))
+            story.append(Paragraph(f"医生消息记录 (共 {len(messages)} 条)", styles["Heading2"]))
 
         doc.build(story)
         file_name = f"summary_{patient_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -478,12 +492,13 @@ class DataExportService:
         For now, we store locally in a temporary directory.
         """
         import os
-        storage_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'exports')
+
+        storage_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "exports")
         os.makedirs(storage_dir, exist_ok=True)
 
         # Use export ID as filename
-        file_path = os.path.join(storage_dir, s3_key.replace('/', '_'))
-        with open(file_path, 'wb') as f:
+        file_path = os.path.join(storage_dir, s3_key.replace("/", "_"))
+        with open(file_path, "wb") as f:
             f.write(content)
 
     def _get_file(self, s3_key: str) -> Optional[bytes]:
@@ -493,11 +508,12 @@ class DataExportService:
         In production, this would download from S3.
         """
         import os
-        storage_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'exports')
-        file_path = os.path.join(storage_dir, s3_key.replace('/', '_'))
+
+        storage_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "exports")
+        file_path = os.path.join(storage_dir, s3_key.replace("/", "_"))
 
         if os.path.exists(file_path):
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 return f.read()
         return None
 
@@ -512,9 +528,7 @@ class DataExportService:
         Returns:
             Tuple of (export_request, file_content, file_name) or None
         """
-        result = await db.execute(
-            select(DataExportRequest).where(DataExportRequest.download_token == download_token)
-        )
+        result = await db.execute(select(DataExportRequest).where(DataExportRequest.download_token == download_token))
         export_request = result.scalar_one_or_none()
 
         if not export_request:

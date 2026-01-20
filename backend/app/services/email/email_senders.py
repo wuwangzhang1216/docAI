@@ -1,6 +1,7 @@
 """
 Specialized email sending functions for different use cases.
 """
+
 import logging
 from datetime import datetime
 from typing import Optional
@@ -9,11 +10,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.user import User
-from app.models.patient import Patient
 from app.models.doctor import Doctor
+from app.models.email import EmailPriority, EmailType
+from app.models.patient import Patient
 from app.models.risk_event import RiskEvent
-from app.models.email import EmailType, EmailPriority
+from app.models.user import User
 from app.services.email.email_service import email_service
 
 logger = logging.getLogger(__name__)
@@ -50,10 +51,7 @@ async def send_patient_invitation_email(
     }
 
     try:
-        html_content, text_content = email_service.render_template(
-            "patient_invitation",
-            context
-        )
+        html_content, text_content = email_service.render_template("patient_invitation", context)
     except Exception as e:
         logger.error(f"Failed to render patient invitation template: {e}")
         # Use fallback HTML
@@ -75,9 +73,8 @@ async def send_patient_invitation_email(
 
     # Send immediately
     from sqlalchemy import select
-    result = await db.execute(
-        select(EmailLog).order_by(EmailLog.created_at.desc()).limit(1)
-    )
+
+    result = await db.execute(select(EmailLog).order_by(EmailLog.created_at.desc()).limit(1))
     email_log = result.scalar_one_or_none()
     if email_log:
         await email_service.send_queued_email_now(db, email_log)
@@ -108,9 +105,9 @@ async def send_password_reset_email(
 
     # Get user name
     user_name = "用户"
-    if hasattr(user, 'patient_profile') and user.patient_profile:
+    if hasattr(user, "patient_profile") and user.patient_profile:
         user_name = f"{user.patient_profile.first_name} {user.patient_profile.last_name}".strip()
-    elif hasattr(user, 'doctor_profile') and user.doctor_profile:
+    elif hasattr(user, "doctor_profile") and user.doctor_profile:
         user_name = f"{user.doctor_profile.first_name} {user.doctor_profile.last_name}".strip()
 
     context = {
@@ -121,10 +118,7 @@ async def send_password_reset_email(
     }
 
     try:
-        html_content, text_content = email_service.render_template(
-            "password_reset",
-            context
-        )
+        html_content, text_content = email_service.render_template("password_reset", context)
     except Exception as e:
         logger.error(f"Failed to render password reset template: {e}")
         html_content = _get_password_reset_fallback_html(context)
@@ -166,9 +160,7 @@ async def send_risk_alert_email(
         return
 
     # Get doctor's email
-    result = await db.execute(
-        select(User).where(User.id == doctor.user_id)
-    )
+    result = await db.execute(select(User).where(User.id == doctor.user_id))
     doctor_user = result.scalar_one_or_none()
     if not doctor_user:
         logger.error(f"Cannot find user for doctor {doctor.id}")
@@ -178,19 +170,24 @@ async def send_risk_alert_email(
         "doctor_name": f"{doctor.first_name} {doctor.last_name}".strip() or "Doctor",
         "patient_name": f"{patient.first_name} {patient.last_name}".strip() or "Patient",
         "patient_id": patient.id,
-        "risk_level": risk_event.risk_level.value if risk_event.risk_level else "UNKNOWN",
+        "risk_level": (risk_event.risk_level.value if risk_event.risk_level else "UNKNOWN"),
         "risk_type": risk_event.risk_type.value if risk_event.risk_type else "未知",
-        "trigger_text": (risk_event.trigger_text[:200] + "...") if risk_event.trigger_text and len(risk_event.trigger_text) > 200 else (risk_event.trigger_text or ""),
-        "detected_at": risk_event.created_at.strftime("%Y-%m-%d %H:%M") if risk_event.created_at else datetime.utcnow().strftime("%Y-%m-%d %H:%M"),
+        "trigger_text": (
+            (risk_event.trigger_text[:200] + "...")
+            if risk_event.trigger_text and len(risk_event.trigger_text) > 200
+            else (risk_event.trigger_text or "")
+        ),
+        "detected_at": (
+            risk_event.created_at.strftime("%Y-%m-%d %H:%M")
+            if risk_event.created_at
+            else datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+        ),
         "dashboard_url": f"{settings.FRONTEND_URL}/risk-queue",
         "app_name": settings.APP_NAME,
     }
 
     try:
-        html_content, text_content = email_service.render_template(
-            "risk_alert",
-            context
-        )
+        html_content, text_content = email_service.render_template("risk_alert", context)
     except Exception as e:
         logger.error(f"Failed to render risk alert template: {e}")
         html_content = _get_risk_alert_fallback_html(context)
@@ -243,9 +240,7 @@ async def send_appointment_reminder_email(
         return
 
     # Get patient's email
-    result = await db.execute(
-        select(User).where(User.id == patient.user_id)
-    )
+    result = await db.execute(select(User).where(User.id == patient.user_id))
     patient_user = result.scalar_one_or_none()
     if not patient_user:
         logger.error(f"Cannot find user for patient {patient.id}")
@@ -260,10 +255,7 @@ async def send_appointment_reminder_email(
     }
 
     try:
-        html_content, text_content = email_service.render_template(
-            "appointment_reminder",
-            context
-        )
+        html_content, text_content = email_service.render_template("appointment_reminder", context)
     except Exception as e:
         logger.error(f"Failed to render appointment reminder template: {e}")
         html_content = _get_appointment_reminder_fallback_html(context)
@@ -289,6 +281,7 @@ async def send_appointment_reminder_email(
 # ============================================
 # Fallback HTML Templates
 # ============================================
+
 
 def _get_base_style() -> str:
     """Get base CSS styles for emails."""

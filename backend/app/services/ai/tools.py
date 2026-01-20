@@ -8,18 +8,17 @@ where we maintain lightweight identifiers and dynamically load data
 into context at runtime using tools.
 """
 
-from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
+from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, and_
 
-from app.models.patient import Patient
-from app.models.checkin import DailyCheckin
 from app.models.assessment import Assessment, AssessmentType, SeverityLevel
+from app.models.checkin import DailyCheckin
 from app.models.conversation import Conversation
-
+from app.models.patient import Patient
 
 # Tool definitions for Claude API
 # These follow the Anthropic tool schema format
@@ -42,11 +41,11 @@ Returns: Recent mood scores, averages, trends (improving/declining/stable), and 
                 "days": {
                     "type": "integer",
                     "description": "Number of days to look back (default: 14, max: 30)",
-                    "default": 14
+                    "default": 14,
                 }
             },
-            "required": []
-        }
+            "required": [],
+        },
     },
     {
         "name": "get_sleep_patterns",
@@ -65,11 +64,11 @@ Returns: Sleep hours, quality ratings, patterns, and any sleep-related concerns.
                 "days": {
                     "type": "integer",
                     "description": "Number of days to look back (default: 14, max: 30)",
-                    "default": 14
+                    "default": 14,
                 }
             },
-            "required": []
-        }
+            "required": [],
+        },
     },
     {
         "name": "get_assessment_results",
@@ -90,11 +89,11 @@ Note: Use clinical information sensitively - don't quote scores unless user asks
                     "type": "string",
                     "enum": ["PHQ9", "GAD7", "PCL5", "PSS", "ISI", "all"],
                     "description": "Specific assessment type or 'all' for all recent assessments",
-                    "default": "all"
+                    "default": "all",
                 }
             },
-            "required": []
-        }
+            "required": [],
+        },
     },
     {
         "name": "get_coping_strategies",
@@ -107,11 +106,7 @@ Use this tool when:
 - You want to remind them of helpful strategies
 
 Returns: User's known effective coping strategies and support resources.""",
-        "input_schema": {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
+        "input_schema": {"type": "object", "properties": {}, "required": []},
     },
     {
         "name": "get_known_triggers",
@@ -125,11 +120,7 @@ Use this tool when:
 
 Returns: Known triggers, sensitive topics, and guidance for the conversation.
 IMPORTANT: Use this information to be more careful, not to avoid topics entirely.""",
-        "input_schema": {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
+        "input_schema": {"type": "object", "properties": {}, "required": []},
     },
     {
         "name": "get_recent_conversation_summary",
@@ -148,18 +139,19 @@ Returns: Summaries of recent conversations and key themes discussed.""",
                 "limit": {
                     "type": "integer",
                     "description": "Number of recent conversations to retrieve (default: 3, max: 5)",
-                    "default": 3
+                    "default": 3,
                 }
             },
-            "required": []
-        }
-    }
+            "required": [],
+        },
+    },
 ]
 
 
 @dataclass
 class ToolResult:
     """Result from a tool execution."""
+
     content: str
     is_error: bool = False
 
@@ -205,19 +197,13 @@ class PatientContextTools:
 
         handler = tool_handlers.get(tool_name)
         if not handler:
-            return ToolResult(
-                content=f"Unknown tool: {tool_name}",
-                is_error=True
-            )
+            return ToolResult(content=f"Unknown tool: {tool_name}", is_error=True)
 
         try:
             result = await handler(tool_input)
             return ToolResult(content=result)
         except Exception as e:
-            return ToolResult(
-                content=f"Error executing {tool_name}: {str(e)}",
-                is_error=True
-            )
+            return ToolResult(content=f"Error executing {tool_name}: {str(e)}", is_error=True)
 
     async def _get_mood_trends(self, params: Dict[str, Any]) -> str:
         """Get recent mood trends from check-ins."""
@@ -229,7 +215,7 @@ class PatientContextTools:
             .where(
                 and_(
                     DailyCheckin.patient_id == self.patient_id,
-                    DailyCheckin.created_at >= cutoff
+                    DailyCheckin.created_at >= cutoff,
                 )
             )
             .order_by(desc(DailyCheckin.checkin_date))
@@ -286,7 +272,7 @@ class PatientContextTools:
             .where(
                 and_(
                     DailyCheckin.patient_id == self.patient_id,
-                    DailyCheckin.created_at >= cutoff
+                    DailyCheckin.created_at >= cutoff,
                 )
             )
             .order_by(desc(DailyCheckin.checkin_date))
@@ -312,7 +298,11 @@ class PatientContextTools:
 
         if sleep_quality:
             avg_quality = sum(sleep_quality) / len(sleep_quality)
-            quality_desc = "poor" if avg_quality < 2 else "fair" if avg_quality < 3 else "moderate" if avg_quality < 4 else "good"
+            quality_desc = (
+                "poor"
+                if avg_quality < 2
+                else ("fair" if avg_quality < 3 else "moderate" if avg_quality < 4 else "good")
+            )
             output += f"\n- Average sleep quality: {quality_desc} ({avg_quality:.1f}/5)"
 
         return output
@@ -325,7 +315,7 @@ class PatientContextTools:
         query = select(Assessment).where(
             and_(
                 Assessment.patient_id == self.patient_id,
-                Assessment.created_at >= cutoff
+                Assessment.created_at >= cutoff,
             )
         )
 
@@ -384,9 +374,7 @@ class PatientContextTools:
 
     async def _get_coping_strategies(self, params: Dict[str, Any]) -> str:
         """Get user's known coping strategies."""
-        result = await self.db.execute(
-            select(Patient).where(Patient.id == self.patient_id)
-        )
+        result = await self.db.execute(select(Patient).where(Patient.id == self.patient_id))
         patient = result.scalar_one_or_none()
 
         if not patient:
@@ -410,9 +398,7 @@ class PatientContextTools:
 
     async def _get_known_triggers(self, params: Dict[str, Any]) -> str:
         """Get user's known triggers and sensitive topics."""
-        result = await self.db.execute(
-            select(Patient).where(Patient.id == self.patient_id)
-        )
+        result = await self.db.execute(select(Patient).where(Patient.id == self.patient_id))
         patient = result.scalar_one_or_none()
 
         if not patient:
@@ -483,7 +469,7 @@ def get_essential_context(patient: Patient) -> str:
             "fa": "فارسی (Farsi)",
             "es": "Español (Spanish)",
             "tr": "Türkçe (Turkish)",
-            "ar": "العربية (Arabic)"
+            "ar": "العربية (Arabic)",
         }
         lang = lang_map.get(patient.preferred_language, patient.preferred_language)
         context_parts.append(f"User's preferred language: {lang}")

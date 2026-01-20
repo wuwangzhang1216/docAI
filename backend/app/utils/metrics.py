@@ -5,16 +5,16 @@ Provides tools for tracking and analyzing application performance.
 Designed for integration with monitoring systems (Prometheus, CloudWatch, etc.)
 """
 
-import time
+import asyncio
 import functools
+import logging
 import statistics
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Callable
-from dataclasses import dataclass, field
+import time
 from collections import defaultdict
 from contextlib import contextmanager
-import asyncio
-import logging
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class MetricPoint:
     """Single metric measurement."""
+
     timestamp: datetime
     value: float
     labels: Dict[str, str] = field(default_factory=dict)
@@ -30,6 +31,7 @@ class MetricPoint:
 @dataclass
 class MetricSummary:
     """Summary statistics for a metric."""
+
     name: str
     count: int
     total: float
@@ -66,12 +68,7 @@ class MetricsCollector:
         self._max_history = max_history
         self._start_time = datetime.utcnow()
 
-    def record(
-        self,
-        name: str,
-        value: float,
-        labels: Optional[Dict[str, str]] = None
-    ) -> None:
+    def record(self, name: str, value: float, labels: Optional[Dict[str, str]] = None) -> None:
         """
         Record a metric value.
 
@@ -80,17 +77,13 @@ class MetricsCollector:
             value: Metric value
             labels: Optional labels/tags
         """
-        point = MetricPoint(
-            timestamp=datetime.utcnow(),
-            value=value,
-            labels=labels or {}
-        )
+        point = MetricPoint(timestamp=datetime.utcnow(), value=value, labels=labels or {})
 
         self._metrics[name].append(point)
 
         # Trim if over max history
         if len(self._metrics[name]) > self._max_history:
-            self._metrics[name] = self._metrics[name][-self._max_history:]
+            self._metrics[name] = self._metrics[name][-self._max_history :]
 
     def record_error(self, name: str) -> None:
         """Record an error for a metric."""
@@ -108,10 +101,7 @@ class MetricsCollector:
             MetricSummary or None if no data
         """
         cutoff = datetime.utcnow() - timedelta(minutes=window_minutes)
-        values = [
-            p.value for p in self._metrics.get(name, [])
-            if p.timestamp >= cutoff
-        ]
+        values = [p.value for p in self._metrics.get(name, []) if p.timestamp >= cutoff]
 
         if not values:
             return None
@@ -130,7 +120,7 @@ class MetricsCollector:
             p95=sorted_values[int(count * 0.95)] if count > 1 else sorted_values[-1],
             p99=sorted_values[int(count * 0.99)] if count > 1 else sorted_values[-1],
             error_count=self._errors.get(name, 0),
-            error_rate=self._errors.get(name, 0) / max(count, 1)
+            error_rate=self._errors.get(name, 0) / max(count, 1),
         )
 
     def get_all_summaries(self, window_minutes: int = 5) -> List[MetricSummary]:
@@ -172,10 +162,12 @@ class MetricsCollector:
             async def my_function():
                 ...
         """
+
         def decorator(func: Callable) -> Callable:
             metric_name = name or f"{func.__module__}.{func.__name__}"
 
             if asyncio.iscoroutinefunction(func):
+
                 @functools.wraps(func)
                 async def async_wrapper(*args, **kwargs):
                     start = time.perf_counter()
@@ -187,8 +179,10 @@ class MetricsCollector:
                     finally:
                         elapsed_ms = (time.perf_counter() - start) * 1000
                         self.record(metric_name, elapsed_ms)
+
                 return async_wrapper
             else:
+
                 @functools.wraps(func)
                 def sync_wrapper(*args, **kwargs):
                     start = time.perf_counter()
@@ -200,7 +194,9 @@ class MetricsCollector:
                     finally:
                         elapsed_ms = (time.perf_counter() - start) * 1000
                         self.record(metric_name, elapsed_ms)
+
                 return sync_wrapper
+
         return decorator
 
     def get_uptime(self) -> timedelta:
@@ -233,10 +229,10 @@ class MetricsCollector:
                     "p99_ms": round(s.p99, 2),
                     "min_ms": round(s.min, 2),
                     "max_ms": round(s.max, 2),
-                    "error_rate": round(s.error_rate * 100, 2)
+                    "error_rate": round(s.error_rate * 100, 2),
                 }
                 for s in summaries
-            ]
+            ],
         }
 
 
@@ -256,13 +252,7 @@ class RequestMetrics:
         self._request_counts: Dict[str, int] = defaultdict(int)
         self._status_codes: Dict[str, Dict[int, int]] = defaultdict(lambda: defaultdict(int))
 
-    def record_request(
-        self,
-        endpoint: str,
-        method: str,
-        status_code: int,
-        duration_ms: float
-    ) -> None:
+    def record_request(self, endpoint: str, method: str, status_code: int, duration_ms: float) -> None:
         """
         Record an HTTP request.
 
@@ -281,12 +271,7 @@ class RequestMetrics:
         if status_code >= 400:
             self._collector.record_error(metric_name)
 
-    def get_endpoint_stats(
-        self,
-        endpoint: str,
-        method: str,
-        window_minutes: int = 5
-    ) -> Optional[Dict[str, Any]]:
+    def get_endpoint_stats(self, endpoint: str, method: str, window_minutes: int = 5) -> Optional[Dict[str, Any]]:
         """Get statistics for a specific endpoint."""
         metric_name = f"{method}:{endpoint}"
         summary = self._collector.get_summary(metric_name, window_minutes)
@@ -301,7 +286,7 @@ class RequestMetrics:
             "avg_response_time_ms": round(summary.avg, 2),
             "p95_response_time_ms": round(summary.p95, 2),
             "error_rate": round(summary.error_rate * 100, 2),
-            "status_codes": dict(self._status_codes[metric_name])
+            "status_codes": dict(self._status_codes[metric_name]),
         }
 
     def get_all_stats(self, window_minutes: int = 5) -> Dict[str, Any]:
@@ -309,7 +294,7 @@ class RequestMetrics:
         stats = {
             "window_minutes": window_minutes,
             "total_requests": sum(self._request_counts.values()),
-            "endpoints": []
+            "endpoints": [],
         }
 
         for metric_name in self._request_counts.keys():
@@ -341,13 +326,7 @@ class DatabaseMetrics:
         self._slow_queries: List[Dict[str, Any]] = []
         self._query_counts: Dict[str, int] = defaultdict(int)
 
-    def record_query(
-        self,
-        operation: str,
-        table: str,
-        duration_ms: float,
-        rows_affected: int = 0
-    ) -> None:
+    def record_query(self, operation: str, table: str, duration_ms: float, rows_affected: int = 0) -> None:
         """
         Record a database query.
 
@@ -363,13 +342,15 @@ class DatabaseMetrics:
 
         # Track slow queries
         if duration_ms > self.SLOW_QUERY_THRESHOLD_MS:
-            self._slow_queries.append({
-                "timestamp": datetime.utcnow().isoformat(),
-                "operation": operation,
-                "table": table,
-                "duration_ms": round(duration_ms, 2),
-                "rows_affected": rows_affected
-            })
+            self._slow_queries.append(
+                {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "operation": operation,
+                    "table": table,
+                    "duration_ms": round(duration_ms, 2),
+                    "rows_affected": rows_affected,
+                }
+            )
 
             # Keep only last 100 slow queries
             if len(self._slow_queries) > 100:
@@ -390,11 +371,11 @@ class DatabaseMetrics:
                     "count": s.count,
                     "avg_ms": round(s.avg, 2),
                     "p95_ms": round(s.p95, 2),
-                    "max_ms": round(s.max, 2)
+                    "max_ms": round(s.max, 2),
                 }
                 for s in summaries
             ],
-            "recent_slow_queries": self._slow_queries[-10:]
+            "recent_slow_queries": self._slow_queries[-10:],
         }
 
 
@@ -411,7 +392,7 @@ class HealthChecker:
     def __init__(
         self,
         request_metrics: Optional[RequestMetrics] = None,
-        db_metrics: Optional[DatabaseMetrics] = None
+        db_metrics: Optional[DatabaseMetrics] = None,
     ):
         self._request_metrics = request_metrics
         self._db_metrics = db_metrics
@@ -444,30 +425,27 @@ class HealthChecker:
                     is_healthy, message = await check_fn()
                 else:
                     is_healthy, message = check_fn()
-                checks[name] = {
-                    "healthy": is_healthy,
-                    "message": message
-                }
+                checks[name] = {"healthy": is_healthy, "message": message}
                 if not is_healthy:
                     overall_healthy = False
             except Exception as e:
-                checks[name] = {
-                    "healthy": False,
-                    "message": f"Check failed: {str(e)}"
-                }
+                checks[name] = {"healthy": False, "message": f"Check failed: {str(e)}"}
                 overall_healthy = False
 
         # Check request metrics thresholds
         if self._request_metrics:
             stats = self._request_metrics.get_all_stats(5)
             high_error_endpoints = [
-                e for e in stats.get("endpoints", [])
-                if e.get("error_rate", 0) > 5  # 5% error rate threshold
+                e for e in stats.get("endpoints", []) if e.get("error_rate", 0) > 5  # 5% error rate threshold
             ]
 
             checks["request_errors"] = {
                 "healthy": len(high_error_endpoints) == 0,
-                "message": f"{len(high_error_endpoints)} endpoints with high error rate" if high_error_endpoints else "All endpoints healthy"
+                "message": (
+                    f"{len(high_error_endpoints)} endpoints with high error rate"
+                    if high_error_endpoints
+                    else "All endpoints healthy"
+                ),
             }
 
             if high_error_endpoints:
@@ -476,7 +454,7 @@ class HealthChecker:
         return {
             "status": "healthy" if overall_healthy else "unhealthy",
             "timestamp": datetime.utcnow().isoformat(),
-            "checks": checks
+            "checks": checks,
         }
 
 
@@ -503,5 +481,5 @@ def get_metrics_report(window_minutes: int = 5) -> Dict[str, Any]:
     return {
         "collector": metrics_collector.to_dict(window_minutes),
         "requests": request_metrics.get_all_stats(window_minutes),
-        "database": database_metrics.get_stats(window_minutes)
+        "database": database_metrics.get_stats(window_minutes),
     }

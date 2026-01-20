@@ -1,11 +1,13 @@
 """
 WebSocket connection manager for real-time messaging.
 """
-import json
+
 import asyncio
-from typing import Dict, Set, Optional, Any
-from fastapi import WebSocket
+import json
 from datetime import datetime
+from typing import Any, Dict, Optional, Set
+
+from fastapi import WebSocket
 
 
 class ConnectionManager:
@@ -107,12 +109,7 @@ class ConnectionManager:
 
         return sent
 
-    async def broadcast_to_thread(
-        self,
-        thread_id: str,
-        message: dict,
-        exclude_user: Optional[str] = None
-    ) -> int:
+    async def broadcast_to_thread(self, thread_id: str, message: dict, exclude_user: Optional[str] = None) -> int:
         """
         Broadcast a message to all users subscribed to a thread.
         Returns the number of users the message was sent to.
@@ -127,20 +124,12 @@ class ConnectionManager:
 
         return sent_count
 
-    async def notify_new_message(
-        self,
-        thread_id: str,
-        message_data: dict,
-        recipient_user_id: str
-    ) -> bool:
+    async def notify_new_message(self, thread_id: str, message_data: dict, recipient_user_id: str) -> bool:
         """
         Notify a user about a new message.
         Used when the recipient might not be subscribed to the thread.
         """
-        ws_message = {
-            "type": "new_message",
-            "payload": message_data
-        }
+        ws_message = {"type": "new_message", "payload": message_data}
         return await self.send_to_user(recipient_user_id, ws_message)
 
     async def notify_message_read(
@@ -148,7 +137,7 @@ class ConnectionManager:
         thread_id: str,
         reader_type: str,
         reader_user_id: str,
-        other_party_user_id: str
+        other_party_user_id: str,
     ) -> bool:
         """
         Notify the other party that their messages have been read.
@@ -158,8 +147,8 @@ class ConnectionManager:
             "payload": {
                 "thread_id": thread_id,
                 "reader_type": reader_type,
-                "read_at": datetime.utcnow().isoformat()
-            }
+                "read_at": datetime.utcnow().isoformat(),
+            },
         }
         return await self.send_to_user(other_party_user_id, ws_message)
 
@@ -169,9 +158,7 @@ class ConnectionManager:
         """
         ws_message = {
             "type": "unread_update",
-            "payload": {
-                "total_unread": total_unread
-            }
+            "payload": {"total_unread": total_unread},
         }
         return await self.send_to_user(user_id, ws_message)
 

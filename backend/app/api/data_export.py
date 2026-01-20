@@ -3,23 +3,24 @@ Data export API endpoints for patient data portability.
 
 Allows patients to request and download their data.
 """
+
 import logging
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import Response
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.patient import Patient
 from app.models.data_export import DataExportRequest, ExportStatus
+from app.models.patient import Patient
 from app.schemas.data_export import (
-    ExportRequestCreate,
-    ExportRequestResponse,
-    ExportRequestListItem,
     ExportDownloadResponse,
     ExportProgressResponse,
+    ExportRequestCreate,
+    ExportRequestListItem,
+    ExportRequestResponse,
 )
 from app.services.data_export.export_service import export_service
 from app.utils.deps import get_current_patient
@@ -76,7 +77,11 @@ def export_to_list_item(export_request: DataExportRequest) -> ExportRequestListI
     )
 
 
-@router.post("/request", response_model=ExportRequestResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/request",
+    response_model=ExportRequestResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def request_data_export(
     request_body: ExportRequestCreate,
     request: Request,
@@ -92,10 +97,7 @@ async def request_data_export(
     # Check if can request
     can_request, reason = await export_service.can_request_export(db, patient.id)
     if not can_request:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=reason
-        )
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=reason)
 
     # Create export request
     export_request = await export_service.create_export_request(
@@ -110,7 +112,7 @@ async def request_data_export(
         date_from=request_body.date_from,
         date_to=request_body.date_to,
         request_ip=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent", "")[:500] if request.headers else None,
+        user_agent=(request.headers.get("user-agent", "")[:500] if request.headers else None),
     )
 
     # Process export immediately (in production, this would be a background task)
@@ -158,10 +160,7 @@ async def get_export_request_detail(
     export_request = result.scalar_one_or_none()
 
     if not export_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Export request not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Export request not found")
 
     return export_to_response(export_request)
 
@@ -186,10 +185,7 @@ async def get_export_progress(
     export_request = result.scalar_one_or_none()
 
     if not export_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Export request not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Export request not found")
 
     return ExportProgressResponse(
         id=export_request.id,
@@ -216,7 +212,7 @@ async def download_export(
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Download not found, expired, or download limit reached"
+            detail="Download not found, expired, or download limit reached",
         )
 
     export_request, file_content, file_name = result
@@ -235,7 +231,7 @@ async def download_export(
         headers={
             "Content-Disposition": f'attachment; filename="{file_name}"',
             "Content-Length": str(len(file_content)),
-        }
+        },
     )
 
 
@@ -260,15 +256,15 @@ async def cancel_export_request(
     export_request = result.scalar_one_or_none()
 
     if not export_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Export request not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Export request not found")
 
-    if export_request.status not in [ExportStatus.PENDING.value, ExportStatus.PROCESSING.value]:
+    if export_request.status not in [
+        ExportStatus.PENDING.value,
+        ExportStatus.PROCESSING.value,
+    ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Can only cancel pending or processing requests"
+            detail="Can only cancel pending or processing requests",
         )
 
     export_request.status = ExportStatus.FAILED.value

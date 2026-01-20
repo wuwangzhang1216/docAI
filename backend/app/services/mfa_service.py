@@ -8,21 +8,22 @@ Supports:
 - Backup codes for recovery
 """
 
+import base64
+import hashlib
+import io
+import secrets
+from datetime import datetime
+from typing import List, Optional, Tuple
+
 import pyotp
 import qrcode
 import qrcode.image.svg
-import secrets
-import hashlib
-import io
-import base64
-from datetime import datetime
-from typing import Optional, Tuple, List
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.mfa import UserMFA, MFABackupCode
-from app.models.user import User
 from app.config import settings
+from app.models.mfa import MFABackupCode, UserMFA
+from app.models.user import User
 
 
 class MFAService:
@@ -142,11 +143,7 @@ class MFAService:
         return hashlib.sha256(normalized.encode()).hexdigest()
 
     @classmethod
-    async def setup_mfa(
-        cls,
-        db: AsyncSession,
-        user: User
-    ) -> Tuple[str, str, List[str]]:
+    async def setup_mfa(cls, db: AsyncSession, user: User) -> Tuple[str, str, List[str]]:
         """
         Initialize MFA setup for a user.
 
@@ -161,9 +158,7 @@ class MFAService:
             Tuple of (secret, qr_code_base64, backup_codes)
         """
         # Check if MFA already exists
-        result = await db.execute(
-            select(UserMFA).where(UserMFA.user_id == user.id)
-        )
+        result = await db.execute(select(UserMFA).where(UserMFA.user_id == user.id))
         existing_mfa = result.scalar_one_or_none()
 
         # Generate new secret and codes
@@ -179,11 +174,7 @@ class MFAService:
             existing_mfa.enabled_at = None
 
             # Remove old backup codes
-            await db.execute(
-                MFABackupCode.__table__.delete().where(
-                    MFABackupCode.user_mfa_id == existing_mfa.id
-                )
-            )
+            await db.execute(MFABackupCode.__table__.delete().where(MFABackupCode.user_mfa_id == existing_mfa.id))
 
             mfa_config = existing_mfa
         else:
@@ -210,12 +201,7 @@ class MFAService:
         return secret, qr_code, backup_codes
 
     @classmethod
-    async def verify_and_enable_mfa(
-        cls,
-        db: AsyncSession,
-        user: User,
-        code: str
-    ) -> bool:
+    async def verify_and_enable_mfa(cls, db: AsyncSession, user: User, code: str) -> bool:
         """
         Verify TOTP code and enable MFA.
 
@@ -230,9 +216,7 @@ class MFAService:
         Returns:
             True if verified and enabled, False otherwise
         """
-        result = await db.execute(
-            select(UserMFA).where(UserMFA.user_id == user.id)
-        )
+        result = await db.execute(select(UserMFA).where(UserMFA.user_id == user.id))
         mfa_config = result.scalar_one_or_none()
 
         if not mfa_config:
@@ -249,12 +233,7 @@ class MFAService:
         return True
 
     @classmethod
-    async def verify_mfa_code(
-        cls,
-        db: AsyncSession,
-        user: User,
-        code: str
-    ) -> Tuple[bool, str]:
+    async def verify_mfa_code(cls, db: AsyncSession, user: User, code: str) -> Tuple[bool, str]:
         """
         Verify an MFA code (TOTP or backup code).
 
@@ -266,9 +245,7 @@ class MFAService:
         Returns:
             Tuple of (is_valid, code_type) where code_type is "totp" or "backup"
         """
-        result = await db.execute(
-            select(UserMFA).where(UserMFA.user_id == user.id)
-        )
+        result = await db.execute(select(UserMFA).where(UserMFA.user_id == user.id))
         mfa_config = result.scalar_one_or_none()
 
         if not mfa_config or not mfa_config.is_enabled:
@@ -286,7 +263,7 @@ class MFAService:
             select(MFABackupCode).where(
                 MFABackupCode.user_mfa_id == mfa_config.id,
                 MFABackupCode.code_hash == code_hash,
-                MFABackupCode.is_used == False
+                MFABackupCode.is_used == False,
             )
         )
         backup_code = backup_result.scalar_one_or_none()
@@ -301,11 +278,7 @@ class MFAService:
         return False, ""
 
     @classmethod
-    async def disable_mfa(
-        cls,
-        db: AsyncSession,
-        user: User
-    ) -> bool:
+    async def disable_mfa(cls, db: AsyncSession, user: User) -> bool:
         """
         Disable MFA for a user.
 
@@ -316,9 +289,7 @@ class MFAService:
         Returns:
             True if disabled, False if MFA wasn't enabled
         """
-        result = await db.execute(
-            select(UserMFA).where(UserMFA.user_id == user.id)
-        )
+        result = await db.execute(select(UserMFA).where(UserMFA.user_id == user.id))
         mfa_config = result.scalar_one_or_none()
 
         if not mfa_config:
@@ -331,11 +302,7 @@ class MFAService:
         return True
 
     @classmethod
-    async def is_mfa_enabled(
-        cls,
-        db: AsyncSession,
-        user_id: str
-    ) -> bool:
+    async def is_mfa_enabled(cls, db: AsyncSession, user_id: str) -> bool:
         """
         Check if MFA is enabled for a user.
 
@@ -346,20 +313,11 @@ class MFAService:
         Returns:
             True if MFA is enabled, False otherwise
         """
-        result = await db.execute(
-            select(UserMFA).where(
-                UserMFA.user_id == user_id,
-                UserMFA.is_enabled == True
-            )
-        )
+        result = await db.execute(select(UserMFA).where(UserMFA.user_id == user_id, UserMFA.is_enabled == True))
         return result.scalar_one_or_none() is not None
 
     @classmethod
-    async def get_remaining_backup_codes(
-        cls,
-        db: AsyncSession,
-        user: User
-    ) -> int:
+    async def get_remaining_backup_codes(cls, db: AsyncSession, user: User) -> int:
         """
         Get the count of remaining (unused) backup codes.
 
@@ -370,9 +328,7 @@ class MFAService:
         Returns:
             Number of unused backup codes
         """
-        result = await db.execute(
-            select(UserMFA).where(UserMFA.user_id == user.id)
-        )
+        result = await db.execute(select(UserMFA).where(UserMFA.user_id == user.id))
         mfa_config = result.scalar_one_or_none()
 
         if not mfa_config:
@@ -381,17 +337,13 @@ class MFAService:
         backup_result = await db.execute(
             select(MFABackupCode).where(
                 MFABackupCode.user_mfa_id == mfa_config.id,
-                MFABackupCode.is_used == False
+                MFABackupCode.is_used == False,
             )
         )
         return len(backup_result.scalars().all())
 
     @classmethod
-    async def regenerate_backup_codes(
-        cls,
-        db: AsyncSession,
-        user: User
-    ) -> Optional[List[str]]:
+    async def regenerate_backup_codes(cls, db: AsyncSession, user: User) -> Optional[List[str]]:
         """
         Regenerate backup codes for a user.
 
@@ -402,20 +354,14 @@ class MFAService:
         Returns:
             List of new backup codes, or None if MFA not enabled
         """
-        result = await db.execute(
-            select(UserMFA).where(UserMFA.user_id == user.id)
-        )
+        result = await db.execute(select(UserMFA).where(UserMFA.user_id == user.id))
         mfa_config = result.scalar_one_or_none()
 
         if not mfa_config or not mfa_config.is_enabled:
             return None
 
         # Delete old backup codes
-        await db.execute(
-            MFABackupCode.__table__.delete().where(
-                MFABackupCode.user_mfa_id == mfa_config.id
-            )
-        )
+        await db.execute(MFABackupCode.__table__.delete().where(MFABackupCode.user_mfa_id == mfa_config.id))
 
         # Generate new codes
         backup_codes = cls.generate_backup_codes()

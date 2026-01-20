@@ -5,21 +5,17 @@ with full access to patient context including medical records, check-ins,
 assessments, and conversation history.
 """
 
-from typing import List, Dict, Optional
-from anthropic import AsyncAnthropic
+from typing import Dict, List, Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from anthropic import AsyncAnthropic
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.doctor import Doctor
-from app.models.patient import Patient
 from app.models.doctor_conversation import DoctorConversation
-from app.services.ai.patient_context_aggregator import (
-    PatientContextAggregator,
-    PatientFullContext,
-)
-
+from app.models.patient import Patient
+from app.services.ai.patient_context_aggregator import PatientContextAggregator, PatientFullContext
 
 # System prompt for doctor AI assistant
 DOCTOR_AI_SYSTEM_PROMPT = """You are an AI clinical assistant for mental health professionals. You help doctors analyze patient data, identify patterns, and consider treatment approaches.
@@ -112,14 +108,10 @@ class DoctorChatEngine:
             raise PermissionError("You don't have access to this patient")
 
         # Get or create conversation
-        conversation = await self._get_or_create_conversation(
-            doctor_id, patient_id, conversation_id
-        )
+        conversation = await self._get_or_create_conversation(doctor_id, patient_id, conversation_id)
 
         # Get patient context
-        patient_context = await self.context_aggregator.get_full_context(
-            patient_id, days_back=30
-        )
+        patient_context = await self.context_aggregator.get_full_context(patient_id, days_back=30)
 
         # Generate AI response
         response_text = await self._generate_response(
@@ -139,9 +131,7 @@ class DoctorChatEngine:
             "patient_name": patient.full_name,
         }
 
-    async def _verify_relationship(
-        self, doctor_id: str, patient_id: str
-    ) -> Optional[Patient]:
+    async def _verify_relationship(self, doctor_id: str, patient_id: str) -> Optional[Patient]:
         """
         Verify that the doctor has a relationship with the patient.
 
@@ -153,10 +143,7 @@ class DoctorChatEngine:
             Patient if relationship exists, None otherwise
         """
         result = await self.db.execute(
-            select(Patient).where(
-                Patient.id == patient_id,
-                Patient.primary_doctor_id == doctor_id
-            )
+            select(Patient).where(Patient.id == patient_id, Patient.primary_doctor_id == doctor_id)
         )
         return result.scalar_one_or_none()
 
@@ -261,16 +248,20 @@ class DoctorChatEngine:
 
         # Include conversation history (last 30 messages = 15 exchanges)
         for msg in history[-30:]:
-            messages.append({
-                "role": msg.get("role", "user"),
-                "content": msg.get("content", ""),
-            })
+            messages.append(
+                {
+                    "role": msg.get("role", "user"),
+                    "content": msg.get("content", ""),
+                }
+            )
 
         # Add new message
-        messages.append({
-            "role": "user",
-            "content": new_message,
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": new_message,
+            }
+        )
 
         return messages
 
@@ -329,18 +320,22 @@ class DoctorChatEngine:
 
         try:
             # Build conversation text
-            conv_text = "\n".join([
-                f"{'医生' if m.get('role') == 'user' else 'AI'}: {m.get('content', '')}"
-                for m in conversation.messages
-            ])
+            conv_text = "\n".join(
+                [
+                    f"{'医生' if m.get('role') == 'user' else 'AI'}: {m.get('content', '')}"
+                    for m in conversation.messages
+                ]
+            )
 
             response = await self.client.messages.create(
                 model="claude-haiku-4-5",
                 max_tokens=200,
-                messages=[{
-                    "role": "user",
-                    "content": f"请用2-3句话总结以下医生与AI助手的对话要点：\n\n{conv_text}"
-                }]
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"请用2-3句话总结以下医生与AI助手的对话要点：\n\n{conv_text}",
+                    }
+                ],
             )
 
             summary = response.content[0].text

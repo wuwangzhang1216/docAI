@@ -15,16 +15,16 @@ Design Goals:
 4. Graceful degradation when Redis unavailable
 """
 
-import time
 import asyncio
-from typing import Optional, Callable, Dict, Tuple
-from functools import wraps
+import time
 from collections import defaultdict
+from functools import wraps
+from typing import Callable, Dict, Optional, Tuple
 
-from fastapi import Request, HTTPException, status
+import redis.asyncio as redis
+from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-import redis.asyncio as redis
 
 from app.config import settings
 
@@ -38,9 +38,9 @@ class RateLimitExceeded(HTTPException):
             detail={
                 "error": "rate_limit_exceeded",
                 "message": "Too many requests. Please try again later.",
-                "retry_after": retry_after
+                "retry_after": retry_after,
             },
-            headers={"Retry-After": str(retry_after)}
+            headers={"Retry-After": str(retry_after)},
         )
 
 
@@ -54,18 +54,15 @@ class RateLimitConfig:
     # Endpoint-specific limits
     ENDPOINT_LIMITS: Dict[str, Tuple[int, int]] = {
         # Auth endpoints - strict limits to prevent brute force
-        "/api/v1/auth/login": (5, 60),           # 5 requests per minute
-        "/api/v1/auth/register": (3, 60),        # 3 requests per minute
-        "/api/v1/auth/change-password": (3, 60), # 3 requests per minute
-
+        "/api/v1/auth/login": (5, 60),  # 5 requests per minute
+        "/api/v1/auth/register": (3, 60),  # 3 requests per minute
+        "/api/v1/auth/change-password": (3, 60),  # 3 requests per minute
         # Chat endpoints - moderate limits
-        "/api/v1/chat": (30, 60),                # 30 messages per minute
-        "/api/v1/chat/pre-visit": (30, 60),      # 30 messages per minute
-
+        "/api/v1/chat": (30, 60),  # 30 messages per minute
+        "/api/v1/chat/pre-visit": (30, 60),  # 30 messages per minute
         # Clinical endpoints
-        "/api/v1/clinical/checkin": (10, 60),    # 10 per minute
-        "/api/v1/clinical/assessment": (10, 60), # 10 per minute
-
+        "/api/v1/clinical/checkin": (10, 60),  # 10 per minute
+        "/api/v1/clinical/assessment": (10, 60),  # 10 per minute
         # Doctor AI chat - moderate limits
         "/api/v1/clinical/doctor/patients/*/ai-chat": (20, 60),  # 20 per minute
     }
@@ -87,17 +84,10 @@ class InMemoryRateLimiter:
     """
 
     def __init__(self):
-        self._buckets: Dict[str, Dict] = defaultdict(
-            lambda: {"tokens": 0, "last_update": 0}
-        )
+        self._buckets: Dict[str, Dict] = defaultdict(lambda: {"tokens": 0, "last_update": 0})
         self._lock = asyncio.Lock()
 
-    async def is_allowed(
-        self,
-        key: str,
-        limit: int,
-        window: int
-    ) -> Tuple[bool, int, int]:
+    async def is_allowed(self, key: str, limit: int, window: int) -> Tuple[bool, int, int]:
         """
         Check if request is allowed under rate limit.
 
@@ -122,7 +112,7 @@ class InMemoryRateLimiter:
             # Refill tokens
             bucket["tokens"] = min(
                 limit * RateLimitConfig.BURST_MULTIPLIER,
-                bucket["tokens"] + (time_passed * refill_rate)
+                bucket["tokens"] + (time_passed * refill_rate),
             )
             bucket["last_update"] = now
 
@@ -153,11 +143,7 @@ class RedisRateLimiter:
         """Connect to Redis."""
         if not self._connected:
             try:
-                self._client = redis.from_url(
-                    self.redis_url,
-                    encoding="utf-8",
-                    decode_responses=True
-                )
+                self._client = redis.from_url(self.redis_url, encoding="utf-8", decode_responses=True)
                 await self._client.ping()
                 self._connected = True
             except Exception as e:
@@ -170,12 +156,7 @@ class RedisRateLimiter:
             await self._client.close()
             self._connected = False
 
-    async def is_allowed(
-        self,
-        key: str,
-        limit: int,
-        window: int
-    ) -> Tuple[bool, int, int]:
+    async def is_allowed(self, key: str, limit: int, window: int) -> Tuple[bool, int, int]:
         """
         Check if request is allowed using sliding window counter.
 
@@ -325,9 +306,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # 1. Check global rate limit (per IP)
         global_key = f"ratelimit:global:{client_ip}"
         is_allowed, remaining, retry_after = await limiter.is_allowed(
-            global_key,
-            RateLimitConfig.GLOBAL_LIMIT,
-            RateLimitConfig.GLOBAL_WINDOW
+            global_key, RateLimitConfig.GLOBAL_LIMIT, RateLimitConfig.GLOBAL_WINDOW
         )
 
         if not is_allowed:
@@ -336,9 +315,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 content={
                     "error": "rate_limit_exceeded",
                     "message": "Global rate limit exceeded. Please slow down.",
-                    "retry_after": retry_after
+                    "retry_after": retry_after,
                 },
-                headers={"Retry-After": str(retry_after)}
+                headers={"Retry-After": str(retry_after)},
             )
 
         # 2. Check endpoint-specific limit
@@ -350,9 +329,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if user_id:
             endpoint_key = f"ratelimit:endpoint:{path}:user:{user_id}"
 
-        is_allowed, remaining, retry_after = await limiter.is_allowed(
-            endpoint_key, limit, window
-        )
+        is_allowed, remaining, retry_after = await limiter.is_allowed(endpoint_key, limit, window)
 
         if not is_allowed:
             return JSONResponse(
@@ -360,14 +337,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 content={
                     "error": "rate_limit_exceeded",
                     "message": f"Rate limit exceeded for this endpoint. Please try again later.",
-                    "retry_after": retry_after
+                    "retry_after": retry_after,
                 },
                 headers={
                     "Retry-After": str(retry_after),
                     "X-RateLimit-Limit": str(limit),
                     "X-RateLimit-Remaining": "0",
-                    "X-RateLimit-Reset": str(int(time.time()) + retry_after)
-                }
+                    "X-RateLimit-Reset": str(int(time.time()) + retry_after),
+                },
             )
 
         # Proceed with request
@@ -384,7 +361,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 def rate_limit(
     limit: int = 10,
     window: int = 60,
-    key_func: Optional[Callable[[Request], str]] = None
+    key_func: Optional[Callable[[Request], str]] = None,
 ):
     """
     Decorator for applying rate limits to specific endpoints.
@@ -400,6 +377,7 @@ def rate_limit(
         window: Time window in seconds
         key_func: Optional function to generate rate limit key from request
     """
+
     def decorator(func: Callable):
         @wraps(func)
         async def wrapper(request: Request, *args, **kwargs):
@@ -411,9 +389,7 @@ def rate_limit(
             else:
                 key = f"ratelimit:decorator:{func.__name__}:{client_ip}"
 
-            is_allowed, remaining, retry_after = await limiter.is_allowed(
-                key, limit, window
-            )
+            is_allowed, remaining, retry_after = await limiter.is_allowed(key, limit, window)
 
             if not is_allowed:
                 raise RateLimitExceeded(retry_after=retry_after)
@@ -421,6 +397,7 @@ def rate_limit(
             return await func(request, *args, **kwargs)
 
         return wrapper
+
     return decorator
 
 

@@ -1,9 +1,10 @@
 """Doctor conversation model for storing doctor-patient AI discussions."""
 
-import uuid
 import json
+import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text
+
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -16,11 +17,22 @@ class DoctorConversation(Base):
     These are conversations where a doctor discusses a patient's case
     with the AI assistant to get clinical insights and recommendations.
     """
+
     __tablename__ = "doctor_conversations"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    doctor_id = Column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    doctor_id = Column(
+        String(36),
+        ForeignKey("doctors.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    patient_id = Column(
+        String(36),
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
 
     # Conversation content stored as JSON
     messages_json = Column(Text, default="[]")
@@ -49,11 +61,13 @@ class DoctorConversation(Base):
     def add_message(self, role: str, content: str):
         """Add a message to the conversation."""
         messages = self.messages
-        messages.append({
-            "role": role,
-            "content": content,
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        messages.append(
+            {
+                "role": role,
+                "content": content,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         self.messages = messages
 
     def __repr__(self):

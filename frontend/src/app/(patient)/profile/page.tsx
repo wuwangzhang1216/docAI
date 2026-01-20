@@ -291,7 +291,7 @@ export default function ProfilePage() {
                   </div>
                   {request.message && (
                     <p className="text-sm text-muted-foreground mt-2 bg-muted p-2 rounded">
-                      "{request.message}"
+                      &ldquo;{request.message}&rdquo;
                     </p>
                   )}
                   <div className="flex gap-2 mt-3">

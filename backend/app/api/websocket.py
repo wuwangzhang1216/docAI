@@ -1,13 +1,15 @@
 """
 WebSocket endpoint for real-time messaging.
 """
-import json
+
 import asyncio
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+import json
+
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from jose import JWTError
 
-from app.utils.security import decode_token
 from app.services.websocket_manager import ws_manager
+from app.utils.security import decode_token
 
 router = APIRouter(tags=["websocket"])
 
@@ -18,7 +20,7 @@ HEARTBEAT_INTERVAL = 30
 @router.websocket("/ws")
 async def websocket_endpoint(
     websocket: WebSocket,
-    token: str = Query(..., description="JWT authentication token")
+    token: str = Query(..., description="JWT authentication token"),
 ):
     """
     WebSocket endpoint for real-time messaging.
@@ -56,20 +58,14 @@ async def websocket_endpoint(
         while True:
             try:
                 # Wait for messages with timeout for heartbeat
-                data = await asyncio.wait_for(
-                    websocket.receive_text(),
-                    timeout=HEARTBEAT_INTERVAL * 2
-                )
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=HEARTBEAT_INTERVAL * 2)
 
                 # Parse and handle message
                 try:
                     message = json.loads(data)
                     await handle_client_message(websocket, user_id, message)
                 except json.JSONDecodeError:
-                    await websocket.send_json({
-                        "type": "error",
-                        "payload": {"message": "Invalid JSON format"}
-                    })
+                    await websocket.send_json({"type": "error", "payload": {"message": "Invalid JSON format"}})
 
             except asyncio.TimeoutError:
                 # No message received, send a ping to check connection
@@ -87,11 +83,7 @@ async def websocket_endpoint(
         await ws_manager.disconnect(websocket)
 
 
-async def handle_client_message(
-    websocket: WebSocket,
-    user_id: str,
-    message: dict
-) -> None:
+async def handle_client_message(websocket: WebSocket, user_id: str, message: dict) -> None:
     """Handle incoming WebSocket messages from clients."""
     msg_type = message.get("type")
 
@@ -102,22 +94,18 @@ async def handle_client_message(
         thread_id = message.get("thread_id")
         if thread_id:
             await ws_manager.subscribe_to_thread(user_id, thread_id)
-            await websocket.send_json({
-                "type": "subscribed",
-                "payload": {"thread_id": thread_id}
-            })
+            await websocket.send_json({"type": "subscribed", "payload": {"thread_id": thread_id}})
 
     elif msg_type == "unsubscribe_thread":
         thread_id = message.get("thread_id")
         if thread_id:
             await ws_manager.unsubscribe_from_thread(user_id, thread_id)
-            await websocket.send_json({
-                "type": "unsubscribed",
-                "payload": {"thread_id": thread_id}
-            })
+            await websocket.send_json({"type": "unsubscribed", "payload": {"thread_id": thread_id}})
 
     else:
-        await websocket.send_json({
-            "type": "error",
-            "payload": {"message": f"Unknown message type: {msg_type}"}
-        })
+        await websocket.send_json(
+            {
+                "type": "error",
+                "payload": {"message": f"Unknown message type: {msg_type}"},
+            }
+        )

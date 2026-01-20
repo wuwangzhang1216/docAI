@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
-from sqlalchemy import Column, String, Boolean, Enum, DateTime, ForeignKey
+
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -9,6 +10,7 @@ from app.database import Base
 
 class UserType(str, PyEnum):
     """User type enumeration."""
+
     PATIENT = "PATIENT"
     DOCTOR = "DOCTOR"
     ADMIN = "ADMIN"
@@ -16,6 +18,7 @@ class UserType(str, PyEnum):
 
 class User(Base):
     """User model for authentication."""
+
     __tablename__ = "users"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -37,7 +40,7 @@ class User(Base):
         back_populates="user",
         uselist=False,
         primaryjoin="User.id == Doctor.user_id",
-        foreign_keys="[Doctor.user_id]"
+        foreign_keys="[Doctor.user_id]",
     )
     audit_logs = relationship("AuditLog", back_populates="user")
     created_by_doctor = relationship("Doctor", foreign_keys=[created_by_doctor_id])

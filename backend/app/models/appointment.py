@@ -1,11 +1,12 @@
 """
 Appointment model for scheduling consultations between doctors and patients.
 """
+
 import uuid
-from datetime import datetime, date, time
+from datetime import date, datetime, time
 from enum import Enum
 
-from sqlalchemy import Column, String, DateTime, Date, Time, Text, Boolean, ForeignKey, Index
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, String, Text, Time
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -13,23 +14,26 @@ from app.database import Base
 
 class AppointmentStatus(str, Enum):
     """Status of an appointment."""
-    PENDING = "PENDING"          # 待确认
-    CONFIRMED = "CONFIRMED"      # 已确认
-    COMPLETED = "COMPLETED"      # 已完成
-    CANCELLED = "CANCELLED"      # 已取消
-    NO_SHOW = "NO_SHOW"          # 爽约
+
+    PENDING = "PENDING"  # 待确认
+    CONFIRMED = "CONFIRMED"  # 已确认
+    COMPLETED = "COMPLETED"  # 已完成
+    CANCELLED = "CANCELLED"  # 已取消
+    NO_SHOW = "NO_SHOW"  # 爽约
 
 
 class AppointmentType(str, Enum):
     """Type of appointment."""
-    INITIAL = "INITIAL"              # 初诊
-    FOLLOW_UP = "FOLLOW_UP"          # 复诊
-    EMERGENCY = "EMERGENCY"          # 紧急
-    CONSULTATION = "CONSULTATION"    # 咨询
+
+    INITIAL = "INITIAL"  # 初诊
+    FOLLOW_UP = "FOLLOW_UP"  # 复诊
+    EMERGENCY = "EMERGENCY"  # 紧急
+    CONSULTATION = "CONSULTATION"  # 咨询
 
 
 class CancelledBy(str, Enum):
     """Who cancelled the appointment."""
+
     DOCTOR = "DOCTOR"
     PATIENT = "PATIENT"
     SYSTEM = "SYSTEM"
@@ -41,15 +45,30 @@ class Appointment(Base):
 
     Tracks scheduled appointments, their status, and related metadata.
     """
+
     __tablename__ = "appointments"
 
     # Primary key (UUID to match existing models)
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
 
     # Foreign keys (matching existing model ID types)
-    doctor_id = Column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
-    pre_visit_summary_id = Column(String(36), ForeignKey("pre_visit_summaries.id", ondelete="SET NULL"), nullable=True)
+    doctor_id = Column(
+        String(36),
+        ForeignKey("doctors.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    patient_id = Column(
+        String(36),
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    pre_visit_summary_id = Column(
+        String(36),
+        ForeignKey("pre_visit_summaries.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     # Scheduling
     appointment_date = Column(Date, nullable=False, index=True)
@@ -62,7 +81,7 @@ class Appointment(Base):
 
     # Reason and notes
     reason = Column(Text, nullable=True)  # 预约原因
-    notes = Column(Text, nullable=True)   # 医生备注
+    notes = Column(Text, nullable=True)  # 医生备注
     patient_notes = Column(Text, nullable=True)  # 患者备注
 
     # Reminders
@@ -89,9 +108,9 @@ class Appointment(Base):
 
     # Indexes for common queries
     __table_args__ = (
-        Index('ix_appointments_doctor_date', 'doctor_id', 'appointment_date'),
-        Index('ix_appointments_patient_date', 'patient_id', 'appointment_date'),
-        Index('ix_appointments_status_date', 'status', 'appointment_date'),
+        Index("ix_appointments_doctor_date", "doctor_id", "appointment_date"),
+        Index("ix_appointments_patient_date", "patient_id", "appointment_date"),
+        Index("ix_appointments_status_date", "status", "appointment_date"),
     )
 
     def __repr__(self):

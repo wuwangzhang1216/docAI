@@ -8,24 +8,26 @@ Provides endpoints for:
 - Disabling MFA
 """
 
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
 
 from app.database import get_db
 from app.models.user import User
-from app.utils.deps import get_current_active_user
 from app.services.mfa_service import MFAService
-
+from app.utils.deps import get_current_active_user
 
 router = APIRouter(prefix="/mfa", tags=["mfa"])
 
 
 # ========== Schemas ==========
 
+
 class MFASetupResponse(BaseModel):
     """Response after initiating MFA setup."""
+
     secret: str  # For manual entry
     qr_code: str  # Base64 encoded QR code image
     backup_codes: List[str]  # One-time backup codes
@@ -34,17 +36,20 @@ class MFASetupResponse(BaseModel):
 
 class MFAVerifyRequest(BaseModel):
     """Request to verify MFA code."""
+
     code: str = Field(..., min_length=6, max_length=10)
 
 
 class MFAVerifyResponse(BaseModel):
     """Response after verifying MFA code."""
+
     success: bool
     message: str
 
 
 class MFAStatusResponse(BaseModel):
     """MFA status for the current user."""
+
     is_enabled: bool
     is_verified: bool
     remaining_backup_codes: int
@@ -53,16 +58,18 @@ class MFAStatusResponse(BaseModel):
 
 class BackupCodesResponse(BaseModel):
     """Response with new backup codes."""
+
     backup_codes: List[str]
     message: str
 
 
 # ========== Endpoints ==========
 
+
 @router.post("/setup", response_model=MFASetupResponse)
 async def setup_mfa(
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Initialize MFA setup for the current user.
@@ -81,7 +88,7 @@ async def setup_mfa(
         secret=secret,
         qr_code=qr_code,
         backup_codes=backup_codes,
-        message="Scan the QR code with your authenticator app, then verify with a code"
+        message="Scan the QR code with your authenticator app, then verify with a code",
     )
 
 
@@ -89,7 +96,7 @@ async def setup_mfa(
 async def verify_mfa_setup(
     request: MFAVerifyRequest,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Verify MFA setup and enable it.
@@ -104,19 +111,16 @@ async def verify_mfa_setup(
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid verification code. Please try again."
+            detail="Invalid verification code. Please try again.",
         )
 
-    return MFAVerifyResponse(
-        success=True,
-        message="MFA has been enabled successfully"
-    )
+    return MFAVerifyResponse(success=True, message="MFA has been enabled successfully")
 
 
 @router.get("/status", response_model=MFAStatusResponse)
 async def get_mfa_status(
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get the current MFA status for the user.
@@ -124,11 +128,10 @@ async def get_mfa_status(
     Returns whether MFA is enabled and how many backup codes remain.
     """
     from sqlalchemy import select
+
     from app.models.mfa import UserMFA
 
-    result = await db.execute(
-        select(UserMFA).where(UserMFA.user_id == current_user.id)
-    )
+    result = await db.execute(select(UserMFA).where(UserMFA.user_id == current_user.id))
     mfa_config = result.scalar_one_or_none()
 
     if not mfa_config:
@@ -136,7 +139,7 @@ async def get_mfa_status(
             is_enabled=False,
             is_verified=False,
             remaining_backup_codes=0,
-            enabled_at=None
+            enabled_at=None,
         )
 
     remaining = await MFAService.get_remaining_backup_codes(db, current_user)
@@ -145,7 +148,7 @@ async def get_mfa_status(
         is_enabled=mfa_config.is_enabled,
         is_verified=mfa_config.is_verified,
         remaining_backup_codes=remaining,
-        enabled_at=mfa_config.enabled_at.isoformat() if mfa_config.enabled_at else None
+        enabled_at=mfa_config.enabled_at.isoformat() if mfa_config.enabled_at else None,
     )
 
 
@@ -153,7 +156,7 @@ async def get_mfa_status(
 async def disable_mfa(
     request: MFAVerifyRequest,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Disable MFA for the current user.
@@ -164,30 +167,21 @@ async def disable_mfa(
     is_valid, _ = await MFAService.verify_mfa_code(db, current_user, request.code)
 
     if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid MFA code"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid MFA code")
 
     success = await MFAService.disable_mfa(db, current_user)
 
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="MFA is not enabled"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="MFA is not enabled")
 
-    return MFAVerifyResponse(
-        success=True,
-        message="MFA has been disabled"
-    )
+    return MFAVerifyResponse(success=True, message="MFA has been disabled")
 
 
 @router.post("/regenerate-backup-codes", response_model=BackupCodesResponse)
 async def regenerate_backup_codes(
     request: MFAVerifyRequest,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Regenerate backup codes.
@@ -201,22 +195,16 @@ async def regenerate_backup_codes(
     is_valid, _ = await MFAService.verify_mfa_code(db, current_user, request.code)
 
     if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid MFA code"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid MFA code")
 
     backup_codes = await MFAService.regenerate_backup_codes(db, current_user)
 
     if backup_codes is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="MFA is not enabled"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="MFA is not enabled")
 
     return BackupCodesResponse(
         backup_codes=backup_codes,
-        message="New backup codes generated. Save them securely."
+        message="New backup codes generated. Save them securely.",
     )
 
 
@@ -224,7 +212,7 @@ async def regenerate_backup_codes(
 async def verify_mfa_code(
     request: MFAVerifyRequest,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Verify an MFA code.
@@ -237,17 +225,11 @@ async def verify_mfa_code(
     is_valid, code_type = await MFAService.verify_mfa_code(db, current_user, request.code)
 
     if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid MFA code"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid MFA code")
 
     message = "Code verified successfully"
     if code_type == "backup":
         remaining = await MFAService.get_remaining_backup_codes(db, current_user)
         message = f"Backup code used. {remaining} codes remaining."
 
-    return MFAVerifyResponse(
-        success=True,
-        message=message
-    )
+    return MFAVerifyResponse(success=True, message=message)

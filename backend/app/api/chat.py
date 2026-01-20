@@ -5,29 +5,23 @@ This approach reduces token usage by ~84% while maintaining accuracy.
 Reference: https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
 """
 
+import json
 from datetime import datetime
 from typing import List, Optional
-import json
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from uuid import UUID
 
-from app.database import get_db
-from app.models.patient import Patient
-from app.models.conversation import Conversation, ConversationType
-from app.models.risk_event import RiskEvent, RiskLevel
-from app.schemas.chat import (
-    ChatRequest,
-    ChatResponse,
-    ConversationResponse,
-    ConversationListItem,
-    MessageItem,
-)
-from app.utils.deps import get_current_patient
-from app.services.ai.hybrid_chat_engine import HybridChatEngine
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import get_db
+from app.models.conversation import Conversation, ConversationType
+from app.models.patient import Patient
+from app.models.risk_event import RiskEvent, RiskLevel
+from app.schemas.chat import ChatRequest, ChatResponse, ConversationListItem, ConversationResponse, MessageItem
+from app.services.ai.hybrid_chat_engine import HybridChatEngine
+from app.utils.deps import get_current_patient
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -41,7 +35,7 @@ def get_chat_engine(db: AsyncSession) -> HybridChatEngine:
 async def send_message(
     request: ChatRequest,
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Send a message to the AI chat assistant.
@@ -54,22 +48,19 @@ async def send_message(
         result = await db.execute(
             select(Conversation).where(
                 Conversation.id == request.conversation_id,
-                Conversation.patient_id == patient.id
+                Conversation.patient_id == patient.id,
             )
         )
         conversation = result.scalar_one_or_none()
 
         if not conversation:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Conversation not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     else:
         # Create new conversation
         conversation = Conversation(
             patient_id=patient.id,
             conv_type=ConversationType.SUPPORTIVE_CHAT,
-            messages=[]
+            messages=[],
         )
         db.add(conversation)
         await db.flush()
@@ -89,17 +80,13 @@ async def send_message(
     # Update conversation messages
     now = datetime.utcnow().isoformat()
     new_messages = history + [
-        {
-            "role": "user",
-            "content": request.message,
-            "timestamp": now
-        },
+        {"role": "user", "content": request.message, "timestamp": now},
         {
             "role": "assistant",
             "content": reply,
             "timestamp": now,
-            "risk_level": risk.level.value if risk else None
-        }
+            "risk_level": risk.level.value if risk else None,
+        },
     ]
     conversation.messages = new_messages
     conversation.updated_at = datetime.utcnow()
@@ -114,7 +101,7 @@ async def send_message(
             risk_level=risk.level,
             risk_type=risk.risk_type,
             trigger_text=risk.trigger_text or request.message[:200],
-            ai_confidence=risk.confidence
+            ai_confidence=risk.confidence,
         )
         db.add(risk_event)
         risk_alert = risk.level in [RiskLevel.HIGH, RiskLevel.CRITICAL]
@@ -127,9 +114,7 @@ async def send_message(
             from app.models.doctor import Doctor
             from app.services.email.email_senders import send_risk_alert_email
 
-            doctor_result = await db.execute(
-                select(Doctor).where(Doctor.id == patient.primary_doctor_id)
-            )
+            doctor_result = await db.execute(select(Doctor).where(Doctor.id == patient.primary_doctor_id))
             doctor = doctor_result.scalar_one_or_none()
 
             if doctor:
@@ -143,20 +128,17 @@ async def send_message(
         except Exception as e:
             # Log but don't fail the request if email fails
             import logging
+
             logging.error(f"Failed to send risk alert email: {e}")
 
-    return ChatResponse(
-        reply=reply,
-        conversation_id=conversation.id,
-        risk_alert=risk_alert
-    )
+    return ChatResponse(reply=reply, conversation_id=conversation.id, risk_alert=risk_alert)
 
 
 @router.post("/stream")
 async def send_message_stream(
     request: ChatRequest,
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Send a message to the AI chat assistant with streaming response.
@@ -176,22 +158,19 @@ async def send_message_stream(
         result = await db.execute(
             select(Conversation).where(
                 Conversation.id == request.conversation_id,
-                Conversation.patient_id == patient.id
+                Conversation.patient_id == patient.id,
             )
         )
         conversation = result.scalar_one_or_none()
 
         if not conversation:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Conversation not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     else:
         # Create new conversation
         conversation = Conversation(
             patient_id=patient.id,
             conv_type=ConversationType.SUPPORTIVE_CHAT,
-            messages=[]
+            messages=[],
         )
         db.add(conversation)
         await db.flush()
@@ -233,17 +212,13 @@ async def send_message_stream(
             # Save conversation after streaming completes
             now = datetime.utcnow().isoformat()
             new_messages = history + [
-                {
-                    "role": "user",
-                    "content": request.message,
-                    "timestamp": now
-                },
+                {"role": "user", "content": request.message, "timestamp": now},
                 {
                     "role": "assistant",
                     "content": full_response,
                     "timestamp": now,
-                    "risk_level": risk_level
-                }
+                    "risk_level": risk_level,
+                },
             ]
             conversation.messages = new_messages
             conversation.updated_at = datetime.utcnow()
@@ -256,7 +231,7 @@ async def send_message_stream(
                     risk_level=RiskLevel(risk_level),
                     risk_type=risk_type,
                     trigger_text=request.message[:200],
-                    ai_confidence=0.8
+                    ai_confidence=0.8,
                 )
                 db.add(risk_event)
 
@@ -266,9 +241,7 @@ async def send_message_stream(
                         from app.models.doctor import Doctor
                         from app.services.email.email_senders import send_risk_alert_email
 
-                        doctor_result = await db.execute(
-                            select(Doctor).where(Doctor.id == patient.primary_doctor_id)
-                        )
+                        doctor_result = await db.execute(select(Doctor).where(Doctor.id == patient.primary_doctor_id))
                         doctor = doctor_result.scalar_one_or_none()
                         if doctor:
                             await db.refresh(risk_event)
@@ -280,6 +253,7 @@ async def send_message_stream(
                             )
                     except Exception as e:
                         import logging
+
                         logging.error(f"Failed to send risk alert email: {e}")
 
             await db.commit()
@@ -289,6 +263,7 @@ async def send_message_stream(
 
         except Exception as e:
             import logging
+
             logging.error(f"Streaming error: {e}")
             yield f"event: error\ndata: {json.dumps({'message': 'An error occurred during streaming'})}\n\n"
 
@@ -299,20 +274,15 @@ async def send_message_stream(
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",  # Disable nginx buffering
-        }
+        },
     )
 
 
 @router.get("/conversations", response_model=List[ConversationListItem])
-async def list_conversations(
-    patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
-):
+async def list_conversations(patient: Patient = Depends(get_current_patient), db: AsyncSession = Depends(get_db)):
     """List all conversations for the current patient."""
     result = await db.execute(
-        select(Conversation)
-        .where(Conversation.patient_id == patient.id)
-        .order_by(Conversation.updated_at.desc())
+        select(Conversation).where(Conversation.patient_id == patient.id).order_by(Conversation.updated_at.desc())
     )
     conversations = result.scalars().all()
 
@@ -327,15 +297,17 @@ async def list_conversations(
             else last_message.get("content", "") if last_message else None
         )
 
-        items.append(ConversationListItem(
-            id=conv.id,
-            conv_type=conv.conv_type,
-            message_count=message_count,
-            last_message_preview=last_preview,
-            is_active=conv.is_active,
-            created_at=conv.created_at,
-            updated_at=conv.updated_at
-        ))
+        items.append(
+            ConversationListItem(
+                id=conv.id,
+                conv_type=conv.conv_type,
+                message_count=message_count,
+                last_message_preview=last_preview,
+                is_active=conv.is_active,
+                created_at=conv.created_at,
+                updated_at=conv.updated_at,
+            )
+        )
 
     return items
 
@@ -344,32 +316,28 @@ async def list_conversations(
 async def get_conversation(
     conversation_id: UUID,
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get a specific conversation with full message history."""
     result = await db.execute(
-        select(Conversation).where(
-            Conversation.id == conversation_id,
-            Conversation.patient_id == patient.id
-        )
+        select(Conversation).where(Conversation.id == conversation_id, Conversation.patient_id == patient.id)
     )
     conversation = result.scalar_one_or_none()
 
     if not conversation:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conversation not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
 
     # Convert messages to MessageItem format
     messages = []
     for msg in conversation.messages or []:
-        messages.append(MessageItem(
-            role=msg.get("role", "user"),
-            content=msg.get("content", ""),
-            timestamp=datetime.fromisoformat(msg.get("timestamp", datetime.utcnow().isoformat())),
-            risk_level=msg.get("risk_level")
-        ))
+        messages.append(
+            MessageItem(
+                role=msg.get("role", "user"),
+                content=msg.get("content", ""),
+                timestamp=datetime.fromisoformat(msg.get("timestamp", datetime.utcnow().isoformat())),
+                risk_level=msg.get("risk_level"),
+            )
+        )
 
     return ConversationResponse(
         id=conversation.id,
@@ -379,7 +347,7 @@ async def get_conversation(
         summary=conversation.summary,
         is_active=conversation.is_active,
         created_at=conversation.created_at,
-        updated_at=conversation.updated_at
+        updated_at=conversation.updated_at,
     )
 
 
@@ -387,7 +355,7 @@ async def get_conversation(
 async def end_conversation(
     conversation_id: UUID,
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     End a conversation and generate a summary.
@@ -395,18 +363,12 @@ async def end_conversation(
     Marks the conversation as inactive and generates an AI summary.
     """
     result = await db.execute(
-        select(Conversation).where(
-            Conversation.id == conversation_id,
-            Conversation.patient_id == patient.id
-        )
+        select(Conversation).where(Conversation.id == conversation_id, Conversation.patient_id == patient.id)
     )
     conversation = result.scalar_one_or_none()
 
     if not conversation:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conversation not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
 
     # Generate summary
     chat_engine = get_chat_engine(db)
@@ -421,7 +383,7 @@ async def end_conversation(
     return {
         "status": "ended",
         "conversation_id": str(conversation_id),
-        "summary": summary
+        "summary": summary,
     }
 
 
@@ -429,7 +391,7 @@ async def end_conversation(
 async def pre_visit_chat(
     request: ChatRequest,
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Send a message to the pre-visit information gathering assistant.
@@ -442,7 +404,7 @@ async def pre_visit_chat(
             select(Conversation).where(
                 Conversation.id == request.conversation_id,
                 Conversation.patient_id == patient.id,
-                Conversation.conv_type == ConversationType.PRE_VISIT
+                Conversation.conv_type == ConversationType.PRE_VISIT,
             )
         )
         conversation = result.scalar_one_or_none()
@@ -450,14 +412,10 @@ async def pre_visit_chat(
         if not conversation:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Pre-visit conversation not found"
+                detail="Pre-visit conversation not found",
             )
     else:
-        conversation = Conversation(
-            patient_id=patient.id,
-            conv_type=ConversationType.PRE_VISIT,
-            messages=[]
-        )
+        conversation = Conversation(patient_id=patient.id, conv_type=ConversationType.PRE_VISIT, messages=[])
         db.add(conversation)
         await db.flush()
 
@@ -477,14 +435,10 @@ async def pre_visit_chat(
     now = datetime.utcnow().isoformat()
     conversation.messages = history + [
         {"role": "user", "content": request.message, "timestamp": now},
-        {"role": "assistant", "content": reply, "timestamp": now}
+        {"role": "assistant", "content": reply, "timestamp": now},
     ]
     conversation.updated_at = datetime.utcnow()
 
     await db.commit()
 
-    return ChatResponse(
-        reply=reply,
-        conversation_id=conversation.id,
-        risk_alert=False
-    )
+    return ChatResponse(reply=reply, conversation_id=conversation.id, risk_alert=False)

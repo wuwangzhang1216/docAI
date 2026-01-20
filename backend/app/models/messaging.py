@@ -1,13 +1,12 @@
 """
 Messaging models for doctor-patient direct communication.
 """
+
 import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
-from sqlalchemy import (
-    Column, String, Boolean, Enum, DateTime, ForeignKey,
-    Text, Integer, Index
-)
+
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -15,6 +14,7 @@ from app.database import Base
 
 class MessageType(str, PyEnum):
     """Message type enumeration."""
+
     TEXT = "TEXT"
     IMAGE = "IMAGE"
     FILE = "FILE"
@@ -25,6 +25,7 @@ class DoctorPatientThread(Base):
     Conversation thread between a doctor and a patient.
     Each doctor-patient pair has exactly one thread.
     """
+
     __tablename__ = "doctor_patient_threads"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -32,13 +33,13 @@ class DoctorPatientThread(Base):
         String(36),
         ForeignKey("doctors.id", ondelete="CASCADE"),
         nullable=False,
-        index=True
+        index=True,
     )
     patient_id = Column(
         String(36),
         ForeignKey("patients.id", ondelete="CASCADE"),
         nullable=False,
-        index=True
+        index=True,
     )
 
     # Last message timestamp for sorting threads
@@ -58,12 +59,12 @@ class DoctorPatientThread(Base):
         "DirectMessage",
         back_populates="thread",
         order_by="DirectMessage.created_at",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     __table_args__ = (
         # Ensure unique thread per doctor-patient pair
-        Index('idx_unique_doctor_patient_thread', 'doctor_id', 'patient_id', unique=True),
+        Index("idx_unique_doctor_patient_thread", "doctor_id", "patient_id", unique=True),
     )
 
     def __repr__(self):
@@ -74,6 +75,7 @@ class DirectMessage(Base):
     """
     A single message in a doctor-patient thread.
     """
+
     __tablename__ = "direct_messages"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -81,7 +83,7 @@ class DirectMessage(Base):
         String(36),
         ForeignKey("doctor_patient_threads.id", ondelete="CASCADE"),
         nullable=False,
-        index=True
+        index=True,
     )
 
     # Sender information
@@ -100,15 +102,11 @@ class DirectMessage(Base):
 
     # Relationships
     thread = relationship("DoctorPatientThread", back_populates="messages")
-    attachments = relationship(
-        "MessageAttachment",
-        back_populates="message",
-        cascade="all, delete-orphan"
-    )
+    attachments = relationship("MessageAttachment", back_populates="message", cascade="all, delete-orphan")
 
     __table_args__ = (
         # Index for efficient message retrieval within a thread
-        Index('idx_thread_messages_time', 'thread_id', 'created_at'),
+        Index("idx_thread_messages_time", "thread_id", "created_at"),
     )
 
     def __repr__(self):
@@ -119,6 +117,7 @@ class MessageAttachment(Base):
     """
     File attachment for a message (image or document).
     """
+
     __tablename__ = "message_attachments"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -126,7 +125,7 @@ class MessageAttachment(Base):
         String(36),
         ForeignKey("direct_messages.id", ondelete="CASCADE"),
         nullable=True,  # Can be null when uploaded before message is sent
-        index=True
+        index=True,
     )
 
     # File metadata

@@ -1,16 +1,17 @@
 """
 Core email service for sending and queuing emails.
 """
+
 import logging
 from datetime import datetime
-from typing import Optional, Dict, Any
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.email import EmailLog, EmailStatus, EmailType, EmailPriority
+from app.models.email import EmailLog, EmailPriority, EmailStatus, EmailType
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class EmailService:
         if template_dir.exists():
             self.jinja_env = Environment(
                 loader=FileSystemLoader(str(template_dir)),
-                autoescape=select_autoescape(["html", "xml"])
+                autoescape=select_autoescape(["html", "xml"]),
             )
         else:
             self.jinja_env = None
@@ -70,9 +71,10 @@ class EmailService:
             return False
 
         try:
-            import aiosmtplib
-            from email.mime.text import MIMEText
             from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
+
+            import aiosmtplib
 
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
@@ -102,11 +104,7 @@ class EmailService:
             logger.error(f"Failed to send email to {to_email}: {e}")
             return False
 
-    def render_template(
-        self,
-        template_name: str,
-        context: Dict[str, Any]
-    ) -> tuple[str, Optional[str]]:
+    def render_template(self, template_name: str, context: Dict[str, Any]) -> tuple[str, Optional[str]]:
         """
         Render an email template.
 
@@ -203,11 +201,7 @@ class EmailService:
 
         return email_log
 
-    async def process_queued_email(
-        self,
-        db: AsyncSession,
-        email_log: EmailLog
-    ) -> bool:
+    async def process_queued_email(self, db: AsyncSession, email_log: EmailLog) -> bool:
         """
         Process a queued email and send it.
 
@@ -249,16 +243,14 @@ class EmailService:
                 logger.error(f"Email permanently failed: {email_log.id} - {e}")
             else:
                 email_log.status = EmailStatus.PENDING.value
-                logger.warning(f"Email failed, will retry ({email_log.retry_count}/{email_log.max_retries}): {email_log.id}")
+                logger.warning(
+                    f"Email failed, will retry ({email_log.retry_count}/{email_log.max_retries}): {email_log.id}"
+                )
 
             await db.commit()
             return False
 
-    async def send_queued_email_now(
-        self,
-        db: AsyncSession,
-        email_log: EmailLog
-    ) -> bool:
+    async def send_queued_email_now(self, db: AsyncSession, email_log: EmailLog) -> bool:
         """
         Convenience method to immediately process a just-queued email.
         For cases where we want synchronous behavior.

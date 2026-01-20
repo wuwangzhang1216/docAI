@@ -237,7 +237,7 @@ export default function RiskQueuePage() {
                     <p className="font-medium text-foreground">{event.patient_name || t('unknownPatient')}</p>
                     {event.trigger_text && (
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        "{event.trigger_text}"
+                        &ldquo;{event.trigger_text}&rdquo;
                       </p>
                     )}
                   </div>
@@ -316,7 +316,7 @@ export default function RiskQueuePage() {
                   <div>
                     <p className="text-sm text-muted-foreground">{t('triggerText')}</p>
                     <p className="bg-red-500/10 p-3 rounded-lg text-red-600 dark:text-red-400 mt-1">
-                      "{selectedEvent.trigger_text}"
+                      &ldquo;{selectedEvent.trigger_text}&rdquo;
                     </p>
                   </div>
                 )}

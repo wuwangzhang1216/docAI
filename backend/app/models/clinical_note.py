@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, Date, DateTime, ForeignKey, Text
+
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -8,10 +9,16 @@ from app.database import Base
 
 class ClinicalNote(Base):
     """Clinical note model for storing doctor notes and AI drafts."""
+
     __tablename__ = "clinical_notes"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(
+        String(36),
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     doctor_id = Column(String(36), ForeignKey("doctors.id"), nullable=True)
     visit_date = Column(Date, nullable=True)
     transcript_url = Column(String(500), nullable=True)

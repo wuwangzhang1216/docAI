@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api import auth, chat, clinical, messaging, reports, appointments, data_export, mfa
+from app.api import appointments, auth, chat, clinical, data_export, messaging, mfa, reports
 
 # Create main API router
 api_router = APIRouter()

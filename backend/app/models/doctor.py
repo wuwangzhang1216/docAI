@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text
+
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -8,10 +9,16 @@ from app.database import Base
 
 class Doctor(Base):
     """Doctor profile model."""
+
     __tablename__ = "doctors"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    user_id = Column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False)
     license_number = Column(String(50), nullable=True)

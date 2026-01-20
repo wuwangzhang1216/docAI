@@ -1,7 +1,8 @@
-import uuid
 import json
+import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text
+
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -9,6 +10,7 @@ from app.database import Base
 
 class AuditLog(Base):
     """Audit log model for tracking user actions."""
+
     __tablename__ = "audit_logs"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -26,7 +28,7 @@ class AuditLog(Base):
     @property
     def details(self):
         return json.loads(self.details_json) if self.details_json else None
-    
+
     @details.setter
     def details(self, value):
         self.details_json = json.dumps(value) if value else None

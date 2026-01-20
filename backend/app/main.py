@@ -1,13 +1,14 @@
 """FastAPI application entry point."""
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
-from app.database import init_db
 from app.api import api_router
 from app.api.websocket import router as websocket_router
+from app.config import settings
+from app.database import init_db
 from app.utils.rate_limit import RateLimitMiddleware, cleanup_rate_limiters
 
 
@@ -68,11 +69,7 @@ app.include_router(websocket_router, prefix=settings.API_V1_PREFIX)
 @app.get("/")
 async def root():
     """Root endpoint."""
-    return {
-        "name": settings.APP_NAME,
-        "version": "0.1.0",
-        "status": "running"
-    }
+    return {"name": settings.APP_NAME, "version": "0.1.0", "status": "running"}
 
 
 @app.get("/health")

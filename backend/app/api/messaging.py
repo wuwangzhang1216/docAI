@@ -1,70 +1,54 @@
 """
 REST API endpoints for doctor-patient messaging.
 """
+
 from datetime import datetime
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status
+
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, desc, func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.user import User, UserType
-from app.models.patient import Patient
 from app.models.doctor import Doctor
-from app.models.messaging import (
-    DoctorPatientThread,
-    DirectMessage,
-    MessageAttachment,
-    MessageType,
-)
+from app.models.messaging import DirectMessage, DoctorPatientThread, MessageAttachment, MessageType
+from app.models.patient import Patient
+from app.models.user import User, UserType
+from app.schemas.common import PaginatedResponse
 from app.schemas.messaging import (
-    MessageCreate,
-    MessageResponse,
-    ThreadSummary,
-    ThreadDetail,
-    UnreadCountResponse,
-    ThreadUnreadCount,
     AttachmentResponse,
     AttachmentUploadResponse,
-)
-from app.schemas.common import PaginatedResponse
-from app.utils.deps import (
-    get_db,
-    get_current_active_user,
-    get_current_patient,
-    get_current_doctor,
+    MessageCreate,
+    MessageResponse,
+    ThreadDetail,
+    ThreadSummary,
+    ThreadUnreadCount,
+    UnreadCountResponse,
 )
 from app.services.storage import storage_service
 from app.services.websocket_manager import ws_manager
-
+from app.utils.deps import get_current_active_user, get_current_doctor, get_current_patient, get_db
 
 router = APIRouter(prefix="/messaging", tags=["messaging"])
 
 
 # ==================== Helper Functions ====================
 
+
 async def get_thread_with_validation(
-    thread_id: str,
-    user: User,
-    db: AsyncSession,
-    require_send_permission: bool = False
+    thread_id: str, user: User, db: AsyncSession, require_send_permission: bool = False
 ) -> tuple[DoctorPatientThread, str, str]:
     """
     Get a thread and validate user access.
     Returns (thread, user_role, other_party_user_id).
     """
     # Get the thread
-    result = await db.execute(
-        select(DoctorPatientThread).where(DoctorPatientThread.id == thread_id)
-    )
+    result = await db.execute(select(DoctorPatientThread).where(DoctorPatientThread.id == thread_id))
     thread = result.scalar_one_or_none()
 
     if not thread:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Thread not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found")
 
     # Determine user's role in the thread
     user_role = None
@@ -72,34 +56,26 @@ async def get_thread_with_validation(
 
     if user.user_type == UserType.PATIENT:
         # Get patient profile
-        patient_result = await db.execute(
-            select(Patient).where(Patient.user_id == user.id)
-        )
+        patient_result = await db.execute(select(Patient).where(Patient.user_id == user.id))
         patient = patient_result.scalar_one_or_none()
 
         if patient and thread.patient_id == patient.id:
             user_role = "PATIENT"
             # Get doctor's user_id
-            doctor_result = await db.execute(
-                select(Doctor).where(Doctor.id == thread.doctor_id)
-            )
+            doctor_result = await db.execute(select(Doctor).where(Doctor.id == thread.doctor_id))
             doctor = doctor_result.scalar_one_or_none()
             if doctor:
                 other_party_user_id = doctor.user_id
 
     elif user.user_type == UserType.DOCTOR:
         # Get doctor profile
-        doctor_result = await db.execute(
-            select(Doctor).where(Doctor.user_id == user.id)
-        )
+        doctor_result = await db.execute(select(Doctor).where(Doctor.user_id == user.id))
         doctor = doctor_result.scalar_one_or_none()
 
         if doctor and thread.doctor_id == doctor.id:
             user_role = "DOCTOR"
             # Get patient's user_id
-            patient_result = await db.execute(
-                select(Patient).where(Patient.id == thread.patient_id)
-            )
+            patient_result = await db.execute(select(Patient).where(Patient.id == thread.patient_id))
             patient = patient_result.scalar_one_or_none()
             if patient:
                 other_party_user_id = patient.user_id
@@ -107,7 +83,7 @@ async def get_thread_with_validation(
     if not user_role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not a participant in this thread"
+            detail="You are not a participant in this thread",
         )
 
     # Check send permission if required
@@ -116,7 +92,7 @@ async def get_thread_with_validation(
         if not can_send:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You cannot send messages in this thread. The connection may have been terminated."
+                detail="You cannot send messages in this thread. The connection may have been terminated.",
             )
 
     return thread, user_role, other_party_user_id
@@ -124,9 +100,7 @@ async def get_thread_with_validation(
 
 async def check_can_send_message(thread: DoctorPatientThread, db: AsyncSession) -> bool:
     """Check if messages can be sent in this thread (connection still active)."""
-    result = await db.execute(
-        select(Patient).where(Patient.id == thread.patient_id)
-    )
+    result = await db.execute(select(Patient).where(Patient.id == thread.patient_id))
     patient = result.scalar_one_or_none()
 
     if not patient:
@@ -137,36 +111,34 @@ async def check_can_send_message(thread: DoctorPatientThread, db: AsyncSession) 
 
 
 async def build_message_response(
-    message: DirectMessage,
-    thread: DoctorPatientThread,
-    db: AsyncSession
+    message: DirectMessage, thread: DoctorPatientThread, db: AsyncSession
 ) -> MessageResponse:
     """Build a MessageResponse from a DirectMessage."""
     # Get sender name
     if message.sender_type == "DOCTOR":
-        result = await db.execute(
-            select(Doctor).where(Doctor.id == message.sender_id)
-        )
+        result = await db.execute(select(Doctor).where(Doctor.id == message.sender_id))
         sender = result.scalar_one_or_none()
         sender_name = f"{sender.first_name} {sender.last_name}" if sender else "Unknown"
     else:
-        result = await db.execute(
-            select(Patient).where(Patient.id == message.sender_id)
-        )
+        result = await db.execute(select(Patient).where(Patient.id == message.sender_id))
         sender = result.scalar_one_or_none()
         sender_name = f"{sender.first_name} {sender.last_name}" if sender else "Unknown"
 
     # Get attachments
     attachments = []
     for att in message.attachments:
-        attachments.append(AttachmentResponse(
-            id=att.id,
-            file_name=att.file_name,
-            file_type=att.file_type,
-            file_size=att.file_size,
-            url=storage_service.get_presigned_url(att.s3_key),
-            thumbnail_url=storage_service.get_presigned_url(att.thumbnail_s3_key) if att.thumbnail_s3_key else None
-        ))
+        attachments.append(
+            AttachmentResponse(
+                id=att.id,
+                file_name=att.file_name,
+                file_type=att.file_type,
+                file_size=att.file_size,
+                url=storage_service.get_presigned_url(att.s3_key),
+                thumbnail_url=(
+                    storage_service.get_presigned_url(att.thumbnail_s3_key) if att.thumbnail_s3_key else None
+                ),
+            )
+        )
 
     return MessageResponse(
         id=message.id,
@@ -179,11 +151,12 @@ async def build_message_response(
         is_read=message.is_read,
         read_at=message.read_at,
         created_at=message.created_at,
-        attachments=attachments
+        attachments=attachments,
     )
 
 
 # ==================== Thread Endpoints ====================
+
 
 @router.get("/threads", response_model=PaginatedResponse[ThreadSummary])
 async def get_threads(
@@ -191,7 +164,7 @@ async def get_threads(
     offset: int = Query(0, ge=0),
     search: Optional[str] = Query(None, description="Search by other party's name"),
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get all message threads for the current user with pagination and search.
@@ -202,9 +175,7 @@ async def get_threads(
 
     if current_user.user_type == UserType.PATIENT:
         # Get patient profile
-        patient_result = await db.execute(
-            select(Patient).where(Patient.user_id == current_user.id)
-        )
+        patient_result = await db.execute(select(Patient).where(Patient.user_id == current_user.id))
         patient = patient_result.scalar_one_or_none()
         if not patient:
             return PaginatedResponse(items=[], total=0, limit=limit, offset=offset, has_more=False)
@@ -223,7 +194,7 @@ async def get_threads(
                 or_(
                     Doctor.first_name.ilike(search_pattern),
                     Doctor.last_name.ilike(search_pattern),
-                    (Doctor.first_name + ' ' + Doctor.last_name).ilike(search_pattern)
+                    (Doctor.first_name + " " + Doctor.last_name).ilike(search_pattern),
                 )
             )
 
@@ -234,10 +205,7 @@ async def get_threads(
 
         # Get paginated threads
         result = await db.execute(
-            base_query
-            .order_by(desc(DoctorPatientThread.last_message_at))
-            .offset(offset)
-            .limit(limit)
+            base_query.order_by(desc(DoctorPatientThread.last_message_at)).offset(offset).limit(limit)
         )
         rows = result.fetchall()
 
@@ -254,26 +222,28 @@ async def get_threads(
             # Check if connection is still active
             can_send = patient.primary_doctor_id == doctor.id
 
-            threads.append(ThreadSummary(
-                id=thread.id,
-                other_party_id=doctor.id,
-                other_party_name=f"{doctor.first_name} {doctor.last_name}",
-                other_party_type="DOCTOR",
-                last_message_preview=last_msg.content[:100] if last_msg and last_msg.content else (
-                    f"[{last_msg.message_type.value}]" if last_msg else None
-                ),
-                last_message_at=thread.last_message_at,
-                last_message_type=last_msg.message_type if last_msg else None,
-                unread_count=thread.patient_unread_count,
-                can_send_message=can_send,
-                created_at=thread.created_at
-            ))
+            threads.append(
+                ThreadSummary(
+                    id=thread.id,
+                    other_party_id=doctor.id,
+                    other_party_name=f"{doctor.first_name} {doctor.last_name}",
+                    other_party_type="DOCTOR",
+                    last_message_preview=(
+                        last_msg.content[:100]
+                        if last_msg and last_msg.content
+                        else (f"[{last_msg.message_type.value}]" if last_msg else None)
+                    ),
+                    last_message_at=thread.last_message_at,
+                    last_message_type=last_msg.message_type if last_msg else None,
+                    unread_count=thread.patient_unread_count,
+                    can_send_message=can_send,
+                    created_at=thread.created_at,
+                )
+            )
 
     elif current_user.user_type == UserType.DOCTOR:
         # Get doctor profile
-        doctor_result = await db.execute(
-            select(Doctor).where(Doctor.user_id == current_user.id)
-        )
+        doctor_result = await db.execute(select(Doctor).where(Doctor.user_id == current_user.id))
         doctor = doctor_result.scalar_one_or_none()
         if not doctor:
             return PaginatedResponse(items=[], total=0, limit=limit, offset=offset, has_more=False)
@@ -292,7 +262,7 @@ async def get_threads(
                 or_(
                     Patient.first_name.ilike(search_pattern),
                     Patient.last_name.ilike(search_pattern),
-                    (Patient.first_name + ' ' + Patient.last_name).ilike(search_pattern)
+                    (Patient.first_name + " " + Patient.last_name).ilike(search_pattern),
                 )
             )
 
@@ -303,10 +273,7 @@ async def get_threads(
 
         # Get paginated threads
         result = await db.execute(
-            base_query
-            .order_by(desc(DoctorPatientThread.last_message_at))
-            .offset(offset)
-            .limit(limit)
+            base_query.order_by(desc(DoctorPatientThread.last_message_at)).offset(offset).limit(limit)
         )
         rows = result.fetchall()
 
@@ -323,27 +290,31 @@ async def get_threads(
             # Check if connection is still active
             can_send = patient.primary_doctor_id == doctor.id
 
-            threads.append(ThreadSummary(
-                id=thread.id,
-                other_party_id=patient.id,
-                other_party_name=f"{patient.first_name} {patient.last_name}",
-                other_party_type="PATIENT",
-                last_message_preview=last_msg.content[:100] if last_msg and last_msg.content else (
-                    f"[{last_msg.message_type.value}]" if last_msg else None
-                ),
-                last_message_at=thread.last_message_at,
-                last_message_type=last_msg.message_type if last_msg else None,
-                unread_count=thread.doctor_unread_count,
-                can_send_message=can_send,
-                created_at=thread.created_at
-            ))
+            threads.append(
+                ThreadSummary(
+                    id=thread.id,
+                    other_party_id=patient.id,
+                    other_party_name=f"{patient.first_name} {patient.last_name}",
+                    other_party_type="PATIENT",
+                    last_message_preview=(
+                        last_msg.content[:100]
+                        if last_msg and last_msg.content
+                        else (f"[{last_msg.message_type.value}]" if last_msg else None)
+                    ),
+                    last_message_at=thread.last_message_at,
+                    last_message_type=last_msg.message_type if last_msg else None,
+                    unread_count=thread.doctor_unread_count,
+                    can_send_message=can_send,
+                    created_at=thread.created_at,
+                )
+            )
 
     return PaginatedResponse(
         items=threads,
         total=total,
         limit=limit,
         offset=offset,
-        has_more=offset + len(threads) < total
+        has_more=offset + len(threads) < total,
     )
 
 
@@ -353,7 +324,7 @@ async def get_thread(
     limit: int = Query(50, ge=1, le=200),
     before: Optional[datetime] = None,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get a specific thread with messages.
@@ -363,26 +334,24 @@ async def get_thread(
 
     # Get other party info
     if user_role == "PATIENT":
-        result = await db.execute(
-            select(Doctor).where(Doctor.id == thread.doctor_id)
-        )
+        result = await db.execute(select(Doctor).where(Doctor.id == thread.doctor_id))
         other = result.scalar_one_or_none()
         other_party_id = other.id if other else ""
         other_party_name = f"{other.first_name} {other.last_name}" if other else "Unknown"
         other_party_type = "DOCTOR"
     else:
-        result = await db.execute(
-            select(Patient).where(Patient.id == thread.patient_id)
-        )
+        result = await db.execute(select(Patient).where(Patient.id == thread.patient_id))
         other = result.scalar_one_or_none()
         other_party_id = other.id if other else ""
         other_party_name = f"{other.first_name} {other.last_name}" if other else "Unknown"
         other_party_type = "PATIENT"
 
     # Get messages with attachments eagerly loaded
-    query = select(DirectMessage).options(
-        selectinload(DirectMessage.attachments)
-    ).where(DirectMessage.thread_id == thread_id)
+    query = (
+        select(DirectMessage)
+        .options(selectinload(DirectMessage.attachments))
+        .where(DirectMessage.thread_id == thread_id)
+    )
     if before:
         query = query.where(DirectMessage.created_at < before)
     query = query.order_by(desc(DirectMessage.created_at)).limit(limit + 1)
@@ -411,7 +380,7 @@ async def get_thread(
         can_send_message=can_send,
         messages=messages,
         has_more=has_more,
-        created_at=thread.created_at
+        created_at=thread.created_at,
     )
 
 
@@ -420,7 +389,7 @@ async def send_message(
     thread_id: str,
     request: MessageCreate,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Send a message in a thread.
@@ -434,20 +403,16 @@ async def send_message(
     if request.message_type == MessageType.TEXT and not request.content:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Text messages must have content"
+            detail="Text messages must have content",
         )
 
     # Get sender ID
     if user_role == "PATIENT":
-        result = await db.execute(
-            select(Patient).where(Patient.user_id == current_user.id)
-        )
+        result = await db.execute(select(Patient).where(Patient.user_id == current_user.id))
         sender = result.scalar_one_or_none()
         sender_id = sender.id
     else:
-        result = await db.execute(
-            select(Doctor).where(Doctor.user_id == current_user.id)
-        )
+        result = await db.execute(select(Doctor).where(Doctor.user_id == current_user.id))
         sender = result.scalar_one_or_none()
         sender_id = sender.id
 
@@ -457,7 +422,7 @@ async def send_message(
         sender_type=user_role,
         sender_id=sender_id,
         content=request.content,
-        message_type=request.message_type
+        message_type=request.message_type,
     )
     db.add(message)
     await db.flush()
@@ -466,9 +431,7 @@ async def send_message(
     if request.attachment_ids:
         for att_id in request.attachment_ids:
             # Get the attachment (should already exist from upload)
-            att_result = await db.execute(
-                select(MessageAttachment).where(MessageAttachment.id == att_id)
-            )
+            att_result = await db.execute(select(MessageAttachment).where(MessageAttachment.id == att_id))
             attachment = att_result.scalar_one_or_none()
             if attachment and attachment.message_id is None:
                 attachment.message_id = message.id
@@ -484,9 +447,7 @@ async def send_message(
 
     # Re-query message with attachments eagerly loaded to avoid lazy loading issues
     msg_result = await db.execute(
-        select(DirectMessage)
-        .options(selectinload(DirectMessage.attachments))
-        .where(DirectMessage.id == message.id)
+        select(DirectMessage).options(selectinload(DirectMessage.attachments)).where(DirectMessage.id == message.id)
     )
     message = msg_result.scalar_one()
 
@@ -498,7 +459,7 @@ async def send_message(
         await ws_manager.notify_new_message(
             thread_id=thread_id,
             message_data=response.model_dump(),
-            recipient_user_id=other_party_user_id
+            recipient_user_id=other_party_user_id,
         )
 
     return response
@@ -508,14 +469,12 @@ async def send_message(
 async def mark_thread_read(
     thread_id: str,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Mark all messages in a thread as read.
     """
-    thread, user_role, other_party_user_id = await get_thread_with_validation(
-        thread_id, current_user, db
-    )
+    thread, user_role, other_party_user_id = await get_thread_with_validation(thread_id, current_user, db)
 
     now = datetime.utcnow()
 
@@ -528,7 +487,7 @@ async def mark_thread_read(
                 and_(
                     DirectMessage.thread_id == thread_id,
                     DirectMessage.sender_type == "DOCTOR",
-                    DirectMessage.is_read == False
+                    DirectMessage.is_read == False,
                 )
             )
             .values(is_read=True, read_at=now)
@@ -542,7 +501,7 @@ async def mark_thread_read(
                 and_(
                     DirectMessage.thread_id == thread_id,
                     DirectMessage.sender_type == "PATIENT",
-                    DirectMessage.is_read == False
+                    DirectMessage.is_read == False,
                 )
             )
             .values(is_read=True, read_at=now)
@@ -557,7 +516,7 @@ async def mark_thread_read(
             thread_id=thread_id,
             reader_type=user_role,
             reader_user_id=current_user.id,
-            other_party_user_id=other_party_user_id
+            other_party_user_id=other_party_user_id,
         )
 
     return {"status": "ok"}
@@ -565,11 +524,12 @@ async def mark_thread_read(
 
 # ==================== Attachment Endpoint ====================
 
+
 @router.post("/upload", response_model=AttachmentUploadResponse)
 async def upload_attachment(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Upload a file attachment.
@@ -580,15 +540,9 @@ async def upload_attachment(
     file_size = len(content)
 
     # Validate file
-    is_valid, error = storage_service.validate_file(
-        content_type=file.content_type,
-        file_size=file_size
-    )
+    is_valid, error = storage_service.validate_file(content_type=file.content_type, file_size=file_size)
     if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
     # Upload to S3
     try:
@@ -596,13 +550,10 @@ async def upload_attachment(
             file_content=content,
             filename=file.filename,
             content_type=file.content_type,
-            folder="message_attachments"
+            folder="message_attachments",
         )
     except RuntimeError as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
 
     # Create attachment record (without message_id - will be set when message is sent)
     attachment = MessageAttachment(
@@ -611,7 +562,7 @@ async def upload_attachment(
         file_type=file.content_type,
         file_size=file_size,
         s3_key=s3_key,
-        thumbnail_s3_key=thumbnail_key
+        thumbnail_s3_key=thumbnail_key,
     )
     db.add(attachment)
     await db.commit()
@@ -623,16 +574,17 @@ async def upload_attachment(
         file_type=attachment.file_type,
         file_size=attachment.file_size,
         s3_key=attachment.s3_key,
-        thumbnail_s3_key=attachment.thumbnail_s3_key
+        thumbnail_s3_key=attachment.thumbnail_s3_key,
     )
 
 
 # ==================== Unread Count Endpoint ====================
 
+
 @router.get("/unread", response_model=UnreadCountResponse)
 async def get_unread_count(
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get total unread message count for the current user.
@@ -642,86 +594,63 @@ async def get_unread_count(
 
     if current_user.user_type == UserType.PATIENT:
         # Get patient profile
-        patient_result = await db.execute(
-            select(Patient).where(Patient.user_id == current_user.id)
-        )
+        patient_result = await db.execute(select(Patient).where(Patient.user_id == current_user.id))
         patient = patient_result.scalar_one_or_none()
         if not patient:
             return UnreadCountResponse(total_unread=0, threads=[])
 
         # Get threads with unread messages
-        result = await db.execute(
-            select(DoctorPatientThread)
-            .where(DoctorPatientThread.patient_id == patient.id)
-        )
+        result = await db.execute(select(DoctorPatientThread).where(DoctorPatientThread.patient_id == patient.id))
         threads = result.scalars().all()
 
         for thread in threads:
             if thread.patient_unread_count > 0:
-                threads_unread.append(ThreadUnreadCount(
-                    thread_id=thread.id,
-                    unread_count=thread.patient_unread_count
-                ))
+                threads_unread.append(ThreadUnreadCount(thread_id=thread.id, unread_count=thread.patient_unread_count))
                 total += thread.patient_unread_count
 
     elif current_user.user_type == UserType.DOCTOR:
         # Get doctor profile
-        doctor_result = await db.execute(
-            select(Doctor).where(Doctor.user_id == current_user.id)
-        )
+        doctor_result = await db.execute(select(Doctor).where(Doctor.user_id == current_user.id))
         doctor = doctor_result.scalar_one_or_none()
         if not doctor:
             return UnreadCountResponse(total_unread=0, threads=[])
 
         # Get threads with unread messages
-        result = await db.execute(
-            select(DoctorPatientThread)
-            .where(DoctorPatientThread.doctor_id == doctor.id)
-        )
+        result = await db.execute(select(DoctorPatientThread).where(DoctorPatientThread.doctor_id == doctor.id))
         threads = result.scalars().all()
 
         for thread in threads:
             if thread.doctor_unread_count > 0:
-                threads_unread.append(ThreadUnreadCount(
-                    thread_id=thread.id,
-                    unread_count=thread.doctor_unread_count
-                ))
+                threads_unread.append(ThreadUnreadCount(thread_id=thread.id, unread_count=thread.doctor_unread_count))
                 total += thread.doctor_unread_count
 
-    return UnreadCountResponse(
-        total_unread=total,
-        threads=threads_unread
-    )
+    return UnreadCountResponse(total_unread=total, threads=threads_unread)
 
 
 # ==================== Doctor-specific Endpoints ====================
+
 
 @router.post("/doctor/patients/{patient_id}/thread", response_model=ThreadSummary)
 async def start_thread_with_patient(
     patient_id: str,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get or create a message thread with a patient.
     Only works for patients connected to this doctor.
     """
     # Verify patient exists and is connected to this doctor
-    result = await db.execute(
-        select(Patient).where(Patient.id == patient_id)
-    )
+    result = await db.execute(select(Patient).where(Patient.id == patient_id))
     patient = result.scalar_one_or_none()
 
     if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
 
     if patient.primary_doctor_id != doctor.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="This patient is not connected to you"
+            detail="This patient is not connected to you",
         )
 
     # Check if thread already exists
@@ -729,7 +658,7 @@ async def start_thread_with_patient(
         select(DoctorPatientThread).where(
             and_(
                 DoctorPatientThread.doctor_id == doctor.id,
-                DoctorPatientThread.patient_id == patient_id
+                DoctorPatientThread.patient_id == patient_id,
             )
         )
     )
@@ -737,10 +666,7 @@ async def start_thread_with_patient(
 
     if not thread:
         # Create new thread
-        thread = DoctorPatientThread(
-            doctor_id=doctor.id,
-            patient_id=patient_id
-        )
+        thread = DoctorPatientThread(doctor_id=doctor.id, patient_id=patient_id)
         db.add(thread)
         await db.commit()
         await db.refresh(thread)
@@ -755,5 +681,5 @@ async def start_thread_with_patient(
         last_message_type=None,
         unread_count=thread.doctor_unread_count,
         can_send_message=True,
-        created_at=thread.created_at
+        created_at=thread.created_at,
     )

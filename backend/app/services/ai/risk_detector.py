@@ -1,18 +1,20 @@
 """Risk detection service using rules and LLM."""
 
-import re
 import json
-from typing import Optional, Tuple, List
-from pydantic import BaseModel
+import re
+from typing import List, Optional, Tuple
+
 from anthropic import AsyncAnthropic
+from pydantic import BaseModel
 
 from app.config import settings
-from app.services.ai.prompts import RISK_DETECTION_PROMPT
 from app.models.risk_event import RiskLevel, RiskType
+from app.services.ai.prompts import RISK_DETECTION_PROMPT
 
 
 class RiskResult(BaseModel):
     """Result of risk detection."""
+
     level: RiskLevel
     risk_type: Optional[RiskType] = None
     confidence: float = 1.0
@@ -44,7 +46,10 @@ class RiskDetector:
         (r"(要|想)(杀|伤害).*(他|她|那个人)", "VIOLENCE"),
         (r"(写好|留下).*遗书", "SUICIDAL"),
         # English
-        (r"(tonight|today|right now|going to).*(kill myself|end it|suicide)", "SUICIDAL"),
+        (
+            r"(tonight|today|right now|going to).*(kill myself|end it|suicide)",
+            "SUICIDAL",
+        ),
         (r"(have|got|prepared).*(pills|knife|rope|gun)", "SUICIDAL"),
         (r"(want to|going to).*(kill|hurt).*(him|her|them|someone)", "VIOLENCE"),
         (r"(written|leaving).*(suicide note|goodbye letter)", "SUICIDAL"),
@@ -106,12 +111,18 @@ class RiskDetector:
         (r"(everything|all my efforts).*(futile|pointless|in vain)", "SUICIDAL"),
         (r"(never|will never).*(get better|change|be okay)", "SUICIDAL"),
         (r"(can't|cannot) see.*(hope|future|point)", "SUICIDAL"),
-        (r"no one.*(understands|can understand).*what I.*(went through|experienced)", "SUICIDAL"),
+        (
+            r"no one.*(understands|can understand).*what I.*(went through|experienced)",
+            "SUICIDAL",
+        ),
         # Political trauma - Persecution fear (Chinese)
         (r"(他们|那边的人|政府).*会找到我", "PERSECUTION_FEAR"),
         (r"(到哪里|在哪).*都不安全", "PERSECUTION_FEAR"),
         # Political trauma - Persecution fear (English)
-        (r"(they|government|agents).*(will find|are watching|tracking) me", "PERSECUTION_FEAR"),
+        (
+            r"(they|government|agents).*(will find|are watching|tracking) me",
+            "PERSECUTION_FEAR",
+        ),
         (r"(nowhere|not).*(safe|can hide)", "PERSECUTION_FEAR"),
         # Farsi patterns
         (r"(زندگی|هیچ).*(معنی|ارزش).*ندار", "SUICIDAL"),
@@ -184,7 +195,7 @@ class RiskDetector:
                     risk_type=RiskType(risk_type),
                     confidence=0.95,
                     trigger_text=match.group(),
-                    reasoning="Critical pattern detected"
+                    reasoning="Critical pattern detected",
                 )
 
         # Check high risk patterns (case-insensitive for English text)
@@ -196,7 +207,7 @@ class RiskDetector:
                     risk_type=RiskType(risk_type),
                     confidence=0.9,
                     trigger_text=match.group(),
-                    reasoning="High risk pattern detected"
+                    reasoning="High risk pattern detected",
                 )
 
         # Check medium risk patterns (case-insensitive for English text)
@@ -208,7 +219,7 @@ class RiskDetector:
                     risk_type=RiskType(risk_type),
                     confidence=0.8,
                     trigger_text=match.group(),
-                    reasoning="Medium risk pattern detected"
+                    reasoning="Medium risk pattern detected",
                 )
 
         # No risk detected
@@ -231,17 +242,14 @@ class RiskDetector:
             response = await self.client.messages.create(
                 model="claude-haiku-4-5",
                 max_tokens=200,
-                messages=[{
-                    "role": "user",
-                    "content": RISK_DETECTION_PROMPT.format(text=text)
-                }]
+                messages=[{"role": "user", "content": RISK_DETECTION_PROMPT.format(text=text)}],
             )
 
             # Parse JSON response
             result_text = response.content[0].text.strip()
 
             # Try to extract JSON from response
-            json_match = re.search(r'\{[^}]+\}', result_text, re.DOTALL)
+            json_match = re.search(r"\{[^}]+\}", result_text, re.DOTALL)
             if json_match:
                 result = json.loads(json_match.group())
             else:
@@ -262,7 +270,7 @@ class RiskDetector:
                 level=RiskLevel(risk_level),
                 risk_type=risk_type,
                 confidence=result.get("confidence", 0.8),
-                reasoning=result.get("reasoning")
+                reasoning=result.get("reasoning"),
             )
 
         except json.JSONDecodeError:
@@ -278,5 +286,5 @@ class RiskDetector:
             RiskLevel.LOW: 0,
             RiskLevel.MEDIUM: 1,
             RiskLevel.HIGH: 2,
-            RiskLevel.CRITICAL: 3
+            RiskLevel.CRITICAL: 3,
         }.get(level, 0)

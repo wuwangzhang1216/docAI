@@ -4,24 +4,25 @@ Aggregates all patient data (profile, check-ins, assessments, conversations,
 risk events) into a comprehensive context for doctor-AI discussions.
 """
 
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timedelta
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
+from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, and_
 
-from app.models.patient import Patient
-from app.models.checkin import DailyCheckin
 from app.models.assessment import Assessment, AssessmentType, SeverityLevel
-from app.models.conversation import Conversation
-from app.models.risk_event import RiskEvent, RiskLevel
+from app.models.checkin import DailyCheckin
 from app.models.clinical_note import ClinicalNote
+from app.models.conversation import Conversation
+from app.models.patient import Patient
+from app.models.risk_event import RiskEvent, RiskLevel
 
 
 @dataclass
 class PatientFullContext:
     """Complete patient context for doctor AI conversations."""
+
     patient: Patient
     checkins: List[DailyCheckin]
     assessments: List[Assessment]
@@ -47,11 +48,7 @@ class PatientContextAggregator:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_full_context(
-        self,
-        patient_id: str,
-        days_back: int = 30
-    ) -> PatientFullContext:
+    async def get_full_context(self, patient_id: str, days_back: int = 30) -> PatientFullContext:
         """
         Get complete patient context for the specified time period.
 
@@ -97,59 +94,45 @@ class PatientContextAggregator:
 
     async def _get_patient(self, patient_id: str) -> Optional[Patient]:
         """Fetch patient profile."""
-        result = await self.db.execute(
-            select(Patient).where(Patient.id == patient_id)
-        )
+        result = await self.db.execute(select(Patient).where(Patient.id == patient_id))
         return result.scalar_one_or_none()
 
-    async def _get_checkins(
-        self,
-        patient_id: str,
-        cutoff_date: datetime
-    ) -> List[DailyCheckin]:
+    async def _get_checkins(self, patient_id: str, cutoff_date: datetime) -> List[DailyCheckin]:
         """Fetch recent check-ins."""
         result = await self.db.execute(
             select(DailyCheckin)
             .where(
                 and_(
                     DailyCheckin.patient_id == patient_id,
-                    DailyCheckin.created_at >= cutoff_date
+                    DailyCheckin.created_at >= cutoff_date,
                 )
             )
             .order_by(desc(DailyCheckin.checkin_date))
         )
         return list(result.scalars().all())
 
-    async def _get_assessments(
-        self,
-        patient_id: str,
-        cutoff_date: datetime
-    ) -> List[Assessment]:
+    async def _get_assessments(self, patient_id: str, cutoff_date: datetime) -> List[Assessment]:
         """Fetch recent assessments."""
         result = await self.db.execute(
             select(Assessment)
             .where(
                 and_(
                     Assessment.patient_id == patient_id,
-                    Assessment.created_at >= cutoff_date
+                    Assessment.created_at >= cutoff_date,
                 )
             )
             .order_by(desc(Assessment.created_at))
         )
         return list(result.scalars().all())
 
-    async def _get_conversations(
-        self,
-        patient_id: str,
-        cutoff_date: datetime
-    ) -> List[Conversation]:
+    async def _get_conversations(self, patient_id: str, cutoff_date: datetime) -> List[Conversation]:
         """Fetch recent conversations."""
         result = await self.db.execute(
             select(Conversation)
             .where(
                 and_(
                     Conversation.patient_id == patient_id,
-                    Conversation.created_at >= cutoff_date
+                    Conversation.created_at >= cutoff_date,
                 )
             )
             .order_by(desc(Conversation.created_at))
@@ -157,36 +140,28 @@ class PatientContextAggregator:
         )
         return list(result.scalars().all())
 
-    async def _get_risk_events(
-        self,
-        patient_id: str,
-        cutoff_date: datetime
-    ) -> List[RiskEvent]:
+    async def _get_risk_events(self, patient_id: str, cutoff_date: datetime) -> List[RiskEvent]:
         """Fetch recent risk events."""
         result = await self.db.execute(
             select(RiskEvent)
             .where(
                 and_(
                     RiskEvent.patient_id == patient_id,
-                    RiskEvent.created_at >= cutoff_date
+                    RiskEvent.created_at >= cutoff_date,
                 )
             )
             .order_by(desc(RiskEvent.created_at))
         )
         return list(result.scalars().all())
 
-    async def _get_clinical_notes(
-        self,
-        patient_id: str,
-        cutoff_date: datetime
-    ) -> List[ClinicalNote]:
+    async def _get_clinical_notes(self, patient_id: str, cutoff_date: datetime) -> List[ClinicalNote]:
         """Fetch recent clinical notes."""
         result = await self.db.execute(
             select(ClinicalNote)
             .where(
                 and_(
                     ClinicalNote.patient_id == patient_id,
-                    ClinicalNote.created_at >= cutoff_date
+                    ClinicalNote.created_at >= cutoff_date,
                 )
             )
             .order_by(desc(ClinicalNote.created_at))
@@ -250,10 +225,7 @@ class PatientContextAggregator:
             "data_points": len(sleep_hours),
         }
 
-    def _compute_assessment_summary(
-        self,
-        assessments: List[Assessment]
-    ) -> Dict[str, Any]:
+    def _compute_assessment_summary(self, assessments: List[Assessment]) -> Dict[str, Any]:
         """Compute assessment summary."""
         if not assessments:
             return {"has_data": False}
@@ -287,7 +259,7 @@ class PatientContextAggregator:
             max_severity = max(
                 (a.severity for a in latest_by_type.values() if a.severity),
                 key=lambda s: severity_order.get(s, 0),
-                default=None
+                default=None,
             )
             summary["overall_severity"] = max_severity.value if max_severity else None
 
@@ -306,11 +278,15 @@ class PatientContextAggregator:
             "total_events": len(risk_events),
             "unreviewed_count": len(unreviewed),
             "critical_high_count": len(critical_high),
-            "latest_event": {
-                "level": risk_events[0].risk_level.value,
-                "type": risk_events[0].risk_type.value if risk_events[0].risk_type else None,
-                "date": risk_events[0].created_at.isoformat(),
-            } if risk_events else None,
+            "latest_event": (
+                {
+                    "level": risk_events[0].risk_level.value,
+                    "type": (risk_events[0].risk_type.value if risk_events[0].risk_type else None),
+                    "date": risk_events[0].created_at.isoformat(),
+                }
+                if risk_events
+                else None
+            ),
         }
 
     def build_context_prompt(self, context: PatientFullContext) -> str:
@@ -399,9 +375,7 @@ class PatientContextAggregator:
 
             for atype, data in assess.get("assessments", {}).items():
                 name = assessment_names.get(atype, atype)
-                assess_lines.append(
-                    f"- {name}: Score {data['score']}, Severity: {data['severity']}"
-                )
+                assess_lines.append(f"- {name}: Score {data['score']}, Severity: {data['severity']}")
                 if data.get("risk_flags"):
                     flags = data["risk_flags"]
                     if isinstance(flags, dict):
@@ -425,9 +399,7 @@ class PatientContextAggregator:
             ]
             if risk.get("latest_event"):
                 latest = risk["latest_event"]
-                risk_lines.append(
-                    f"- Most Recent: {latest['level']} ({latest['type'] or 'unspecified'})"
-                )
+                risk_lines.append(f"- Most Recent: {latest['level']} ({latest['type'] or 'unspecified'})")
             sections.append("\n".join(risk_lines))
 
         # Recent Conversation Themes
@@ -440,10 +412,7 @@ class PatientContextAggregator:
                 sections.append("\n".join(conv_lines))
 
         # Recent Check-in Notes
-        recent_notes = [
-            c.notes for c in context.checkins[:5]
-            if c.notes and len(c.notes.strip()) > 10
-        ]
+        recent_notes = [c.notes for c in context.checkins[:5] if c.notes and len(c.notes.strip()) > 10]
         if recent_notes:
             notes_lines = ["## Recent Check-in Notes"]
             for note in recent_notes[:3]:

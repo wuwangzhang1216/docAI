@@ -5,9 +5,10 @@ Stores TOTP secrets and backup codes for users.
 """
 
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, ForeignKey, Boolean, Text
-from sqlalchemy.orm import relationship
 from uuid import uuid4
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -24,6 +25,7 @@ class UserMFA(Base):
     - A TOTP secret for authenticator apps
     - A set of backup codes for recovery
     """
+
     __tablename__ = "user_mfa"
 
     id = Column(String, primary_key=True, default=generate_uuid)
@@ -55,6 +57,7 @@ class MFABackupCode(Base):
 
     Backup codes are one-time use and are marked as used when consumed.
     """
+
     __tablename__ = "mfa_backup_codes"
 
     id = Column(String, primary_key=True, default=generate_uuid)

@@ -1,27 +1,28 @@
 """
 Pre-Visit Report Service for generating clinical summary PDFs.
 """
-import uuid
-import json
-from datetime import datetime, timedelta, date
-from typing import Optional, Dict, Any, List
 
-from sqlalchemy import select, desc, and_
+import json
+import uuid
+from datetime import date, datetime, timedelta
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.patient import Patient
-from app.models.pre_visit_summary import PreVisitSummary
 from app.models.assessment import Assessment
-from app.models.risk_event import RiskEvent, RiskLevel
 from app.models.checkin import DailyCheckin
 from app.models.conversation import Conversation
-from app.models.generated_report import GeneratedReport, ReportType
-from app.models.user import User
 from app.models.doctor import Doctor
+from app.models.generated_report import GeneratedReport, ReportType
+from app.models.patient import Patient
+from app.models.pre_visit_summary import PreVisitSummary
+from app.models.risk_event import RiskEvent, RiskLevel
+from app.models.user import User
+from app.schemas.reports import ReportGenerateRequest
 from app.services.reports.pdf_generator import pdf_generator
 from app.services.storage import storage_service
-from app.schemas.reports import ReportGenerateRequest
 
 
 class PreVisitReportService:
@@ -38,7 +39,7 @@ class PreVisitReportService:
         db: AsyncSession,
         summary_id: str,
         generated_by: User,
-        options: ReportGenerateRequest
+        options: ReportGenerateRequest,
     ) -> Dict[str, Any]:
         """
         Generate a Pre-Visit Summary PDF report.
@@ -106,7 +107,7 @@ class PreVisitReportService:
             Bucket=self.storage.bucket,
             Key=s3_key,
             Body=pdf_bytes,
-            ContentType='application/pdf',
+            ContentType="application/pdf",
         )
 
         # 7. Create GeneratedReport record
@@ -117,14 +118,16 @@ class PreVisitReportService:
             report_type=ReportType.PRE_VISIT_SUMMARY,
             s3_key=s3_key,
             generated_by_id=generated_by.id,
-            metadata_json=json.dumps({
-                'options': {
-                    'include_risk_events': options.include_risk_events,
-                    'include_checkin_trend': options.include_checkin_trend,
-                    'days_for_trend': options.days_for_trend,
-                },
-                'report_id_display': report_id,
-            }),
+            metadata_json=json.dumps(
+                {
+                    "options": {
+                        "include_risk_events": options.include_risk_events,
+                        "include_checkin_trend": options.include_checkin_trend,
+                        "days_for_trend": options.days_for_trend,
+                    },
+                    "report_id_display": report_id,
+                }
+            ),
             created_at=generated_at,
         )
         db.add(report)
@@ -136,20 +139,15 @@ class PreVisitReportService:
         expires_at = datetime.utcnow() + timedelta(seconds=self.storage.PRESIGNED_URL_EXPIRY)
 
         return {
-            'report_id': report.id,
-            'patient_id': patient.id,
-            'report_type': ReportType.PRE_VISIT_SUMMARY,
-            'pdf_url': pdf_url,
-            'expires_at': expires_at,
-            'generated_at': generated_at,
+            "report_id": report.id,
+            "patient_id": patient.id,
+            "report_type": ReportType.PRE_VISIT_SUMMARY,
+            "pdf_url": pdf_url,
+            "expires_at": expires_at,
+            "generated_at": generated_at,
         }
 
-    async def get_report(
-        self,
-        db: AsyncSession,
-        report_id: str,
-        user: User
-    ) -> Optional[Dict[str, Any]]:
+    async def get_report(self, db: AsyncSession, report_id: str, user: User) -> Optional[Dict[str, Any]]:
         """
         Get report details and refresh presigned URL.
 
@@ -176,12 +174,12 @@ class PreVisitReportService:
         expires_at = datetime.utcnow() + timedelta(seconds=self.storage.PRESIGNED_URL_EXPIRY)
 
         return {
-            'report_id': report.id,
-            'patient_id': report.patient_id,
-            'report_type': report.report_type,
-            'pdf_url': pdf_url,
-            'expires_at': expires_at,
-            'generated_at': report.created_at,
+            "report_id": report.id,
+            "patient_id": report.patient_id,
+            "report_type": report.report_type,
+            "pdf_url": pdf_url,
+            "expires_at": expires_at,
+            "generated_at": report.created_at,
         }
 
     async def list_reports(
@@ -190,7 +188,7 @@ class PreVisitReportService:
         user: User,
         patient_id: Optional[str] = None,
         limit: int = 20,
-        offset: int = 0
+        offset: int = 0,
     ) -> Dict[str, Any]:
         """
         List generated reports.
@@ -225,7 +223,9 @@ class PreVisitReportService:
                 stmt = stmt.where(GeneratedReport.patient_id.in_(patient_ids))
 
         # Count total
-        count_stmt = select(GeneratedReport).where(stmt.whereclause) if stmt.whereclause is not None else select(GeneratedReport)
+        count_stmt = (
+            select(GeneratedReport).where(stmt.whereclause) if stmt.whereclause is not None else select(GeneratedReport)
+        )
         count_result = await db.execute(count_stmt)
         total = len(count_result.scalars().all())
 
@@ -241,17 +241,19 @@ class PreVisitReportService:
             patient_result = await db.execute(patient_stmt)
             patient = patient_result.scalar_one_or_none()
 
-            report_list.append({
-                'report_id': report.id,
-                'patient_id': report.patient_id,
-                'patient_name': patient.full_name if patient else 'Unknown',
-                'report_type': report.report_type,
-                'generated_at': report.created_at,
-            })
+            report_list.append(
+                {
+                    "report_id": report.id,
+                    "patient_id": report.patient_id,
+                    "patient_name": patient.full_name if patient else "Unknown",
+                    "report_type": report.report_type,
+                    "generated_at": report.created_at,
+                }
+            )
 
         return {
-            'reports': report_list,
-            'total': total,
+            "reports": report_list,
+            "total": total,
         }
 
     async def _get_summary(self, db: AsyncSession, summary_id: str) -> Optional[PreVisitSummary]:
@@ -280,21 +282,14 @@ class PreVisitReportService:
             raise PermissionError("Only doctors can generate reports")
 
         # Verify patient belongs to doctor
-        patient_stmt = select(Patient).where(
-            and_(Patient.id == patient_id, Patient.primary_doctor_id == doctor.id)
-        )
+        patient_stmt = select(Patient).where(and_(Patient.id == patient_id, Patient.primary_doctor_id == doctor.id))
         patient_result = await db.execute(patient_stmt)
         patient = patient_result.scalar_one_or_none()
 
         if not patient:
             raise PermissionError("Patient not assigned to this doctor")
 
-    async def _get_assessments(
-        self,
-        db: AsyncSession,
-        patient_id: str,
-        limit: int = 5
-    ) -> List[Assessment]:
+    async def _get_assessments(self, db: AsyncSession, patient_id: str, limit: int = 5) -> List[Assessment]:
         """Get recent assessments for patient."""
         stmt = (
             select(Assessment)
@@ -306,10 +301,7 @@ class PreVisitReportService:
         return list(result.scalars().all())
 
     async def _get_risk_events(
-        self,
-        db: AsyncSession,
-        patient_id: str,
-        unreviewed_only: bool = False
+        self, db: AsyncSession, patient_id: str, unreviewed_only: bool = False
     ) -> List[RiskEvent]:
         """Get risk events for patient, prioritizing high-risk."""
         stmt = (
@@ -318,7 +310,7 @@ class PreVisitReportService:
             .order_by(
                 # Sort by risk level (CRITICAL > HIGH > MEDIUM > LOW)
                 desc(RiskEvent.risk_level),
-                desc(RiskEvent.created_at)
+                desc(RiskEvent.created_at),
             )
             .limit(10)
         )
@@ -329,12 +321,7 @@ class PreVisitReportService:
         result = await db.execute(stmt)
         return list(result.scalars().all())
 
-    async def _get_checkin_trend(
-        self,
-        db: AsyncSession,
-        patient_id: str,
-        days: int = 7
-    ) -> Dict[str, Any]:
+    async def _get_checkin_trend(self, db: AsyncSession, patient_id: str, days: int = 7) -> Dict[str, Any]:
         """Calculate check-in trends for the specified period."""
         start_date = date.today() - timedelta(days=days)
 
@@ -343,7 +330,7 @@ class PreVisitReportService:
             .where(
                 and_(
                     DailyCheckin.patient_id == patient_id,
-                    DailyCheckin.checkin_date >= start_date
+                    DailyCheckin.checkin_date >= start_date,
                 )
             )
             .order_by(desc(DailyCheckin.checkin_date))
@@ -353,11 +340,11 @@ class PreVisitReportService:
 
         if not checkins:
             return {
-                'days': days,
-                'checkin_count': 0,
-                'avg_mood': None,
-                'avg_sleep': None,
-                'avg_sleep_quality': None,
+                "days": days,
+                "checkin_count": 0,
+                "avg_mood": None,
+                "avg_sleep": None,
+                "avg_sleep_quality": None,
             }
 
         # Calculate averages
@@ -366,18 +353,14 @@ class PreVisitReportService:
         sleep_quality = [c.sleep_quality for c in checkins if c.sleep_quality is not None]
 
         return {
-            'days': days,
-            'checkin_count': len(checkins),
-            'avg_mood': sum(mood_scores) / len(mood_scores) if mood_scores else None,
-            'avg_sleep': sum(sleep_hours) / len(sleep_hours) if sleep_hours else None,
-            'avg_sleep_quality': sum(sleep_quality) / len(sleep_quality) if sleep_quality else None,
+            "days": days,
+            "checkin_count": len(checkins),
+            "avg_mood": sum(mood_scores) / len(mood_scores) if mood_scores else None,
+            "avg_sleep": sum(sleep_hours) / len(sleep_hours) if sleep_hours else None,
+            "avg_sleep_quality": (sum(sleep_quality) / len(sleep_quality) if sleep_quality else None),
         }
 
-    async def _get_conversation_summary(
-        self,
-        db: AsyncSession,
-        conversation_id: str
-    ) -> Optional[str]:
+    async def _get_conversation_summary(self, db: AsyncSession, conversation_id: str) -> Optional[str]:
         """Get conversation summary."""
         stmt = select(Conversation).where(Conversation.id == conversation_id)
         result = await db.execute(stmt)
@@ -401,52 +384,59 @@ class PreVisitReportService:
         if patient.date_of_birth:
             today = date.today()
             age = today.year - patient.date_of_birth.year
-            if (today.month, today.day) < (patient.date_of_birth.month, patient.date_of_birth.day):
+            if (today.month, today.day) < (
+                patient.date_of_birth.month,
+                patient.date_of_birth.day,
+            ):
                 age -= 1
 
         # Format scheduled visit
         scheduled_visit = None
         if summary.scheduled_visit:
-            scheduled_visit = summary.scheduled_visit.strftime('%Y-%m-%d')
+            scheduled_visit = summary.scheduled_visit.strftime("%Y-%m-%d")
 
         # Format assessments
         assessment_list = []
         for a in assessments:
-            assessment_list.append({
-                'type': a.assessment_type.value if a.assessment_type else 'Unknown',
-                'score': a.total_score,
-                'severity': a.severity.value if a.severity else None,
-                'date': a.created_at,
-            })
+            assessment_list.append(
+                {
+                    "type": a.assessment_type.value if a.assessment_type else "Unknown",
+                    "score": a.total_score,
+                    "severity": a.severity.value if a.severity else None,
+                    "date": a.created_at,
+                }
+            )
 
         # Format risk events
         risk_list = []
         for r in risk_events:
-            risk_list.append({
-                'level': r.risk_level.value if r.risk_level else 'MEDIUM',
-                'type': r.risk_type.value if r.risk_type else 'OTHER',
-                'trigger_text': r.trigger_text,
-            })
+            risk_list.append(
+                {
+                    "level": r.risk_level.value if r.risk_level else "MEDIUM",
+                    "type": r.risk_type.value if r.risk_type else "OTHER",
+                    "trigger_text": r.trigger_text,
+                }
+            )
 
         return {
-            'report_id': report_id,
-            'generated_at': generated_at,
-            'patient': {
-                'name': patient.full_name,
-                'gender': patient.gender or 'Not specified',
-                'age': f'{age} years' if age else 'Not specified',
-                'scheduled_visit': scheduled_visit or 'Not scheduled',
+            "report_id": report_id,
+            "generated_at": generated_at,
+            "patient": {
+                "name": patient.full_name,
+                "gender": patient.gender or "Not specified",
+                "age": f"{age} years" if age else "Not specified",
+                "scheduled_visit": scheduled_visit or "Not scheduled",
             },
-            'chief_complaint': summary.chief_complaint,
-            'assessments': assessment_list,
-            'risk_events': risk_list,
-            'checkin_trend': checkin_trend,
-            'conversation_summary': conversation_summary,
+            "chief_complaint": summary.chief_complaint,
+            "assessments": assessment_list,
+            "risk_events": risk_list,
+            "checkin_trend": checkin_trend,
+            "conversation_summary": conversation_summary,
         }
 
     def _generate_s3_key(self, patient_id: str, report_id: str) -> str:
         """Generate S3 key for the report."""
-        timestamp = datetime.utcnow().strftime('%Y/%m/%d')
+        timestamp = datetime.utcnow().strftime("%Y/%m/%d")
         return f"reports/pre_visit_summaries/{timestamp}/{report_id}_{patient_id[:8]}.pdf"
 
 

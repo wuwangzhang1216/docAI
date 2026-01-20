@@ -1,8 +1,9 @@
-import uuid
 import json
+import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
-from sqlalchemy import Column, String, Enum, DateTime, ForeignKey, SmallInteger, Text
+
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, SmallInteger, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -13,15 +14,17 @@ class AssessmentType(str, PyEnum):
 
     Includes standard scales and trauma-specific scales for political trauma survivors.
     """
-    PHQ9 = "PHQ9"      # Patient Health Questionnaire-9 (Depression)
-    GAD7 = "GAD7"      # Generalized Anxiety Disorder-7 (Anxiety)
-    PSS = "PSS"        # Perceived Stress Scale
-    ISI = "ISI"        # Insomnia Severity Index
-    PCL5 = "PCL5"      # PTSD Checklist for DSM-5 (Trauma-specific)
+
+    PHQ9 = "PHQ9"  # Patient Health Questionnaire-9 (Depression)
+    GAD7 = "GAD7"  # Generalized Anxiety Disorder-7 (Anxiety)
+    PSS = "PSS"  # Perceived Stress Scale
+    ISI = "ISI"  # Insomnia Severity Index
+    PCL5 = "PCL5"  # PTSD Checklist for DSM-5 (Trauma-specific)
 
 
 class SeverityLevel(str, PyEnum):
     """Severity level enumeration."""
+
     MINIMAL = "MINIMAL"
     MILD = "MILD"
     MODERATE = "MODERATE"
@@ -31,10 +34,16 @@ class SeverityLevel(str, PyEnum):
 
 class Assessment(Base):
     """Assessment model for storing questionnaire results."""
+
     __tablename__ = "assessments"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(
+        String(36),
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     assessment_type = Column(Enum(AssessmentType), nullable=False)
     responses_json = Column(Text, nullable=False)  # JSON string for SQLite
     total_score = Column(SmallInteger, nullable=False)
@@ -48,7 +57,7 @@ class Assessment(Base):
     @property
     def responses(self):
         return json.loads(self.responses_json) if self.responses_json else {}
-    
+
     @responses.setter
     def responses(self, value):
         self.responses_json = json.dumps(value) if value else None
@@ -56,7 +65,7 @@ class Assessment(Base):
     @property
     def risk_flags(self):
         return json.loads(self.risk_flags_json) if self.risk_flags_json else None
-    
+
     @risk_flags.setter
     def risk_flags(self, value):
         self.risk_flags_json = json.dumps(value) if value else None

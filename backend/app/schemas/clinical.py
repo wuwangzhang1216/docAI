@@ -1,7 +1,7 @@
 from datetime import date, datetime
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel, Field
 
 from app.models.assessment import AssessmentType, SeverityLevel
 from app.models.risk_event import RiskLevel, RiskType
@@ -9,6 +9,7 @@ from app.models.risk_event import RiskLevel, RiskType
 
 class CheckinCreate(BaseModel):
     """Schema for creating a daily check-in."""
+
     mood_score: int = Field(..., ge=0, le=10)
     sleep_hours: float = Field(..., ge=0, le=24)
     sleep_quality: int = Field(..., ge=1, le=5)
@@ -18,6 +19,7 @@ class CheckinCreate(BaseModel):
 
 class CheckinResponse(BaseModel):
     """Schema for check-in response."""
+
     id: str
     patient_id: str
     checkin_date: date
@@ -34,12 +36,14 @@ class CheckinResponse(BaseModel):
 
 class AssessmentCreate(BaseModel):
     """Schema for creating an assessment."""
+
     assessment_type: AssessmentType
     responses: Dict[str, int]  # {"q1": 2, "q2": 1, ...}
 
 
 class AssessmentResponse(BaseModel):
     """Schema for assessment response."""
+
     id: str
     patient_id: str
     assessment_type: AssessmentType
@@ -54,6 +58,7 @@ class AssessmentResponse(BaseModel):
 
 class PatientOverview(BaseModel):
     """Schema for patient overview in doctor's view."""
+
     patient_id: str
     patient_name: str
     recent_mood_avg: Optional[float]
@@ -64,6 +69,7 @@ class PatientOverview(BaseModel):
 
 class RiskEventResponse(BaseModel):
     """Schema for risk event response."""
+
     id: str
     patient_id: str
     patient_name: Optional[str] = None
@@ -82,6 +88,7 @@ class RiskEventResponse(BaseModel):
 
 class PatientTimelineItem(BaseModel):
     """Schema for patient timeline item."""
+
     type: str  # "checkin", "assessment", "risk_event"
     date: datetime
     data: Dict[str, Any]
@@ -89,6 +96,7 @@ class PatientTimelineItem(BaseModel):
 
 class PatientTimeline(BaseModel):
     """Schema for patient timeline."""
+
     patient_id: str
     patient_name: str
     items: List[PatientTimelineItem]
@@ -96,14 +104,17 @@ class PatientTimeline(BaseModel):
 
 # ========== Doctor AI Chat Schemas ==========
 
+
 class DoctorAIChatRequest(BaseModel):
     """Schema for doctor AI chat request."""
+
     message: str = Field(..., min_length=1, max_length=5000)
     conversation_id: Optional[str] = None  # Continue existing conversation
 
 
 class DoctorAIChatResponse(BaseModel):
     """Schema for doctor AI chat response."""
+
     response: str
     conversation_id: str
     patient_name: str
@@ -111,12 +122,14 @@ class DoctorAIChatResponse(BaseModel):
 
 class DoctorConversationMessage(BaseModel):
     """Schema for a single message in doctor conversation."""
+
     role: str  # "user" or "assistant"
     content: str
 
 
 class DoctorConversationResponse(BaseModel):
     """Schema for doctor conversation response."""
+
     id: str
     doctor_id: str
     patient_id: str
@@ -132,6 +145,7 @@ class DoctorConversationResponse(BaseModel):
 
 class DoctorConversationListItem(BaseModel):
     """Schema for doctor conversation list item."""
+
     id: str
     patient_id: str
     patient_name: Optional[str] = None

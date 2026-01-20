@@ -27,10 +27,6 @@ export default function ReportGenerator({ patientId, patientName }: ReportGenera
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedSummary, setSelectedSummary] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadSummaries();
-  }, [patientId]);
-
   const loadSummaries = async () => {
     try {
       setLoading(true);
@@ -46,6 +42,11 @@ export default function ReportGenerator({ patientId, patientName }: ReportGenera
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadSummaries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientId]);
 
   const handleGenerateReport = async () => {
     if (!selectedSummary) {

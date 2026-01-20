@@ -1,11 +1,12 @@
 """
 Email system models for notifications and password reset.
 """
+
 import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Integer, Boolean, JSON, Index
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -13,16 +14,18 @@ from app.database import Base
 
 class EmailStatus(str, PyEnum):
     """Email sending status."""
-    PENDING = "PENDING"       # Waiting to be sent
-    QUEUED = "QUEUED"         # Added to queue
-    SENDING = "SENDING"       # Currently sending
-    SENT = "SENT"             # Successfully sent
-    FAILED = "FAILED"         # Failed to send
-    BOUNCED = "BOUNCED"       # Bounced back
+
+    PENDING = "PENDING"  # Waiting to be sent
+    QUEUED = "QUEUED"  # Added to queue
+    SENDING = "SENDING"  # Currently sending
+    SENT = "SENT"  # Successfully sent
+    FAILED = "FAILED"  # Failed to send
+    BOUNCED = "BOUNCED"  # Bounced back
 
 
 class EmailPriority(str, PyEnum):
     """Email priority levels."""
+
     LOW = "LOW"
     NORMAL = "NORMAL"
     HIGH = "HIGH"
@@ -31,6 +34,7 @@ class EmailPriority(str, PyEnum):
 
 class EmailType(str, PyEnum):
     """Email types for categorization."""
+
     PATIENT_INVITATION = "PATIENT_INVITATION"
     PASSWORD_RESET = "PASSWORD_RESET"
     RISK_ALERT = "RISK_ALERT"
@@ -42,6 +46,7 @@ class EmailType(str, PyEnum):
 
 class EmailTemplate(Base):
     """Email template model for storing reusable email templates."""
+
     __tablename__ = "email_templates"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -65,6 +70,7 @@ class EmailTemplate(Base):
 
 class EmailLog(Base):
     """Email sending log for tracking all sent emails."""
+
     __tablename__ = "email_logs"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -112,8 +118,8 @@ class EmailLog(Base):
     recipient = relationship("User", foreign_keys=[recipient_user_id])
 
     __table_args__ = (
-        Index('ix_email_logs_status_priority', 'status', 'priority'),
-        Index('ix_email_logs_created_status', 'created_at', 'status'),
+        Index("ix_email_logs_status_priority", "status", "priority"),
+        Index("ix_email_logs_created_status", "created_at", "status"),
     )
 
     def __repr__(self):
@@ -122,6 +128,7 @@ class EmailLog(Base):
 
 class PasswordResetToken(Base):
     """Password reset token for secure password recovery."""
+
     __tablename__ = "password_reset_tokens"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -129,7 +136,7 @@ class PasswordResetToken(Base):
         String(36),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
-        index=True
+        index=True,
     )
     token = Column(String(64), unique=True, nullable=False, index=True)
     expires_at = Column(DateTime, nullable=False)

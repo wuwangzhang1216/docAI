@@ -135,7 +135,7 @@ export default function DashboardPage() {
                 className="text-center p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10"
             >
                 <p className="italic text-sm text-foreground/80">
-                    "The only journey is the one within."
+                    &ldquo;The only journey is the one within.&rdquo;
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">— Rainer Maria Rilke</p>
             </motion.div>

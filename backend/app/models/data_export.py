@@ -1,11 +1,12 @@
 """
 Data export models for patient data portability.
 """
+
 import uuid
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Column, String, DateTime, Integer, Boolean, Text, ForeignKey, BigInteger
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -13,18 +14,20 @@ from app.database import Base
 
 class ExportStatus(str, Enum):
     """Status of an export request."""
-    PENDING = "PENDING"          # 等待处理
-    PROCESSING = "PROCESSING"    # 正在处理
-    COMPLETED = "COMPLETED"      # 已完成
-    FAILED = "FAILED"            # 失败
-    EXPIRED = "EXPIRED"          # 已过期
-    DOWNLOADED = "DOWNLOADED"    # 已下载
+
+    PENDING = "PENDING"  # 等待处理
+    PROCESSING = "PROCESSING"  # 正在处理
+    COMPLETED = "COMPLETED"  # 已完成
+    FAILED = "FAILED"  # 失败
+    EXPIRED = "EXPIRED"  # 已过期
+    DOWNLOADED = "DOWNLOADED"  # 已下载
 
 
 class ExportFormat(str, Enum):
     """Export file format."""
-    JSON = "JSON"              # JSON格式
-    CSV = "CSV"                # CSV格式（ZIP打包）
+
+    JSON = "JSON"  # JSON格式
+    CSV = "CSV"  # CSV格式（ZIP打包）
     PDF_SUMMARY = "PDF_SUMMARY"  # PDF摘要报告
 
 
@@ -35,13 +38,19 @@ class DataExportRequest(Base):
     Tracks patient data export requests and their status.
     Supports JSON, CSV, and PDF summary formats.
     """
+
     __tablename__ = "data_export_requests"
 
     # Primary key
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
 
     # Requester
-    patient_id = Column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(
+        String(36),
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
 
     # Export configuration
     export_format = Column(String(20), default=ExportFormat.JSON.value, nullable=False)
@@ -109,4 +118,7 @@ class DataExportRequest(Base):
     @property
     def is_processing(self) -> bool:
         """Check if export is being processed."""
-        return self.status in [ExportStatus.PENDING.value, ExportStatus.PROCESSING.value]
+        return self.status in [
+            ExportStatus.PENDING.value,
+            ExportStatus.PROCESSING.value,
+        ]

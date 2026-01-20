@@ -1,61 +1,63 @@
 from datetime import date, datetime, timedelta
 from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
 
-
+from app.config import settings
 from app.database import get_db
-from app.models.user import User, UserType
-from app.models.patient import Patient
-from app.models.doctor import Doctor
-from app.models.checkin import DailyCheckin
 from app.models.assessment import Assessment, AssessmentType, SeverityLevel
-from app.models.risk_event import RiskEvent, RiskLevel
-from app.models.connection_request import PatientConnectionRequest, ConnectionStatus
+from app.models.checkin import DailyCheckin
+from app.models.connection_request import ConnectionStatus, PatientConnectionRequest
+from app.models.doctor import Doctor
 from app.models.messaging import DoctorPatientThread
+from app.models.patient import Patient
+from app.models.risk_event import RiskEvent, RiskLevel
+from app.models.user import User, UserType
 from app.schemas.clinical import (
-    CheckinCreate,
-    CheckinResponse,
     AssessmentCreate,
     AssessmentResponse,
-    PatientOverview,
-    RiskEventResponse,
+    CheckinCreate,
+    CheckinResponse,
     DoctorAIChatRequest,
     DoctorAIChatResponse,
-    DoctorConversationResponse,
     DoctorConversationListItem,
     DoctorConversationMessage,
+    DoctorConversationResponse,
+    PatientOverview,
+    RiskEventResponse,
 )
 from app.schemas.common import PaginatedResponse
-from app.schemas.user import PatientResponse, DoctorResponse, DoctorUpdate, DoctorPublicProfile, DoctorCreatePatient, DoctorCreatePatientResponse
 from app.schemas.connection import (
     ConnectionRequestCreate,
     ConnectionRequestResponse,
-    PatientConnectionRequestView,
-    DoctorPublicInfo,
     ConnectionRequestStatusResponse,
+    DoctorPublicInfo,
+    PatientConnectionRequestView,
 )
-from app.utils.deps import (
-    get_current_active_user,
-    get_current_patient,
-    get_current_doctor,
-    require_user_type,
+from app.schemas.user import (
+    DoctorCreatePatient,
+    DoctorCreatePatientResponse,
+    DoctorPublicProfile,
+    DoctorResponse,
+    DoctorUpdate,
+    PatientResponse,
 )
+from app.utils.deps import get_current_active_user, get_current_doctor, get_current_patient, require_user_type
 from app.utils.security import hash_password
-from app.config import settings
-
 
 router = APIRouter(prefix="/clinical", tags=["clinical"])
 
 
 # ========== Daily Check-in ==========
 
+
 @router.post("/checkin", response_model=CheckinResponse)
 async def submit_checkin(
     request: CheckinCreate,
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Submit or update daily check-in.
@@ -69,7 +71,7 @@ async def submit_checkin(
         select(DailyCheckin).where(
             and_(
                 DailyCheckin.patient_id == patient.id,
-                DailyCheckin.checkin_date == today
+                DailyCheckin.checkin_date == today,
             )
         )
     )
@@ -92,7 +94,7 @@ async def submit_checkin(
             sleep_hours=request.sleep_hours,
             sleep_quality=request.sleep_quality,
             medication_taken=request.medication_taken,
-            notes=request.notes
+            notes=request.notes,
         )
         db.add(checkin)
 
@@ -107,33 +109,32 @@ async def get_checkins(
     start_date: date = Query(..., description="Start date (inclusive)"),
     end_date: date = Query(..., description="End date (inclusive)"),
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get check-ins for a date range."""
     result = await db.execute(
-        select(DailyCheckin).where(
+        select(DailyCheckin)
+        .where(
             and_(
                 DailyCheckin.patient_id == patient.id,
                 DailyCheckin.checkin_date >= start_date,
-                DailyCheckin.checkin_date <= end_date
+                DailyCheckin.checkin_date <= end_date,
             )
-        ).order_by(DailyCheckin.checkin_date)
+        )
+        .order_by(DailyCheckin.checkin_date)
     )
     checkins = result.scalars().all()
     return checkins
 
 
 @router.get("/checkin/today", response_model=Optional[CheckinResponse])
-async def get_today_checkin(
-    patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
-):
+async def get_today_checkin(patient: Patient = Depends(get_current_patient), db: AsyncSession = Depends(get_db)):
     """Get today's check-in if exists."""
     result = await db.execute(
         select(DailyCheckin).where(
             and_(
                 DailyCheckin.patient_id == patient.id,
-                DailyCheckin.checkin_date == date.today()
+                DailyCheckin.checkin_date == date.today(),
             )
         )
     )
@@ -165,11 +166,11 @@ GAD7_SEVERITY = [
 # Cutoff of 31-33 on full scale suggests probable PTSD diagnosis
 # For simplified 8-item version, proportional cutoff ~12-13
 PCL5_SEVERITY = [
-    (7, SeverityLevel.MINIMAL),      # 0-7: Minimal symptoms
-    (12, SeverityLevel.MILD),        # 8-12: Mild symptoms
-    (19, SeverityLevel.MODERATE),    # 13-19: Moderate symptoms
+    (7, SeverityLevel.MINIMAL),  # 0-7: Minimal symptoms
+    (12, SeverityLevel.MILD),  # 8-12: Mild symptoms
+    (19, SeverityLevel.MODERATE),  # 13-19: Moderate symptoms
     (25, SeverityLevel.MODERATELY_SEVERE),  # 20-25: Moderately severe
-    (32, SeverityLevel.SEVERE),      # 26-32: Severe symptoms
+    (32, SeverityLevel.SEVERE),  # 26-32: Severe symptoms
 ]
 
 
@@ -196,7 +197,7 @@ def calculate_severity(score: int, assessment_type: AssessmentType) -> SeverityL
 async def submit_assessment(
     request: AssessmentCreate,
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Submit an assessment (PHQ-9, GAD-7, PCL-5, etc.).
@@ -251,7 +252,7 @@ async def submit_assessment(
         responses=request.responses,
         total_score=total_score,
         severity=severity,
-        risk_flags=risk_flags if risk_flags else None
+        risk_flags=risk_flags if risk_flags else None,
     )
     db.add(assessment)
 
@@ -260,22 +261,25 @@ async def submit_assessment(
         if risk_flags.get("suicidal_ideation") and risk_flags.get("q9_score", 0) >= 2:
             risk_event = RiskEvent(
                 patient_id=patient.id,
-                risk_level=RiskLevel.HIGH if risk_flags["q9_score"] >= 2 else RiskLevel.MEDIUM,
+                risk_level=(RiskLevel.HIGH if risk_flags["q9_score"] >= 2 else RiskLevel.MEDIUM),
                 risk_type="SUICIDAL",
                 trigger_text=f"PHQ-9 Q9 score: {risk_flags['q9_score']}",
-                ai_confidence=1.0  # Direct from assessment
+                ai_confidence=1.0,  # Direct from assessment
             )
             db.add(risk_event)
 
     elif request.assessment_type == AssessmentType.PCL5:
         # Create risk event for severe PTSD symptoms
-        if risk_flags.get("probable_ptsd") and severity in [SeverityLevel.MODERATELY_SEVERE, SeverityLevel.SEVERE]:
+        if risk_flags.get("probable_ptsd") and severity in [
+            SeverityLevel.MODERATELY_SEVERE,
+            SeverityLevel.SEVERE,
+        ]:
             risk_event = RiskEvent(
                 patient_id=patient.id,
                 risk_level=RiskLevel.MEDIUM,
                 risk_type="OTHER",  # PTSD requires clinical follow-up
                 trigger_text=f"PCL-5 score: {total_score} - Probable PTSD, severity: {severity.value}",
-                ai_confidence=1.0
+                ai_confidence=1.0,
             )
             db.add(risk_event)
 
@@ -290,7 +294,7 @@ async def get_assessments(
     assessment_type: Optional[AssessmentType] = None,
     limit: int = Query(10, ge=1, le=100),
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get assessments with optional type filter."""
     query = select(Assessment).where(Assessment.patient_id == patient.id)
@@ -306,6 +310,7 @@ async def get_assessments(
 
 # ========== Doctor Endpoints ==========
 
+
 @router.get("/doctor/patients", response_model=PaginatedResponse[PatientOverview])
 async def get_doctor_patients(
     limit: int = Query(10, ge=1, le=50, description="Number of items per page"),
@@ -314,7 +319,7 @@ async def get_doctor_patients(
     sort_by: str = Query("risk", description="Sort by: risk, name, mood"),
     sort_order: str = Query("desc", description="Sort order: asc, desc"),
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get overview of all patients assigned to the doctor with pagination.
@@ -330,14 +335,10 @@ async def get_doctor_patients(
     # Apply search filter
     if search:
         search_term = f"%{search.lower()}%"
-        base_query = base_query.where(
-            func.lower(Patient.first_name + " " + Patient.last_name).like(search_term)
-        )
+        base_query = base_query.where(func.lower(Patient.first_name + " " + Patient.last_name).like(search_term))
 
     # Get total count
-    count_result = await db.execute(
-        select(func.count()).select_from(base_query.subquery())
-    )
+    count_result = await db.execute(select(func.count()).select_from(base_query.subquery()))
     total = count_result.scalar() or 0
 
     # Get all patients (we need to sort after computing stats)
@@ -351,7 +352,7 @@ async def get_doctor_patients(
             select(func.avg(DailyCheckin.mood_score)).where(
                 and_(
                     DailyCheckin.patient_id == patient.id,
-                    DailyCheckin.checkin_date >= seven_days_ago
+                    DailyCheckin.checkin_date >= seven_days_ago,
                 )
             )
         )
@@ -359,23 +360,29 @@ async def get_doctor_patients(
 
         # Get latest PHQ-9
         phq9_result = await db.execute(
-            select(Assessment.total_score).where(
+            select(Assessment.total_score)
+            .where(
                 and_(
                     Assessment.patient_id == patient.id,
-                    Assessment.assessment_type == AssessmentType.PHQ9
+                    Assessment.assessment_type == AssessmentType.PHQ9,
                 )
-            ).order_by(Assessment.created_at.desc()).limit(1)
+            )
+            .order_by(Assessment.created_at.desc())
+            .limit(1)
         )
         latest_phq9 = phq9_result.scalar()
 
         # Get latest GAD-7
         gad7_result = await db.execute(
-            select(Assessment.total_score).where(
+            select(Assessment.total_score)
+            .where(
                 and_(
                     Assessment.patient_id == patient.id,
-                    Assessment.assessment_type == AssessmentType.GAD7
+                    Assessment.assessment_type == AssessmentType.GAD7,
                 )
-            ).order_by(Assessment.created_at.desc()).limit(1)
+            )
+            .order_by(Assessment.created_at.desc())
+            .limit(1)
         )
         latest_gad7 = gad7_result.scalar()
 
@@ -384,27 +391,32 @@ async def get_doctor_patients(
             select(func.count(RiskEvent.id)).where(
                 and_(
                     RiskEvent.patient_id == patient.id,
-                    RiskEvent.doctor_reviewed == False
+                    RiskEvent.doctor_reviewed == False,
                 )
             )
         )
         unreviewed_risks = risk_result.scalar() or 0
 
-        overviews.append(PatientOverview(
-            patient_id=patient.id,
-            patient_name=patient.full_name,
-            recent_mood_avg=float(recent_mood_avg) if recent_mood_avg else None,
-            latest_phq9=latest_phq9,
-            latest_gad7=latest_gad7,
-            unreviewed_risks=unreviewed_risks
-        ))
+        overviews.append(
+            PatientOverview(
+                patient_id=patient.id,
+                patient_name=patient.full_name,
+                recent_mood_avg=float(recent_mood_avg) if recent_mood_avg else None,
+                latest_phq9=latest_phq9,
+                latest_gad7=latest_gad7,
+                unreviewed_risks=unreviewed_risks,
+            )
+        )
 
     # Sort overviews
     reverse = sort_order.lower() == "desc"
     if sort_by == "name":
         overviews.sort(key=lambda x: x.patient_name.lower(), reverse=reverse)
     elif sort_by == "mood":
-        overviews.sort(key=lambda x: x.recent_mood_avg if x.recent_mood_avg is not None else -1, reverse=reverse)
+        overviews.sort(
+            key=lambda x: x.recent_mood_avg if x.recent_mood_avg is not None else -1,
+            reverse=reverse,
+        )
     elif sort_by == "risk":
         overviews.sort(key=lambda x: x.unreviewed_risks, reverse=reverse)
     else:
@@ -412,14 +424,14 @@ async def get_doctor_patients(
         overviews.sort(key=lambda x: x.unreviewed_risks, reverse=True)
 
     # Apply pagination after sorting
-    paginated_items = overviews[offset:offset + limit]
+    paginated_items = overviews[offset : offset + limit]
 
     return PaginatedResponse(
         items=paginated_items,
         total=total,
         limit=limit,
         offset=offset,
-        has_more=offset + limit < total
+        has_more=offset + limit < total,
     )
 
 
@@ -431,7 +443,7 @@ async def get_risk_queue(
     patient_id: Optional[str] = Query(None, description="Filter by patient ID"),
     search: Optional[str] = Query(None, description="Search in trigger text"),
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get unreviewed risk events for the doctor's patients with pagination.
@@ -440,24 +452,24 @@ async def get_risk_queue(
     Supports filtering by risk level, patient, and search in trigger text.
     """
     # Get patient IDs for this doctor
-    patient_result = await db.execute(
-        select(Patient.id).where(Patient.primary_doctor_id == doctor.id)
-    )
+    patient_result = await db.execute(select(Patient.id).where(Patient.primary_doctor_id == doctor.id))
     patient_ids = [row[0] for row in patient_result.fetchall()]
 
     if not patient_ids:
         return PaginatedResponse(items=[], total=0, limit=limit, offset=offset, has_more=False)
 
     # Build base query - concatenate first_name and last_name since full_name is a property
-    base_query = select(
-        RiskEvent,
-        (Patient.first_name + ' ' + Patient.last_name).label('patient_name')
-    ).join(
-        Patient, RiskEvent.patient_id == Patient.id
-    ).where(
-        and_(
-            RiskEvent.patient_id.in_(patient_ids),
-            RiskEvent.doctor_reviewed == False
+    base_query = (
+        select(
+            RiskEvent,
+            (Patient.first_name + " " + Patient.last_name).label("patient_name"),
+        )
+        .join(Patient, RiskEvent.patient_id == Patient.id)
+        .where(
+            and_(
+                RiskEvent.patient_id.in_(patient_ids),
+                RiskEvent.doctor_reviewed == False,
+            )
         )
     )
 
@@ -474,29 +486,30 @@ async def get_risk_queue(
 
     if search:
         search_term = f"%{search.lower()}%"
-        base_query = base_query.where(
-            func.lower(RiskEvent.trigger_text).like(search_term)
-        )
+        base_query = base_query.where(func.lower(RiskEvent.trigger_text).like(search_term))
 
     # Get total count
     count_query = select(func.count()).select_from(
-        select(RiskEvent.id).join(
-            Patient, RiskEvent.patient_id == Patient.id
-        ).where(
+        select(RiskEvent.id)
+        .join(Patient, RiskEvent.patient_id == Patient.id)
+        .where(
             and_(
                 RiskEvent.patient_id.in_(patient_ids),
-                RiskEvent.doctor_reviewed == False
+                RiskEvent.doctor_reviewed == False,
             )
-        ).subquery()
+        )
+        .subquery()
     )
 
     # Apply same filters for count
-    count_base = select(RiskEvent.id).join(
-        Patient, RiskEvent.patient_id == Patient.id
-    ).where(
-        and_(
-            RiskEvent.patient_id.in_(patient_ids),
-            RiskEvent.doctor_reviewed == False
+    count_base = (
+        select(RiskEvent.id)
+        .join(Patient, RiskEvent.patient_id == Patient.id)
+        .where(
+            and_(
+                RiskEvent.patient_id.in_(patient_ids),
+                RiskEvent.doctor_reviewed == False,
+            )
         )
     )
 
@@ -512,20 +525,15 @@ async def get_risk_queue(
 
     if search:
         search_term = f"%{search.lower()}%"
-        count_base = count_base.where(
-            func.lower(RiskEvent.trigger_text).like(search_term)
-        )
+        count_base = count_base.where(func.lower(RiskEvent.trigger_text).like(search_term))
 
-    count_result = await db.execute(
-        select(func.count()).select_from(count_base.subquery())
-    )
+    count_result = await db.execute(select(func.count()).select_from(count_base.subquery()))
     total = count_result.scalar() or 0
 
     # Apply ordering and pagination
-    base_query = base_query.order_by(
-        RiskEvent.risk_level.desc(),
-        RiskEvent.created_at.desc()
-    ).offset(offset).limit(limit)
+    base_query = (
+        base_query.order_by(RiskEvent.risk_level.desc(), RiskEvent.created_at.desc()).offset(offset).limit(limit)
+    )
 
     result = await db.execute(base_query)
 
@@ -533,26 +541,28 @@ async def get_risk_queue(
     for row in result.fetchall():
         event = row[0]
         patient_name = row[1]
-        risk_events.append(RiskEventResponse(
-            id=event.id,
-            patient_id=event.patient_id,
-            patient_name=patient_name,
-            conversation_id=event.conversation_id,
-            risk_level=event.risk_level,
-            risk_type=event.risk_type,
-            trigger_text=event.trigger_text,
-            ai_confidence=float(event.ai_confidence) if event.ai_confidence else None,
-            doctor_reviewed=event.doctor_reviewed,
-            doctor_notes=event.doctor_notes,
-            created_at=event.created_at
-        ))
+        risk_events.append(
+            RiskEventResponse(
+                id=event.id,
+                patient_id=event.patient_id,
+                patient_name=patient_name,
+                conversation_id=event.conversation_id,
+                risk_level=event.risk_level,
+                risk_type=event.risk_type,
+                trigger_text=event.trigger_text,
+                ai_confidence=(float(event.ai_confidence) if event.ai_confidence else None),
+                doctor_reviewed=event.doctor_reviewed,
+                doctor_notes=event.doctor_notes,
+                created_at=event.created_at,
+            )
+        )
 
     return PaginatedResponse(
         items=risk_events,
         total=total,
         limit=limit,
         offset=offset,
-        has_more=offset + limit < total
+        has_more=offset + limit < total,
     )
 
 
@@ -561,30 +571,23 @@ async def review_risk_event(
     event_id: str,
     notes: Optional[str] = None,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Mark a risk event as reviewed by the doctor."""
-    result = await db.execute(
-        select(RiskEvent).where(RiskEvent.id == event_id)
-    )
+    result = await db.execute(select(RiskEvent).where(RiskEvent.id == event_id))
     event = result.scalar_one_or_none()
 
     if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Risk event not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Risk event not found")
 
     # Verify the patient belongs to this doctor
-    patient_result = await db.execute(
-        select(Patient).where(Patient.id == event.patient_id)
-    )
+    patient_result = await db.execute(select(Patient).where(Patient.id == event.patient_id))
     patient = patient_result.scalar_one_or_none()
 
     if not patient or patient.primary_doctor_id != doctor.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to review this risk event"
+            detail="Not authorized to review this risk event",
         )
 
     event.doctor_reviewed = True
@@ -600,32 +603,29 @@ async def get_patient_checkins(
     start_date: date = Query(...),
     end_date: date = Query(...),
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get check-ins for a specific patient (doctor view)."""
     # Verify patient belongs to doctor
     patient_result = await db.execute(
-        select(Patient).where(
-            and_(
-                Patient.id == patient_id,
-                Patient.primary_doctor_id == doctor.id
-            )
-        )
+        select(Patient).where(and_(Patient.id == patient_id, Patient.primary_doctor_id == doctor.id))
     )
     if not patient_result.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to view this patient"
+            detail="Not authorized to view this patient",
         )
 
     result = await db.execute(
-        select(DailyCheckin).where(
+        select(DailyCheckin)
+        .where(
             and_(
                 DailyCheckin.patient_id == patient_id,
                 DailyCheckin.checkin_date >= start_date,
-                DailyCheckin.checkin_date <= end_date
+                DailyCheckin.checkin_date <= end_date,
             )
-        ).order_by(DailyCheckin.checkin_date)
+        )
+        .order_by(DailyCheckin.checkin_date)
     )
 
     return result.scalars().all()
@@ -635,24 +635,19 @@ async def get_patient_checkins(
 async def get_patient_profile(
     patient_id: str,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get full profile for a specific patient (doctor view)."""
     # Verify patient belongs to doctor
     result = await db.execute(
-        select(Patient).where(
-            and_(
-                Patient.id == patient_id,
-                Patient.primary_doctor_id == doctor.id
-            )
-        )
+        select(Patient).where(and_(Patient.id == patient_id, Patient.primary_doctor_id == doctor.id))
     )
     patient = result.scalar_one_or_none()
 
     if not patient:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to view this patient"
+            detail="Not authorized to view this patient",
         )
 
     return patient
@@ -662,27 +657,23 @@ async def get_patient_profile(
 async def get_patient_pre_visit_summaries(
     patient_id: str,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get all pre-visit summaries for a patient (doctor view)."""
-    from app.models.pre_visit_summary import PreVisitSummary
     from sqlalchemy import desc
+
+    from app.models.pre_visit_summary import PreVisitSummary
 
     # Verify patient belongs to doctor
     result = await db.execute(
-        select(Patient).where(
-            and_(
-                Patient.id == patient_id,
-                Patient.primary_doctor_id == doctor.id
-            )
-        )
+        select(Patient).where(and_(Patient.id == patient_id, Patient.primary_doctor_id == doctor.id))
     )
     patient = result.scalar_one_or_none()
 
     if not patient:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to view this patient"
+            detail="Not authorized to view this patient",
         )
 
     # Get pre-visit summaries
@@ -698,12 +689,12 @@ async def get_patient_pre_visit_summaries(
             "id": s.id,
             "patient_id": s.patient_id,
             "conversation_id": s.conversation_id,
-            "scheduled_visit": s.scheduled_visit.isoformat() if s.scheduled_visit else None,
+            "scheduled_visit": (s.scheduled_visit.isoformat() if s.scheduled_visit else None),
             "chief_complaint": s.chief_complaint,
             "phq9_score": s.phq9_score,
             "gad7_score": s.gad7_score,
             "doctor_viewed": s.doctor_viewed,
-            "doctor_viewed_at": s.doctor_viewed_at.isoformat() if s.doctor_viewed_at else None,
+            "doctor_viewed_at": (s.doctor_viewed_at.isoformat() if s.doctor_viewed_at else None),
             "created_at": s.created_at.isoformat() if s.created_at else None,
         }
         for s in summaries
@@ -712,11 +703,12 @@ async def get_patient_pre_visit_summaries(
 
 # ========== Doctor Connection Request Endpoints ==========
 
+
 @router.post("/doctor/connection-requests", response_model=ConnectionRequestResponse)
 async def send_connection_request(
     request: ConnectionRequestCreate,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Send a connection request to a patient by email.
@@ -726,23 +718,23 @@ async def send_connection_request(
     """
     # Find patient by email (case-insensitive)
     result = await db.execute(
-        select(Patient).join(User, Patient.user_id == User.id).where(
-            func.lower(User.email) == func.lower(request.patient_email)
-        )
+        select(Patient)
+        .join(User, Patient.user_id == User.id)
+        .where(func.lower(User.email) == func.lower(request.patient_email))
     )
     patient = result.scalar_one_or_none()
 
     if not patient:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No patient found with this email address"
+            detail="No patient found with this email address",
         )
 
     # Check if patient is already connected to this doctor
     if patient.primary_doctor_id == doctor.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This patient is already connected to you"
+            detail="This patient is already connected to you",
         )
 
     # Check for existing pending request
@@ -751,7 +743,7 @@ async def send_connection_request(
             and_(
                 PatientConnectionRequest.doctor_id == doctor.id,
                 PatientConnectionRequest.patient_id == patient.id,
-                PatientConnectionRequest.status == ConnectionStatus.PENDING
+                PatientConnectionRequest.status == ConnectionStatus.PENDING,
             )
         )
     )
@@ -760,13 +752,11 @@ async def send_connection_request(
     if existing_request:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A pending connection request already exists for this patient"
+            detail="A pending connection request already exists for this patient",
         )
 
     # Get patient's email for response
-    user_result = await db.execute(
-        select(User).where(User.id == patient.user_id)
-    )
+    user_result = await db.execute(select(User).where(User.id == patient.user_id))
     patient_user = user_result.scalar_one()
 
     # Create connection request
@@ -774,7 +764,7 @@ async def send_connection_request(
         doctor_id=doctor.id,
         patient_id=patient.id,
         message=request.message,
-        status=ConnectionStatus.PENDING
+        status=ConnectionStatus.PENDING,
     )
     db.add(connection_request)
     await db.commit()
@@ -790,18 +780,21 @@ async def send_connection_request(
         message=connection_request.message,
         created_at=connection_request.created_at,
         updated_at=connection_request.updated_at,
-        responded_at=connection_request.responded_at
+        responded_at=connection_request.responded_at,
     )
 
 
-@router.get("/doctor/connection-requests", response_model=PaginatedResponse[ConnectionRequestResponse])
+@router.get(
+    "/doctor/connection-requests",
+    response_model=PaginatedResponse[ConnectionRequestResponse],
+)
 async def get_doctor_connection_requests(
     limit: int = Query(20, ge=1, le=50, description="Number of items per page"),
     offset: int = Query(0, ge=0, description="Number of items to skip"),
     status_filter: Optional[ConnectionStatus] = Query(None, alias="status"),
     search: Optional[str] = Query(None, description="Search by patient name or email"),
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get connection requests sent by this doctor with pagination.
@@ -810,12 +803,11 @@ async def get_doctor_connection_requests(
     Supports search by patient name or email.
     """
     # Build base query
-    base_query = select(PatientConnectionRequest, Patient, User).join(
-        Patient, PatientConnectionRequest.patient_id == Patient.id
-    ).join(
-        User, Patient.user_id == User.id
-    ).where(
-        PatientConnectionRequest.doctor_id == doctor.id
+    base_query = (
+        select(PatientConnectionRequest, Patient, User)
+        .join(Patient, PatientConnectionRequest.patient_id == Patient.id)
+        .join(User, Patient.user_id == User.id)
+        .where(PatientConnectionRequest.doctor_id == doctor.id)
     )
 
     # Apply status filter
@@ -826,17 +818,16 @@ async def get_doctor_connection_requests(
     if search:
         search_term = f"%{search.lower()}%"
         base_query = base_query.where(
-            (func.lower(Patient.first_name + " " + Patient.last_name).like(search_term)) |
-            (func.lower(User.email).like(search_term))
+            (func.lower(Patient.first_name + " " + Patient.last_name).like(search_term))
+            | (func.lower(User.email).like(search_term))
         )
 
     # Build count query with same filters
-    count_query = select(PatientConnectionRequest.id).join(
-        Patient, PatientConnectionRequest.patient_id == Patient.id
-    ).join(
-        User, Patient.user_id == User.id
-    ).where(
-        PatientConnectionRequest.doctor_id == doctor.id
+    count_query = (
+        select(PatientConnectionRequest.id)
+        .join(Patient, PatientConnectionRequest.patient_id == Patient.id)
+        .join(User, Patient.user_id == User.id)
+        .where(PatientConnectionRequest.doctor_id == doctor.id)
     )
 
     if status_filter:
@@ -845,19 +836,15 @@ async def get_doctor_connection_requests(
     if search:
         search_term = f"%{search.lower()}%"
         count_query = count_query.where(
-            (func.lower(Patient.first_name + " " + Patient.last_name).like(search_term)) |
-            (func.lower(User.email).like(search_term))
+            (func.lower(Patient.first_name + " " + Patient.last_name).like(search_term))
+            | (func.lower(User.email).like(search_term))
         )
 
-    count_result = await db.execute(
-        select(func.count()).select_from(count_query.subquery())
-    )
+    count_result = await db.execute(select(func.count()).select_from(count_query.subquery()))
     total = count_result.scalar() or 0
 
     # Apply ordering and pagination
-    base_query = base_query.order_by(
-        PatientConnectionRequest.created_at.desc()
-    ).offset(offset).limit(limit)
+    base_query = base_query.order_by(PatientConnectionRequest.created_at.desc()).offset(offset).limit(limit)
 
     result = await db.execute(base_query)
     rows = result.fetchall()
@@ -873,7 +860,7 @@ async def get_doctor_connection_requests(
             message=req.message,
             created_at=req.created_at,
             updated_at=req.updated_at,
-            responded_at=req.responded_at
+            responded_at=req.responded_at,
         )
         for req, patient, user in rows
     ]
@@ -883,15 +870,18 @@ async def get_doctor_connection_requests(
         total=total,
         limit=limit,
         offset=offset,
-        has_more=offset + limit < total
+        has_more=offset + limit < total,
     )
 
 
-@router.delete("/doctor/connection-requests/{request_id}", response_model=ConnectionRequestStatusResponse)
+@router.delete(
+    "/doctor/connection-requests/{request_id}",
+    response_model=ConnectionRequestStatusResponse,
+)
 async def cancel_connection_request(
     request_id: str,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Cancel a pending connection request.
@@ -902,22 +892,19 @@ async def cancel_connection_request(
         select(PatientConnectionRequest).where(
             and_(
                 PatientConnectionRequest.id == request_id,
-                PatientConnectionRequest.doctor_id == doctor.id
+                PatientConnectionRequest.doctor_id == doctor.id,
             )
         )
     )
     connection_request = result.scalar_one_or_none()
 
     if not connection_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Connection request not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Connection request not found")
 
     if connection_request.status != ConnectionStatus.PENDING:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot cancel request with status {connection_request.status}"
+            detail=f"Cannot cancel request with status {connection_request.status}",
         )
 
     connection_request.status = ConnectionStatus.CANCELLED
@@ -927,16 +914,16 @@ async def cancel_connection_request(
     return ConnectionRequestStatusResponse(
         status="cancelled",
         request_id=request_id,
-        message="Connection request has been cancelled"
+        message="Connection request has been cancelled",
     )
 
 
 # ========== Patient Connection Request Endpoints ==========
 
+
 @router.get("/patient/connection-requests", response_model=List[PatientConnectionRequestView])
 async def get_patient_connection_requests(
-    patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    patient: Patient = Depends(get_current_patient), db: AsyncSession = Depends(get_db)
 ):
     """
     Get pending connection requests for the current patient.
@@ -944,14 +931,15 @@ async def get_patient_connection_requests(
     Only returns PENDING requests.
     """
     result = await db.execute(
-        select(PatientConnectionRequest, Doctor).join(
-            Doctor, PatientConnectionRequest.doctor_id == Doctor.id
-        ).where(
+        select(PatientConnectionRequest, Doctor)
+        .join(Doctor, PatientConnectionRequest.doctor_id == Doctor.id)
+        .where(
             and_(
                 PatientConnectionRequest.patient_id == patient.id,
-                PatientConnectionRequest.status == ConnectionStatus.PENDING
+                PatientConnectionRequest.status == ConnectionStatus.PENDING,
             )
-        ).order_by(PatientConnectionRequest.created_at.desc())
+        )
+        .order_by(PatientConnectionRequest.created_at.desc())
     )
     rows = result.fetchall()
 
@@ -962,17 +950,20 @@ async def get_patient_connection_requests(
             doctor_name=doctor.full_name,
             doctor_specialty=doctor.specialty,
             message=req.message,
-            created_at=req.created_at
+            created_at=req.created_at,
         )
         for req, doctor in rows
     ]
 
 
-@router.post("/patient/connection-requests/{request_id}/accept", response_model=ConnectionRequestStatusResponse)
+@router.post(
+    "/patient/connection-requests/{request_id}/accept",
+    response_model=ConnectionRequestStatusResponse,
+)
 async def accept_connection_request(
     request_id: str,
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Accept a connection request from a doctor.
@@ -983,22 +974,19 @@ async def accept_connection_request(
         select(PatientConnectionRequest).where(
             and_(
                 PatientConnectionRequest.id == request_id,
-                PatientConnectionRequest.patient_id == patient.id
+                PatientConnectionRequest.patient_id == patient.id,
             )
         )
     )
     connection_request = result.scalar_one_or_none()
 
     if not connection_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Connection request not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Connection request not found")
 
     if connection_request.status != ConnectionStatus.PENDING:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot accept request with status {connection_request.status}"
+            detail=f"Cannot accept request with status {connection_request.status}",
         )
 
     # Update the patient's primary doctor
@@ -1014,15 +1002,12 @@ async def accept_connection_request(
         select(DoctorPatientThread).where(
             and_(
                 DoctorPatientThread.doctor_id == connection_request.doctor_id,
-                DoctorPatientThread.patient_id == patient.id
+                DoctorPatientThread.patient_id == patient.id,
             )
         )
     )
     if not existing_thread.scalar_one_or_none():
-        new_thread = DoctorPatientThread(
-            doctor_id=connection_request.doctor_id,
-            patient_id=patient.id
-        )
+        new_thread = DoctorPatientThread(doctor_id=connection_request.doctor_id, patient_id=patient.id)
         db.add(new_thread)
 
     await db.commit()
@@ -1030,15 +1015,18 @@ async def accept_connection_request(
     return ConnectionRequestStatusResponse(
         status="accepted",
         request_id=request_id,
-        message="You are now connected with the doctor"
+        message="You are now connected with the doctor",
     )
 
 
-@router.post("/patient/connection-requests/{request_id}/reject", response_model=ConnectionRequestStatusResponse)
+@router.post(
+    "/patient/connection-requests/{request_id}/reject",
+    response_model=ConnectionRequestStatusResponse,
+)
 async def reject_connection_request(
     request_id: str,
     patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Reject a connection request from a doctor.
@@ -1047,22 +1035,19 @@ async def reject_connection_request(
         select(PatientConnectionRequest).where(
             and_(
                 PatientConnectionRequest.id == request_id,
-                PatientConnectionRequest.patient_id == patient.id
+                PatientConnectionRequest.patient_id == patient.id,
             )
         )
     )
     connection_request = result.scalar_one_or_none()
 
     if not connection_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Connection request not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Connection request not found")
 
     if connection_request.status != ConnectionStatus.PENDING:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot reject request with status {connection_request.status}"
+            detail=f"Cannot reject request with status {connection_request.status}",
         )
 
     connection_request.status = ConnectionStatus.REJECTED
@@ -1074,15 +1059,12 @@ async def reject_connection_request(
     return ConnectionRequestStatusResponse(
         status="rejected",
         request_id=request_id,
-        message="Connection request has been rejected"
+        message="Connection request has been rejected",
     )
 
 
 @router.get("/patient/my-doctor", response_model=Optional[DoctorPublicInfo])
-async def get_patient_doctor(
-    patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
-):
+async def get_patient_doctor(patient: Patient = Depends(get_current_patient), db: AsyncSession = Depends(get_db)):
     """
     Get the current patient's assigned doctor.
 
@@ -1091,26 +1073,17 @@ async def get_patient_doctor(
     if not patient.primary_doctor_id:
         return None
 
-    result = await db.execute(
-        select(Doctor).where(Doctor.id == patient.primary_doctor_id)
-    )
+    result = await db.execute(select(Doctor).where(Doctor.id == patient.primary_doctor_id))
     doctor = result.scalar_one_or_none()
 
     if not doctor:
         return None
 
-    return DoctorPublicInfo(
-        id=doctor.id,
-        full_name=doctor.full_name,
-        specialty=doctor.specialty
-    )
+    return DoctorPublicInfo(id=doctor.id, full_name=doctor.full_name, specialty=doctor.specialty)
 
 
 @router.delete("/patient/disconnect-doctor", response_model=ConnectionRequestStatusResponse)
-async def disconnect_from_doctor(
-    patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
-):
+async def disconnect_from_doctor(patient: Patient = Depends(get_current_patient), db: AsyncSession = Depends(get_db)):
     """
     Disconnect from the current doctor.
 
@@ -1120,7 +1093,7 @@ async def disconnect_from_doctor(
     if not patient.primary_doctor_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You are not connected to any doctor"
+            detail="You are not connected to any doctor",
         )
 
     patient.primary_doctor_id = None
@@ -1129,17 +1102,15 @@ async def disconnect_from_doctor(
     return ConnectionRequestStatusResponse(
         status="disconnected",
         request_id="",
-        message="You have been disconnected from your doctor"
+        message="You have been disconnected from your doctor",
     )
 
 
 # ========== Doctor Profile Endpoints ==========
 
+
 @router.get("/doctor/profile", response_model=DoctorResponse)
-async def get_doctor_profile(
-    doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
-):
+async def get_doctor_profile(doctor: Doctor = Depends(get_current_doctor), db: AsyncSession = Depends(get_db)):
     """
     Get the current doctor's profile.
     """
@@ -1150,7 +1121,7 @@ async def get_doctor_profile(
 async def update_doctor_profile(
     request: DoctorUpdate,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Update the current doctor's profile.
@@ -1170,8 +1141,7 @@ async def update_doctor_profile(
 
 @router.get("/patient/my-doctor/profile", response_model=Optional[DoctorPublicProfile])
 async def get_patient_doctor_profile(
-    patient: Patient = Depends(get_current_patient),
-    db: AsyncSession = Depends(get_db)
+    patient: Patient = Depends(get_current_patient), db: AsyncSession = Depends(get_db)
 ):
     """
     Get the full profile of the patient's assigned doctor.
@@ -1181,9 +1151,7 @@ async def get_patient_doctor_profile(
     if not patient.primary_doctor_id:
         return None
 
-    result = await db.execute(
-        select(Doctor).where(Doctor.id == patient.primary_doctor_id)
-    )
+    result = await db.execute(select(Doctor).where(Doctor.id == patient.primary_doctor_id))
     doctor = result.scalar_one_or_none()
 
     if not doctor:
@@ -1204,17 +1172,18 @@ async def get_patient_doctor_profile(
         clinic_address=doctor.clinic_address,
         clinic_city=doctor.clinic_city,
         clinic_country=doctor.clinic_country,
-        consultation_hours=doctor.consultation_hours
+        consultation_hours=doctor.consultation_hours,
     )
 
 
 # ========== Doctor Create Patient Endpoints ==========
 
+
 @router.post("/doctor/patients", response_model=DoctorCreatePatientResponse)
 async def create_patient_by_doctor(
     request: DoctorCreatePatient,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Create a new patient account by a doctor.
@@ -1230,13 +1199,11 @@ async def create_patient_by_doctor(
     Returns the patient details including the default password for the doctor to share.
     """
     # Check if email already exists
-    existing_user = await db.execute(
-        select(User).where(func.lower(User.email) == func.lower(request.email))
-    )
+    existing_user = await db.execute(select(User).where(func.lower(User.email) == func.lower(request.email)))
     if existing_user.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A user with this email already exists"
+            detail="A user with this email already exists",
         )
 
     # Create the User account with default password
@@ -1247,7 +1214,7 @@ async def create_patient_by_doctor(
         user_type=UserType.PATIENT,
         is_active=True,
         password_must_change=True,
-        created_by_doctor_id=doctor.id
+        created_by_doctor_id=doctor.id,
     )
     db.add(user)
     await db.flush()  # Get user.id without committing
@@ -1276,15 +1243,12 @@ async def create_patient_by_doctor(
         triggers_notes=request.triggers_notes,
         coping_strategies=request.coping_strategies,
         primary_doctor_id=doctor.id,  # Automatically connect to creating doctor
-        consent_signed=False
+        consent_signed=False,
     )
     db.add(patient)
 
     # Create message thread for doctor-patient communication
-    message_thread = DoctorPatientThread(
-        doctor_id=doctor.id,
-        patient_id=patient.id
-    )
+    message_thread = DoctorPatientThread(doctor_id=doctor.id, patient_id=patient.id)
     db.add(message_thread)
 
     await db.commit()
@@ -1293,6 +1257,7 @@ async def create_patient_by_doctor(
     # Send invitation email to the patient
     try:
         from app.services.email.email_senders import send_patient_invitation_email
+
         await send_patient_invitation_email(
             db=db,
             patient=patient,
@@ -1303,6 +1268,7 @@ async def create_patient_by_doctor(
     except Exception as e:
         # Log but don't fail the request if email fails
         import logging
+
         logging.error(f"Failed to send patient invitation email: {e}")
 
     return DoctorCreatePatientResponse(
@@ -1311,18 +1277,19 @@ async def create_patient_by_doctor(
         email=user.email,
         full_name=patient.full_name,
         default_password=default_password,
-        message="Patient account created successfully. An invitation email has been sent to the patient."
+        message="Patient account created successfully. An invitation email has been sent to the patient.",
     )
 
 
 # ========== Doctor AI Chat Endpoints ==========
+
 
 @router.post("/doctor/patients/{patient_id}/ai-chat", response_model=DoctorAIChatResponse)
 async def doctor_ai_chat(
     patient_id: str,
     request: DoctorAIChatRequest,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Send a message to the AI assistant about a specific patient.
@@ -1359,53 +1326,45 @@ async def doctor_ai_chat(
         )
 
     except PermissionError as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
         print(f"Doctor AI chat error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while processing your request"
+            detail="An error occurred while processing your request",
         )
 
 
-@router.get("/doctor/patients/{patient_id}/ai-conversations", response_model=List[DoctorConversationListItem])
+@router.get(
+    "/doctor/patients/{patient_id}/ai-conversations",
+    response_model=List[DoctorConversationListItem],
+)
 async def get_patient_ai_conversations(
     patient_id: str,
     limit: int = Query(10, ge=1, le=50),
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get AI conversation history for a specific patient.
 
     Returns a list of conversations ordered by most recent first.
     """
-    from app.services.ai.doctor_chat_engine import DoctorChatEngine
     from app.models.doctor_conversation import DoctorConversation
+    from app.services.ai.doctor_chat_engine import DoctorChatEngine
 
     # Verify patient belongs to doctor
     patient_result = await db.execute(
-        select(Patient).where(
-            and_(
-                Patient.id == patient_id,
-                Patient.primary_doctor_id == doctor.id
-            )
-        )
+        select(Patient).where(and_(Patient.id == patient_id, Patient.primary_doctor_id == doctor.id))
     )
     patient = patient_result.scalar_one_or_none()
 
     if not patient:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to view this patient"
+            detail="Not authorized to view this patient",
         )
 
     chat_engine = DoctorChatEngine(db)
@@ -1429,12 +1388,15 @@ async def get_patient_ai_conversations(
     ]
 
 
-@router.get("/doctor/patients/{patient_id}/ai-conversations/{conversation_id}", response_model=DoctorConversationResponse)
+@router.get(
+    "/doctor/patients/{patient_id}/ai-conversations/{conversation_id}",
+    response_model=DoctorConversationResponse,
+)
 async def get_ai_conversation_detail(
     patient_id: str,
     conversation_id: str,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get the full detail of a specific AI conversation.
@@ -1445,19 +1407,14 @@ async def get_ai_conversation_detail(
 
     # Verify patient belongs to doctor
     patient_result = await db.execute(
-        select(Patient).where(
-            and_(
-                Patient.id == patient_id,
-                Patient.primary_doctor_id == doctor.id
-            )
-        )
+        select(Patient).where(and_(Patient.id == patient_id, Patient.primary_doctor_id == doctor.id))
     )
     patient = patient_result.scalar_one_or_none()
 
     if not patient:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to view this patient"
+            detail="Not authorized to view this patient",
         )
 
     # Get conversation
@@ -1473,20 +1430,14 @@ async def get_ai_conversation_detail(
     conversation = result.scalar_one_or_none()
 
     if not conversation:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conversation not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
 
     return DoctorConversationResponse(
         id=conversation.id,
         doctor_id=conversation.doctor_id,
         patient_id=conversation.patient_id,
         patient_name=patient.full_name,
-        messages=[
-            DoctorConversationMessage(role=m["role"], content=m["content"])
-            for m in conversation.messages
-        ],
+        messages=[DoctorConversationMessage(role=m["role"], content=m["content"]) for m in conversation.messages],
         summary=conversation.summary,
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
@@ -1498,29 +1449,24 @@ async def summarize_ai_conversation(
     patient_id: str,
     conversation_id: str,
     doctor: Doctor = Depends(get_current_doctor),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Generate or update a summary for an AI conversation.
 
     Returns the generated summary.
     """
-    from app.services.ai.doctor_chat_engine import DoctorChatEngine
     from app.models.doctor_conversation import DoctorConversation
+    from app.services.ai.doctor_chat_engine import DoctorChatEngine
 
     # Verify patient belongs to doctor
     patient_result = await db.execute(
-        select(Patient).where(
-            and_(
-                Patient.id == patient_id,
-                Patient.primary_doctor_id == doctor.id
-            )
-        )
+        select(Patient).where(and_(Patient.id == patient_id, Patient.primary_doctor_id == doctor.id))
     )
     if not patient_result.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to view this patient"
+            detail="Not authorized to view this patient",
         )
 
     # Get conversation
@@ -1536,10 +1482,7 @@ async def summarize_ai_conversation(
     conversation = result.scalar_one_or_none()
 
     if not conversation:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conversation not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
 
     chat_engine = DoctorChatEngine(db)
     summary = await chat_engine.generate_conversation_summary(conversation)

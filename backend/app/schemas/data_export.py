@@ -1,15 +1,17 @@
 """
 Data export schemas for request/response validation.
 """
+
 from datetime import datetime
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
 class ExportFormatEnum(str, Enum):
     """Export format options."""
+
     JSON = "JSON"
     CSV = "CSV"
     PDF_SUMMARY = "PDF_SUMMARY"
@@ -17,6 +19,7 @@ class ExportFormatEnum(str, Enum):
 
 class ExportStatusEnum(str, Enum):
     """Export status values."""
+
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
@@ -29,8 +32,10 @@ class ExportStatusEnum(str, Enum):
 # Request Schemas
 # ============================================
 
+
 class ExportRequestCreate(BaseModel):
     """Schema for creating a data export request."""
+
     export_format: ExportFormatEnum = ExportFormatEnum.JSON
 
     # Data selection (all default to True)
@@ -49,8 +54,10 @@ class ExportRequestCreate(BaseModel):
 # Response Schemas
 # ============================================
 
+
 class ExportRequestResponse(BaseModel):
     """Full export request response."""
+
     id: str
     patient_id: str
     export_format: str
@@ -89,6 +96,7 @@ class ExportRequestResponse(BaseModel):
 
 class ExportRequestListItem(BaseModel):
     """Simplified export request for list views."""
+
     id: str
     export_format: str
     status: str
@@ -106,6 +114,7 @@ class ExportRequestListItem(BaseModel):
 
 class ExportDownloadResponse(BaseModel):
     """Response with download URL."""
+
     download_url: str
     expires_at: datetime
     file_name: str
@@ -115,6 +124,7 @@ class ExportDownloadResponse(BaseModel):
 
 class ExportProgressResponse(BaseModel):
     """Progress update during export processing."""
+
     id: str
     status: str
     progress_percent: int

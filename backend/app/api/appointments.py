@@ -3,34 +3,35 @@ Appointment management API endpoints.
 
 Provides endpoints for doctors and patients to manage appointments.
 """
-import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+import logging
+from datetime import date, datetime, timedelta
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
+from app.models.appointment import Appointment, AppointmentStatus, AppointmentType, CancelledBy
 from app.models.doctor import Doctor
 from app.models.patient import Patient
-from app.models.appointment import Appointment, AppointmentStatus, AppointmentType, CancelledBy
 from app.schemas.appointment import (
-    AppointmentCreate,
-    AppointmentUpdate,
     AppointmentCancel,
     AppointmentComplete,
-    PatientNotesUpdate,
-    AppointmentResponse,
+    AppointmentCreate,
     AppointmentListItem,
-    CalendarDaySlot,
-    CalendarDay,
-    CalendarMonthView,
-    CalendarWeekView,
+    AppointmentResponse,
     AppointmentStats,
     AppointmentStatusEnum,
     AppointmentTypeEnum,
+    AppointmentUpdate,
+    CalendarDay,
+    CalendarDaySlot,
+    CalendarMonthView,
+    CalendarWeekView,
+    PatientNotesUpdate,
 )
 from app.utils.deps import get_current_doctor, get_current_patient, get_db
 
@@ -43,9 +44,10 @@ router = APIRouter(prefix="/appointments", tags=["appointments"])
 # Helper Functions
 # ============================================
 
+
 def appointment_to_response(appointment: Appointment) -> AppointmentResponse:
     """Convert appointment model to response schema."""
-    from app.schemas.appointment import PatientSummary, DoctorSummary
+    from app.schemas.appointment import DoctorSummary, PatientSummary
 
     patient_data = None
     if appointment.patient:
@@ -98,7 +100,7 @@ def appointment_to_response(appointment: Appointment) -> AppointmentResponse:
 
 def appointment_to_list_item(appointment: Appointment) -> AppointmentListItem:
     """Convert appointment model to list item schema."""
-    from app.schemas.appointment import PatientSummary, DoctorSummary
+    from app.schemas.appointment import DoctorSummary, PatientSummary
 
     patient_data = None
     if appointment.patient:
@@ -149,10 +151,12 @@ async def check_time_conflict(
         and_(
             Appointment.doctor_id == doctor_id,
             Appointment.appointment_date == appointment_date,
-            Appointment.status.in_([
-                AppointmentStatus.PENDING.value,
-                AppointmentStatus.CONFIRMED.value,
-            ]),
+            Appointment.status.in_(
+                [
+                    AppointmentStatus.PENDING.value,
+                    AppointmentStatus.CONFIRMED.value,
+                ]
+            ),
             or_(
                 # New appointment starts during existing
                 and_(
@@ -184,6 +188,7 @@ async def check_time_conflict(
 # Doctor Endpoints
 # ============================================
 
+
 @router.post("/doctor", response_model=AppointmentResponse, status_code=status.HTTP_201_CREATED)
 async def create_appointment(
     request: AppointmentCreate,
@@ -209,16 +214,14 @@ async def create_appointment(
     if not patient:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found or not assigned to you"
+            detail="Patient not found or not assigned to you",
         )
 
     # Check for time conflicts
-    if await check_time_conflict(
-        db, doctor.id, request.appointment_date, request.start_time, request.end_time
-    ):
+    if await check_time_conflict(db, doctor.id, request.appointment_date, request.start_time, request.end_time):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Time slot conflicts with an existing appointment"
+            detail="Time slot conflicts with an existing appointment",
         )
 
     # Create appointment
@@ -292,15 +295,17 @@ async def get_doctor_calendar(
         if apt_date not in days_dict:
             days_dict[apt_date] = []
 
-        days_dict[apt_date].append(CalendarDaySlot(
-            id=apt.id,
-            start_time=apt.start_time,
-            end_time=apt.end_time,
-            status=apt.status,
-            appointment_type=apt.appointment_type,
-            patient_name=apt.patient.full_name if apt.patient else "Unknown",
-            patient_id=apt.patient_id,
-        ))
+        days_dict[apt_date].append(
+            CalendarDaySlot(
+                id=apt.id,
+                start_time=apt.start_time,
+                end_time=apt.end_time,
+                status=apt.status,
+                appointment_type=apt.appointment_type,
+                patient_name=apt.patient.full_name if apt.patient else "Unknown",
+                patient_id=apt.patient_id,
+            )
+        )
 
     # Build response
     days = [
@@ -355,15 +360,17 @@ async def get_doctor_week_view(
         if apt_date not in days_dict:
             days_dict[apt_date] = []
 
-        days_dict[apt_date].append(CalendarDaySlot(
-            id=apt.id,
-            start_time=apt.start_time,
-            end_time=apt.end_time,
-            status=apt.status,
-            appointment_type=apt.appointment_type,
-            patient_name=apt.patient.full_name if apt.patient else "Unknown",
-            patient_id=apt.patient_id,
-        ))
+        days_dict[apt_date].append(
+            CalendarDaySlot(
+                id=apt.id,
+                start_time=apt.start_time,
+                end_time=apt.end_time,
+                status=apt.status,
+                appointment_type=apt.appointment_type,
+                patient_name=apt.patient.full_name if apt.patient else "Unknown",
+                patient_id=apt.patient_id,
+            )
+        )
 
     # Build response
     days = [
@@ -416,8 +423,7 @@ async def get_doctor_appointments(
 
     # Order and paginate
     query = (
-        query
-        .options(selectinload(Appointment.patient))
+        query.options(selectinload(Appointment.patient))
         .order_by(Appointment.appointment_date.desc(), Appointment.start_time.desc())
         .limit(limit)
         .offset(offset)
@@ -449,8 +455,7 @@ async def get_doctor_appointment_stats(
 
     # Get today's count
     today_result = await db.execute(
-        select(func.count(Appointment.id))
-        .where(
+        select(func.count(Appointment.id)).where(
             and_(
                 Appointment.doctor_id == doctor.id,
                 Appointment.appointment_date == today,
@@ -461,8 +466,7 @@ async def get_doctor_appointment_stats(
 
     # Get this week's count
     week_result = await db.execute(
-        select(func.count(Appointment.id))
-        .where(
+        select(func.count(Appointment.id)).where(
             and_(
                 Appointment.doctor_id == doctor.id,
                 Appointment.appointment_date >= week_start,
@@ -474,8 +478,7 @@ async def get_doctor_appointment_stats(
 
     # Get this month's count
     month_result = await db.execute(
-        select(func.count(Appointment.id))
-        .where(
+        select(func.count(Appointment.id)).where(
             and_(
                 Appointment.doctor_id == doctor.id,
                 Appointment.appointment_date >= month_start,
@@ -518,10 +521,7 @@ async def get_doctor_appointment_detail(
     appointment = result.scalar_one_or_none()
 
     if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
 
     return appointment_to_response(appointment)
 
@@ -552,15 +552,15 @@ async def update_appointment(
     appointment = result.scalar_one_or_none()
 
     if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
 
-    if appointment.status in [AppointmentStatus.CANCELLED.value, AppointmentStatus.COMPLETED.value]:
+    if appointment.status in [
+        AppointmentStatus.CANCELLED.value,
+        AppointmentStatus.COMPLETED.value,
+    ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot update cancelled or completed appointments"
+            detail="Cannot update cancelled or completed appointments",
         )
 
     # Check for time conflicts if date/time is being changed
@@ -568,17 +568,17 @@ async def update_appointment(
     new_start = request.start_time or appointment.start_time
     new_end = request.end_time or appointment.end_time
 
-    if (request.appointment_date or request.start_time or request.end_time):
+    if request.appointment_date or request.start_time or request.end_time:
         if await check_time_conflict(db, doctor.id, new_date, new_start, new_end, appointment.id):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Time slot conflicts with an existing appointment"
+                detail="Time slot conflicts with an existing appointment",
             )
 
     # Update fields
     update_data = request.model_dump(exclude_unset=True)
-    if 'appointment_type' in update_data and update_data['appointment_type']:
-        update_data['appointment_type'] = update_data['appointment_type'].value
+    if "appointment_type" in update_data and update_data["appointment_type"]:
+        update_data["appointment_type"] = update_data["appointment_type"].value
 
     for field, value in update_data.items():
         setattr(appointment, field, value)
@@ -611,15 +611,12 @@ async def confirm_appointment(
     appointment = result.scalar_one_or_none()
 
     if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
 
     if appointment.status != AppointmentStatus.PENDING.value:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot confirm appointment with status: {appointment.status}"
+            detail=f"Cannot confirm appointment with status: {appointment.status}",
         )
 
     appointment.status = AppointmentStatus.CONFIRMED.value
@@ -652,15 +649,15 @@ async def complete_appointment(
     appointment = result.scalar_one_or_none()
 
     if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
 
-    if appointment.status not in [AppointmentStatus.PENDING.value, AppointmentStatus.CONFIRMED.value]:
+    if appointment.status not in [
+        AppointmentStatus.PENDING.value,
+        AppointmentStatus.CONFIRMED.value,
+    ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot complete appointment with status: {appointment.status}"
+            detail=f"Cannot complete appointment with status: {appointment.status}",
         )
 
     appointment.status = AppointmentStatus.COMPLETED.value
@@ -695,15 +692,15 @@ async def mark_appointment_no_show(
     appointment = result.scalar_one_or_none()
 
     if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
 
-    if appointment.status not in [AppointmentStatus.PENDING.value, AppointmentStatus.CONFIRMED.value]:
+    if appointment.status not in [
+        AppointmentStatus.PENDING.value,
+        AppointmentStatus.CONFIRMED.value,
+    ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot mark as no-show for appointment with status: {appointment.status}"
+            detail=f"Cannot mark as no-show for appointment with status: {appointment.status}",
         )
 
     appointment.status = AppointmentStatus.NO_SHOW.value
@@ -736,15 +733,12 @@ async def cancel_appointment_by_doctor(
     appointment = result.scalar_one_or_none()
 
     if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
 
     if not appointment.is_cancellable:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This appointment cannot be cancelled"
+            detail="This appointment cannot be cancelled",
         )
 
     appointment.status = AppointmentStatus.CANCELLED.value
@@ -763,6 +757,7 @@ async def cancel_appointment_by_doctor(
 # ============================================
 # Patient Endpoints
 # ============================================
+
 
 @router.get("/patient/list", response_model=List[AppointmentListItem])
 async def get_patient_appointments(
@@ -787,16 +782,17 @@ async def get_patient_appointments(
         query = query.where(
             and_(
                 Appointment.appointment_date >= date.today(),
-                Appointment.status.in_([
-                    AppointmentStatus.PENDING.value,
-                    AppointmentStatus.CONFIRMED.value,
-                ])
+                Appointment.status.in_(
+                    [
+                        AppointmentStatus.PENDING.value,
+                        AppointmentStatus.CONFIRMED.value,
+                    ]
+                ),
             )
         )
 
     query = (
-        query
-        .options(selectinload(Appointment.doctor))
+        query.options(selectinload(Appointment.doctor))
         .order_by(Appointment.appointment_date.asc(), Appointment.start_time.asc())
         .limit(limit)
         .offset(offset)
@@ -820,10 +816,12 @@ async def get_patient_upcoming_appointments(
             and_(
                 Appointment.patient_id == patient.id,
                 Appointment.appointment_date >= date.today(),
-                Appointment.status.in_([
-                    AppointmentStatus.PENDING.value,
-                    AppointmentStatus.CONFIRMED.value,
-                ])
+                Appointment.status.in_(
+                    [
+                        AppointmentStatus.PENDING.value,
+                        AppointmentStatus.CONFIRMED.value,
+                    ]
+                ),
             )
         )
         .options(selectinload(Appointment.doctor))
@@ -857,10 +855,7 @@ async def get_patient_appointment_detail(
     appointment = result.scalar_one_or_none()
 
     if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
 
     return appointment_to_response(appointment)
 
@@ -886,15 +881,15 @@ async def update_patient_notes(
     appointment = result.scalar_one_or_none()
 
     if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
 
-    if appointment.status in [AppointmentStatus.CANCELLED.value, AppointmentStatus.COMPLETED.value]:
+    if appointment.status in [
+        AppointmentStatus.CANCELLED.value,
+        AppointmentStatus.COMPLETED.value,
+    ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot update notes for cancelled or completed appointments"
+            detail="Cannot update notes for cancelled or completed appointments",
         )
 
     appointment.patient_notes = request.patient_notes
@@ -927,15 +922,12 @@ async def cancel_appointment_by_patient(
     appointment = result.scalar_one_or_none()
 
     if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found")
 
     if not appointment.is_cancellable:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This appointment cannot be cancelled"
+            detail="This appointment cannot be cancelled",
         )
 
     appointment.status = AppointmentStatus.CANCELLED.value

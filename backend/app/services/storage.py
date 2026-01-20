@@ -1,10 +1,12 @@
 """
 S3/MinIO storage service for file uploads.
 """
-import uuid
+
 import io
+import uuid
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
+
 import boto3
 from botocore.exceptions import ClientError
 from PIL import Image
@@ -88,23 +90,20 @@ class StorageService:
         safe_filename = "".join(c for c in filename if c.isalnum() or c in "._-")[:50]
         return f"{folder}/{timestamp}/{unique_id}_{safe_filename}{extension}"
 
-    def validate_file(
-        self,
-        content_type: str,
-        file_size: int,
-        is_image: bool = False
-    ) -> Tuple[bool, Optional[str]]:
+    def validate_file(self, content_type: str, file_size: int, is_image: bool = False) -> Tuple[bool, Optional[str]]:
         """
         Validate file type and size.
         Returns (is_valid, error_message).
         """
         if file_size > self.MAX_FILE_SIZE:
-            return False, f"File size exceeds {self.MAX_FILE_SIZE // (1024*1024)}MB limit"
+            return (
+                False,
+                f"File size exceeds {self.MAX_FILE_SIZE // (1024*1024)}MB limit",
+            )
 
-        allowed_types = self.ALLOWED_IMAGE_TYPES if is_image else {
-            **self.ALLOWED_IMAGE_TYPES,
-            **self.ALLOWED_FILE_TYPES
-        }
+        allowed_types = (
+            self.ALLOWED_IMAGE_TYPES if is_image else {**self.ALLOWED_IMAGE_TYPES, **self.ALLOWED_FILE_TYPES}
+        )
 
         if content_type not in allowed_types:
             return False, f"File type '{content_type}' is not allowed"
@@ -125,7 +124,7 @@ class StorageService:
         file_content: bytes,
         filename: str,
         content_type: str,
-        folder: str = "attachments"
+        folder: str = "attachments",
     ) -> Tuple[str, Optional[str]]:
         """
         Upload a file to S3.
@@ -149,21 +148,14 @@ class StorageService:
         # Generate thumbnail for images
         if self.is_image(content_type):
             try:
-                thumbnail_key = await self._create_thumbnail(
-                    file_content, s3_key, content_type
-                )
+                thumbnail_key = await self._create_thumbnail(file_content, s3_key, content_type)
             except Exception as e:
                 # Thumbnail creation failed, but main upload succeeded
                 print(f"Warning: Thumbnail creation failed: {e}")
 
         return s3_key, thumbnail_key
 
-    async def _create_thumbnail(
-        self,
-        image_content: bytes,
-        original_key: str,
-        content_type: str
-    ) -> Optional[str]:
+    async def _create_thumbnail(self, image_content: bytes, original_key: str, content_type: str) -> Optional[str]:
         """Create and upload a thumbnail for an image."""
         try:
             image = Image.open(io.BytesIO(image_content))

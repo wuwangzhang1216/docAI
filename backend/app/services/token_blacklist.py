@@ -6,9 +6,9 @@ Tokens are stored in Redis with their JTI (JWT ID) as the key,
 and expire automatically based on the token's expiration time.
 """
 
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
-import logging
 
 from app.config import settings
 
@@ -27,11 +27,8 @@ async def get_redis_client():
 
     try:
         import redis.asyncio as redis
-        _redis_client = redis.from_url(
-            settings.REDIS_URL,
-            encoding="utf-8",
-            decode_responses=True
-        )
+
+        _redis_client = redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
         # Test connection
         await _redis_client.ping()
         logger.info("Redis connection established for token blacklist")
@@ -59,7 +56,7 @@ class TokenBlacklist:
         jti: str,
         expires_at: datetime,
         user_id: Optional[str] = None,
-        reason: str = "logout"
+        reason: str = "logout",
     ) -> bool:
         """
         Add a token to the blacklist.

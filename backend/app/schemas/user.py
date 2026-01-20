@@ -1,13 +1,14 @@
 from datetime import date, datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
 
+from pydantic import BaseModel, EmailStr, Field
 
 from app.models.user import UserType
 
 
 class UserCreate(BaseModel):
     """Schema for creating a new user."""
+
     email: EmailStr
     password: str = Field(..., min_length=6)
     user_type: UserType
@@ -17,12 +18,14 @@ class UserCreate(BaseModel):
 
 class UserLogin(BaseModel):
     """Schema for user login."""
+
     email: EmailStr
     password: str
 
 
 class UserResponse(BaseModel):
     """Schema for user response."""
+
     id: str
     email: str
     user_type: UserType
@@ -35,6 +38,7 @@ class UserResponse(BaseModel):
 
 class TokenResponse(BaseModel):
     """Schema for token response."""
+
     access_token: str
     token_type: str = "bearer"
     user_type: UserType
@@ -45,6 +49,7 @@ class TokenResponse(BaseModel):
 
 class PatientCreate(BaseModel):
     """Schema for creating patient profile."""
+
     first_name: str = Field(..., min_length=1, max_length=50)
     last_name: str = Field(..., min_length=1, max_length=50)
     date_of_birth: Optional[date] = None
@@ -55,6 +60,7 @@ class PatientCreate(BaseModel):
 
 class PatientUpdate(BaseModel):
     """Schema for updating patient profile."""
+
     first_name: Optional[str] = Field(None, min_length=1, max_length=50)
     last_name: Optional[str] = Field(None, min_length=1, max_length=50)
     date_of_birth: Optional[date] = None
@@ -85,6 +91,7 @@ class PatientUpdate(BaseModel):
 
 class PatientResponse(BaseModel):
     """Schema for patient response."""
+
     id: str
     user_id: str
     first_name: str
@@ -126,6 +133,7 @@ class PatientResponse(BaseModel):
 
 class DoctorCreate(BaseModel):
     """Schema for creating doctor profile."""
+
     first_name: str = Field(..., min_length=1, max_length=50)
     last_name: str = Field(..., min_length=1, max_length=50)
     license_number: Optional[str] = Field(None, max_length=50)
@@ -134,6 +142,7 @@ class DoctorCreate(BaseModel):
 
 class DoctorUpdate(BaseModel):
     """Schema for updating doctor profile."""
+
     first_name: Optional[str] = Field(None, min_length=1, max_length=50)
     last_name: Optional[str] = Field(None, min_length=1, max_length=50)
     license_number: Optional[str] = Field(None, max_length=50)
@@ -160,6 +169,7 @@ class DoctorUpdate(BaseModel):
 
 class DoctorResponse(BaseModel):
     """Schema for doctor response."""
+
     id: str
     user_id: str
     first_name: str
@@ -194,6 +204,7 @@ class DoctorResponse(BaseModel):
 
 class DoctorPublicProfile(BaseModel):
     """Schema for doctor public profile (viewable by patients)."""
+
     id: str
     first_name: str
     last_name: str
@@ -216,8 +227,10 @@ class DoctorPublicProfile(BaseModel):
 
 # ============ Doctor creates patient schemas ============
 
+
 class DoctorCreatePatient(BaseModel):
     """Schema for doctor creating a new patient account."""
+
     # Required fields
     email: EmailStr
     first_name: str = Field(..., min_length=1, max_length=50)
@@ -252,6 +265,7 @@ class DoctorCreatePatient(BaseModel):
 
 class DoctorCreatePatientResponse(BaseModel):
     """Response schema for doctor creating a patient."""
+
     patient_id: str
     user_id: str
     email: str
@@ -262,7 +276,9 @@ class DoctorCreatePatientResponse(BaseModel):
 
 # ============ Password change schemas ============
 
+
 class PasswordChange(BaseModel):
     """Schema for changing password."""
+
     current_password: str
     new_password: str = Field(..., min_length=6)

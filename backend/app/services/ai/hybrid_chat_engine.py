@@ -8,31 +8,22 @@ Implements the "Just-in-Time" approach recommended by Anthropic:
 Reference: https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
 """
 
-from typing import List, Dict, Tuple, Optional, Any, AsyncGenerator
-from anthropic import AsyncAnthropic
 import json
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 
+from anthropic import AsyncAnthropic
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
 
 from app.config import settings
-from app.models.patient import Patient
 from app.models.assessment import Assessment
 from app.models.checkin import DailyCheckin
 from app.models.conversation import ConversationType
+from app.models.patient import Patient
 from app.models.risk_event import RiskLevel
-
-from app.services.ai.prompts import (
-    CRISIS_RESPONSE_CRITICAL,
-    CRISIS_RESPONSE_HIGH,
-)
+from app.services.ai.prompts import CRISIS_RESPONSE_CRITICAL, CRISIS_RESPONSE_HIGH
 from app.services.ai.risk_detector import RiskDetector, RiskResult
-from app.services.ai.tools import (
-    PATIENT_CONTEXT_TOOLS,
-    PatientContextTools,
-    get_essential_context,
-)
-
+from app.services.ai.tools import PATIENT_CONTEXT_TOOLS, PatientContextTools, get_essential_context
 
 # Hybrid system prompts - minimal essential context, tools for details
 HYBRID_SUPPORTIVE_CHAT_SYSTEM = """You are a supportive conversation companion, specifically designed to provide emotional support for people who have experienced political persecution and exile trauma.
@@ -203,7 +194,7 @@ class HybridChatEngine:
 
         # Step 4: Generate AI response with tools
         if not self.client:
-            return self._fallback_response(), risk if risk.level != RiskLevel.LOW else None
+            return self._fallback_response(), (risk if risk.level != RiskLevel.LOW else None)
 
         try:
             response = await self._generate_response_with_tools(
@@ -222,9 +213,7 @@ class HybridChatEngine:
 
     async def _get_patient(self, patient_id: str) -> Optional[Patient]:
         """Fetch patient profile for essential context."""
-        result = await self.db.execute(
-            select(Patient).where(Patient.id == patient_id)
-        )
+        result = await self.db.execute(select(Patient).where(Patient.id == patient_id))
         return result.scalar_one_or_none()
 
     async def _generate_response_with_tools(
@@ -277,19 +266,11 @@ class HybridChatEngine:
             # Check if Claude wants to use tools
             if response.stop_reason == "tool_use":
                 # Process tool calls
-                tool_results = await self._process_tool_calls(
-                    response.content, tool_executor
-                )
+                tool_results = await self._process_tool_calls(response.content, tool_executor)
 
                 # Add assistant response and tool results to messages
-                messages.append({
-                    "role": "assistant",
-                    "content": response.content
-                })
-                messages.append({
-                    "role": "user",
-                    "content": tool_results
-                })
+                messages.append({"role": "assistant", "content": response.content})
+                messages.append({"role": "user", "content": tool_results})
 
                 # Continue the loop for Claude to process results
                 continue
@@ -300,11 +281,7 @@ class HybridChatEngine:
         # Max iterations reached - return what we have
         return self._extract_text_response(response.content) if response else self._fallback_response()
 
-    async def _process_tool_calls(
-        self,
-        content: List[Any],
-        tool_executor: PatientContextTools
-    ) -> List[Dict[str, Any]]:
+    async def _process_tool_calls(self, content: List[Any], tool_executor: PatientContextTools) -> List[Dict[str, Any]]:
         """
         Process tool use blocks and execute tools.
 
@@ -318,38 +295,33 @@ class HybridChatEngine:
         tool_results = []
 
         for block in content:
-            if hasattr(block, 'type') and block.type == "tool_use":
+            if hasattr(block, "type") and block.type == "tool_use":
                 # Execute the tool
-                result = await tool_executor.execute_tool(
-                    tool_name=block.name,
-                    tool_input=block.input
-                )
+                result = await tool_executor.execute_tool(tool_name=block.name, tool_input=block.input)
 
                 # Add result block
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": result.content,
-                    "is_error": result.is_error
-                })
+                tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result.content,
+                        "is_error": result.is_error,
+                    }
+                )
 
         return tool_results
 
     def _extract_text_response(self, content: List[Any]) -> str:
         """Extract text from response content blocks."""
         for block in content:
-            if hasattr(block, 'type') and block.type == "text":
+            if hasattr(block, "type") and block.type == "text":
                 return block.text
-            elif hasattr(block, 'text'):
+            elif hasattr(block, "text"):
                 return block.text
 
         return self._fallback_response()
 
-    def _build_messages(
-        self,
-        history: List[Dict[str, str]],
-        new_message: str
-    ) -> List[Dict[str, Any]]:
+    def _build_messages(self, history: List[Dict[str, str]], new_message: str) -> List[Dict[str, Any]]:
         """
         Build messages list for API call.
 
@@ -364,16 +336,10 @@ class HybridChatEngine:
 
         # Keep last 20 messages (10 exchanges)
         for h in history[-20:]:
-            messages.append({
-                "role": h.get("role", "user"),
-                "content": h.get("content", "")
-            })
+            messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
 
         # Add new message
-        messages.append({
-            "role": "user",
-            "content": new_message
-        })
+        messages.append({"role": "user", "content": new_message})
 
         return messages
 
@@ -420,7 +386,7 @@ class HybridChatEngine:
             "data": {
                 "level": risk.level.value,
                 "risk_type": risk.risk_type.value if risk.risk_type else None,
-            }
+            },
         }
 
         # Step 2: Handle high-risk situations
@@ -428,7 +394,7 @@ class HybridChatEngine:
             yield {"event": "text_delta", "data": {"text": CRISIS_RESPONSE_CRITICAL}}
             yield {
                 "event": "message_complete",
-                "data": {"content": CRISIS_RESPONSE_CRITICAL, "risk": risk.level.value}
+                "data": {"content": CRISIS_RESPONSE_CRITICAL, "risk": risk.level.value},
             }
             return
 
@@ -436,7 +402,7 @@ class HybridChatEngine:
             yield {"event": "text_delta", "data": {"text": CRISIS_RESPONSE_HIGH}}
             yield {
                 "event": "message_complete",
-                "data": {"content": CRISIS_RESPONSE_HIGH, "risk": risk.level.value}
+                "data": {"content": CRISIS_RESPONSE_HIGH, "risk": risk.level.value},
             }
             return
 
@@ -445,14 +411,20 @@ class HybridChatEngine:
         if not patient:
             fallback = self._fallback_response()
             yield {"event": "text_delta", "data": {"text": fallback}}
-            yield {"event": "message_complete", "data": {"content": fallback, "risk": None}}
+            yield {
+                "event": "message_complete",
+                "data": {"content": fallback, "risk": None},
+            }
             return
 
         # Step 4: Generate streaming response with tools
         if not self.client:
             fallback = self._fallback_response()
             yield {"event": "text_delta", "data": {"text": fallback}}
-            yield {"event": "message_complete", "data": {"content": fallback, "risk": None}}
+            yield {
+                "event": "message_complete",
+                "data": {"content": fallback, "risk": None},
+            }
             return
 
         try:
@@ -469,7 +441,10 @@ class HybridChatEngine:
             print(f"Streaming chat error: {e}")
             yield {"event": "error", "data": {"message": str(e)}}
             fallback = self._fallback_response()
-            yield {"event": "message_complete", "data": {"content": fallback, "risk": None}}
+            yield {
+                "event": "message_complete",
+                "data": {"content": fallback, "risk": None},
+            }
 
     async def _generate_streaming_response_with_tools(
         self,
@@ -532,24 +507,18 @@ class HybridChatEngine:
                             current_tool_use = {
                                 "id": block.id,
                                 "name": block.name,
-                                "input": {}
+                                "input": {},
                             }
                             current_tool_input = ""
                             yield {
                                 "event": "tool_start",
-                                "data": {
-                                    "tool_id": block.id,
-                                    "tool_name": block.name
-                                }
+                                "data": {"tool_id": block.id, "tool_name": block.name},
                             }
 
                     elif event.type == "content_block_delta":
                         delta = event.delta
                         if delta.type == "text_delta":
-                            yield {
-                                "event": "text_delta",
-                                "data": {"text": delta.text}
-                            }
+                            yield {"event": "text_delta", "data": {"text": delta.text}}
                             full_response += delta.text
 
                         elif delta.type == "input_json_delta":
@@ -563,12 +532,14 @@ class HybridChatEngine:
                             except json.JSONDecodeError:
                                 current_tool_use["input"] = {}
 
-                            current_content_blocks.append({
-                                "type": "tool_use",
-                                "id": current_tool_use["id"],
-                                "name": current_tool_use["name"],
-                                "input": current_tool_use["input"]
-                            })
+                            current_content_blocks.append(
+                                {
+                                    "type": "tool_use",
+                                    "id": current_tool_use["id"],
+                                    "name": current_tool_use["name"],
+                                    "input": current_tool_use["input"],
+                                }
+                            )
                             current_tool_use = None
                             current_tool_input = ""
 
@@ -583,36 +554,31 @@ class HybridChatEngine:
                 for block in current_content_blocks:
                     if block["type"] == "tool_use":
                         # Execute the tool
-                        result = await tool_executor.execute_tool(
-                            tool_name=block["name"],
-                            tool_input=block["input"]
-                        )
+                        result = await tool_executor.execute_tool(tool_name=block["name"], tool_input=block["input"])
 
                         yield {
                             "event": "tool_end",
                             "data": {
                                 "tool_id": block["id"],
                                 "tool_name": block["name"],
-                                "result_preview": result.content[:200] + "..." if len(result.content) > 200 else result.content
-                            }
+                                "result_preview": (
+                                    result.content[:200] + "..." if len(result.content) > 200 else result.content
+                                ),
+                            },
                         }
 
-                        tool_results.append({
-                            "type": "tool_result",
-                            "tool_use_id": block["id"],
-                            "content": result.content,
-                            "is_error": result.is_error
-                        })
+                        tool_results.append(
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": block["id"],
+                                "content": result.content,
+                                "is_error": result.is_error,
+                            }
+                        )
 
                 # Add assistant response and tool results to messages
-                messages.append({
-                    "role": "assistant",
-                    "content": final_message.content
-                })
-                messages.append({
-                    "role": "user",
-                    "content": tool_results
-                })
+                messages.append({"role": "assistant", "content": final_message.content})
+                messages.append({"role": "user", "content": tool_results})
 
                 # Reset for next iteration
                 full_response = ""
@@ -626,8 +592,8 @@ class HybridChatEngine:
             "event": "message_complete",
             "data": {
                 "content": full_response or self._fallback_response(),
-                "risk": None
-            }
+                "risk": None,
+            },
         }
 
     async def generate_summary(self, messages: List[Dict[str, str]]) -> str:
@@ -645,18 +611,19 @@ class HybridChatEngine:
 
         try:
             # Build conversation text
-            conversation_text = "\n".join([
-                f"{'User' if m.get('role') == 'user' else 'Assistant'}: {m.get('content', '')}"
-                for m in messages
-            ])
+            conversation_text = "\n".join(
+                [f"{'User' if m.get('role') == 'user' else 'Assistant'}: {m.get('content', '')}" for m in messages]
+            )
 
             response = await self.client.messages.create(
                 model="claude-haiku-4-5",
                 max_tokens=300,
-                messages=[{
-                    "role": "user",
-                    "content": f"Summarize this conversation in 2-3 sentences, focusing on the main topics and emotional themes. Write the summary in the same language as the conversation:\n\n{conversation_text}"
-                }]
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Summarize this conversation in 2-3 sentences, focusing on the main topics and emotional themes. Write the summary in the same language as the conversation:\n\n{conversation_text}",
+                    }
+                ],
             )
 
             return response.content[0].text
