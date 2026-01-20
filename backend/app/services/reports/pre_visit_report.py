@@ -18,7 +18,7 @@ from app.models.doctor import Doctor
 from app.models.generated_report import GeneratedReport, ReportType
 from app.models.patient import Patient
 from app.models.pre_visit_summary import PreVisitSummary
-from app.models.risk_event import RiskEvent, RiskLevel
+from app.models.risk_event import RiskEvent
 from app.models.user import User
 from app.schemas.reports import ReportGenerateRequest
 from app.services.reports.pdf_generator import pdf_generator

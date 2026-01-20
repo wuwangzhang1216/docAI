@@ -3,7 +3,7 @@ Appointment model for scheduling consultations between doctors and patients.
 """
 
 import uuid
-from datetime import date, datetime, time
+from datetime import date, datetime
 from enum import Enum
 
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, String, Text, Time

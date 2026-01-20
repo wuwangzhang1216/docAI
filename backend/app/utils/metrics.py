@@ -142,11 +142,9 @@ class MetricsCollector:
                 result = await db.execute(query)
         """
         start = time.perf_counter()
-        error_occurred = False
         try:
             yield
         except Exception:
-            error_occurred = True
             self.record_error(name)
             raise
         finally:

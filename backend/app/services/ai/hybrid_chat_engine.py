@@ -12,12 +12,10 @@ import json
 from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 
 from anthropic import AsyncAnthropic
-from sqlalchemy import desc, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.assessment import Assessment
-from app.models.checkin import DailyCheckin
 from app.models.conversation import ConversationType
 from app.models.patient import Patient
 from app.models.risk_event import RiskLevel

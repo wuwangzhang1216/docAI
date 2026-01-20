@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer

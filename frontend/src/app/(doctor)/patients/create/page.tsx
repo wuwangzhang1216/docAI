@@ -113,7 +113,7 @@ export default function CreatePatientPage() {
         }
       });
 
-      const result = await api.createPatient(requestData as Parameters<typeof api.createPatient>[0]);
+      const result = await api.createPatient(requestData as unknown as Parameters<typeof api.createPatient>[0]);
       setCreatedPatient(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create patient');

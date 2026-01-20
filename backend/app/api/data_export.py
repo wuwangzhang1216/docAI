@@ -16,7 +16,6 @@ from app.database import get_db
 from app.models.data_export import DataExportRequest, ExportStatus
 from app.models.patient import Patient
 from app.schemas.data_export import (
-    ExportDownloadResponse,
     ExportProgressResponse,
     ExportRequestCreate,
     ExportRequestListItem,

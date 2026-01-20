@@ -44,7 +44,7 @@ from app.schemas.user import (
     DoctorUpdate,
     PatientResponse,
 )
-from app.utils.deps import get_current_active_user, get_current_doctor, get_current_patient, require_user_type
+from app.utils.deps import get_current_doctor, get_current_patient
 from app.utils.security import hash_password
 
 router = APIRouter(prefix="/clinical", tags=["clinical"])
@@ -1352,7 +1352,6 @@ async def get_patient_ai_conversations(
 
     Returns a list of conversations ordered by most recent first.
     """
-    from app.models.doctor_conversation import DoctorConversation
     from app.services.ai.doctor_chat_engine import DoctorChatEngine
 
     # Verify patient belongs to doctor

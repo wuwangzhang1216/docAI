@@ -12,7 +12,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.doctor import Doctor
 from app.models.doctor_conversation import DoctorConversation
 from app.models.patient import Patient
 from app.services.ai.patient_context_aggregator import PatientContextAggregator, PatientFullContext

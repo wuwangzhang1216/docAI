@@ -127,8 +127,6 @@ class UnreadCountResponse(BaseModel):
 class WSMessagePayload(BaseModel):
     """Base payload for WebSocket messages."""
 
-    pass
-
 
 class WSNewMessagePayload(WSMessagePayload):
     """Payload for new message notification."""

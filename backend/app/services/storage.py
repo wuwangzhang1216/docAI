@@ -4,7 +4,7 @@ S3/MinIO storage service for file uploads.
 
 import io
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, Tuple
 
 import boto3

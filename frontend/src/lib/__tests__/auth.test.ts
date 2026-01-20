@@ -38,6 +38,7 @@ describe('Auth Store', () => {
     it('sets authentication state on successful login', async () => {
       const mockResponse = {
         access_token: 'test-token',
+        token_type: 'bearer',
         user_type: 'PATIENT' as const,
         user_id: 'user-123',
         password_must_change: false,
@@ -59,6 +60,7 @@ describe('Auth Store', () => {
     it('sets passwordMustChange flag when required', async () => {
       const mockResponse = {
         access_token: 'test-token',
+        token_type: 'bearer',
         user_type: 'PATIENT' as const,
         user_id: 'user-123',
         password_must_change: true,

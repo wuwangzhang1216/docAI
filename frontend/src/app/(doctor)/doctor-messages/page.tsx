@@ -41,9 +41,9 @@ export default function DoctorMessagesPage() {
   // WebSocket connection
   const handleWSMessage = useCallback((message: WSMessage) => {
     if (message.type === 'new_message' && message.payload) {
-      handleNewMessage(message.payload as Parameters<typeof handleNewMessage>[0]);
+      handleNewMessage(message.payload as unknown as Parameters<typeof handleNewMessage>[0]);
     } else if (message.type === 'message_read' && message.payload) {
-      const payload = message.payload as { thread_id: string; reader_type: 'DOCTOR' | 'PATIENT' };
+      const payload = message.payload as unknown as { thread_id: string; reader_type: 'DOCTOR' | 'PATIENT' };
       handleMessageRead(payload.thread_id, payload.reader_type);
     }
   }, [handleNewMessage, handleMessageRead]);

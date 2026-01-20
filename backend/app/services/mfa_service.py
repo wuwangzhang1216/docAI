@@ -21,7 +21,6 @@ import qrcode.image.svg
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.models.mfa import MFABackupCode, UserMFA
 from app.models.user import User
 

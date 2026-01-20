@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.appointment import Appointment, AppointmentStatus, AppointmentType, CancelledBy
+from app.models.appointment import Appointment, AppointmentStatus, CancelledBy
 from app.models.doctor import Doctor
 from app.models.patient import Patient
 from app.schemas.appointment import (
@@ -33,7 +33,7 @@ from app.schemas.appointment import (
     CalendarWeekView,
     PatientNotesUpdate,
 )
-from app.utils.deps import get_current_doctor, get_current_patient, get_db
+from app.utils.deps import get_current_doctor, get_current_patient
 
 logger = logging.getLogger(__name__)
 

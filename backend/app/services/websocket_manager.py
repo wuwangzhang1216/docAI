@@ -5,7 +5,7 @@ WebSocket connection manager for real-time messaging.
 import asyncio
 import json
 from datetime import datetime
-from typing import Any, Dict, Optional, Set
+from typing import Dict, Optional, Set
 
 from fastapi import WebSocket
 

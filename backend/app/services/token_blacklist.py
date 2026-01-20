@@ -7,7 +7,7 @@ and expire automatically based on the token's expiration time.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from app.config import settings

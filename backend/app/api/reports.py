@@ -11,7 +11,7 @@ from app.database import get_db
 from app.models.user import User, UserType
 from app.schemas.reports import ReportGenerateRequest, ReportListItem, ReportListResponse, ReportResponse
 from app.services.reports.pre_visit_report import pre_visit_report_service
-from app.utils.deps import get_current_user, require_user_type
+from app.utils.deps import require_user_type
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 

@@ -3,7 +3,7 @@ REST API endpoints for doctor-patient messaging.
 """
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import and_, desc, func, or_, select
@@ -28,7 +28,7 @@ from app.schemas.messaging import (
 )
 from app.services.storage import storage_service
 from app.services.websocket_manager import ws_manager
-from app.utils.deps import get_current_active_user, get_current_doctor, get_current_patient, get_db
+from app.utils.deps import get_current_active_user, get_current_doctor
 
 router = APIRouter(prefix="/messaging", tags=["messaging"])
 

@@ -14,9 +14,7 @@ from zipfile import ZipFile
 
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from app.config import settings
 from app.models.assessment import Assessment
 from app.models.checkin import DailyCheckin
 from app.models.conversation import Conversation
@@ -413,11 +411,9 @@ class DataExportService:
         """Generate a PDF summary report."""
         # For now, generate a simple text-based summary
         # In production, use reportlab or similar for proper PDF generation
-        from reportlab.lib import colors
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-        from reportlab.lib.units import inch
-        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4)

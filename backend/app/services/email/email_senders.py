@@ -4,7 +4,6 @@ Specialized email sending functions for different use cases.
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
