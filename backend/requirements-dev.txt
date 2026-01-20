@@ -19,7 +19,7 @@ flake8==7.0.0
 mypy==1.8.0
 
 # Additional Testing Tools
-faker==23.2.0
+faker==40.1.2
 factory-boy==3.3.0
 respx==0.20.2  # Mock httpx requests
 
