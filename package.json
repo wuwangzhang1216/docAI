@@ -1,0 +1,36 @@
+{
+  "name": "docai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "docAI Healthcare Platform",
+  "scripts": {
+    "prepare": "husky",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,css,scss}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,css,scss}\"",
+    "lint:frontend": "cd frontend && npm run lint",
+    "test:frontend": "cd frontend && npm run test:run",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && uvicorn app.main:app --reload",
+    "build:frontend": "cd frontend && npm run build"
+  },
+  "lint-staged": {
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "**/*.{json,md,css,scss,yaml,yml}": [
+      "prettier --write"
+    ],
+    "backend/**/*.py": [
+      "black",
+      "isort"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0"
+  }
+}

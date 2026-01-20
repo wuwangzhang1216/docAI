@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 from uuid import uuid4
 from passlib.context import CryptContext
 from jose import jwt, JWTError
@@ -9,6 +9,76 @@ from app.config import settings
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def get_token_expiration(token: str) -> Optional[datetime]:
+    """
+    Get the expiration time from a JWT token without validating it.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        Expiration datetime or None if invalid
+    """
+    try:
+        # Decode without verification to get expiration
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            options={"verify_exp": False}
+        )
+        exp = payload.get("exp")
+        if exp:
+            return datetime.utcfromtimestamp(exp)
+        return None
+    except JWTError:
+        return None
+
+
+def get_token_jti(token: str) -> Optional[str]:
+    """
+    Get the JTI (JWT ID) from a token without validating it.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        JTI string or None if invalid
+    """
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            options={"verify_exp": False}
+        )
+        return payload.get("jti")
+    except JWTError:
+        return None
+
+
+def get_token_claims(token: str) -> Optional[Dict[str, Any]]:
+    """
+    Get all claims from a token without validating expiration.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        Token payload dict or None if invalid
+    """
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            options={"verify_exp": False}
+        )
+        return payload
+    except JWTError:
+        return None
 
 
 def hash_password(password: str) -> str:

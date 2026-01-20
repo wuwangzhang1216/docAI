@@ -40,6 +40,7 @@ class TokenResponse(BaseModel):
     user_type: UserType
     user_id: str
     password_must_change: bool = False
+    mfa_required: bool = False  # True if MFA verification is needed
 
 
 class PatientCreate(BaseModel):

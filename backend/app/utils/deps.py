@@ -11,6 +11,7 @@ from app.models.user import User, UserType
 from app.models.patient import Patient
 from app.models.doctor import Doctor
 from app.utils.security import decode_token
+from app.services.token_blacklist import TokenBlacklist
 
 
 # HTTP Bearer security scheme
@@ -32,7 +33,7 @@ async def get_current_user(
         Authenticated User object
 
     Raises:
-        HTTPException: If token is invalid or user not found
+        HTTPException: If token is invalid, blacklisted, or user not found
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -40,11 +41,24 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    token_revoked_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Token has been revoked",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
     try:
         payload = decode_token(credentials.credentials)
         user_id: str = payload.get("sub")
+        jti: str = payload.get("jti")
+
         if user_id is None:
             raise credentials_exception
+
+        # Check if token is blacklisted
+        if jti and await TokenBlacklist.is_blacklisted(jti):
+            raise token_revoked_exception
+
     except JWTError:
         raise credentials_exception
 

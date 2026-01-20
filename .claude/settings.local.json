@@ -58,7 +58,21 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: docAI healthcare platform\n\n- Backend: FastAPI with SQLAlchemy, Alembic migrations\n- Frontend: Next.js with TypeScript, Tailwind CSS\n- Features: Patient/Doctor portals, AI chat, appointments, messaging\n- Multi-language support \\(12 languages\\)\n- Email notifications, data export, risk detection\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git remote add:*)",
       "Bash(cd:*)",
-      "Bash(move:*)"
+      "Bash(move:*)",
+      "Bash(npx husky:*)",
+      "Bash(npm run test:run:*)",
+      "Bash(npx vitest:*)",
+      "Bash(node:*)",
+      "Bash(cmd.exe /c \"cd /d E:\\\\work\\\\docAI\\\\frontend && npm install\")",
+      "Bash(cmd.exe /c \"cd /d E:\\\\work\\\\docAI\\\\frontend && npm install 2>&1\")",
+      "Bash(npm.cmd install:*)",
+      "Bash(npx.cmd vitest:*)",
+      "Bash(chmod:*)",
+      "Bash(git reset:*)",
+      "Bash(git config:*)",
+      "Bash(npx.cmd commitlint:*)",
+      "Bash(git restore:*)",
+      "Bash(git check-ignore:*)"
     ],
     "deny": [],
     "ask": []

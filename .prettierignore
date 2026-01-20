@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+__pycache__/
+*.pyc
+
+# Package manager
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# IDE
+.idea/
+.vscode/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Generated files
+*.min.js
+*.min.css
+
+# Database
+*.db
+*.sqlite
+
+# Misc
+.DS_Store
+*.log

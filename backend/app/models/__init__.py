@@ -15,6 +15,7 @@ from app.models.doctor_conversation import DoctorConversation
 from app.models.email import EmailTemplate, EmailLog, PasswordResetToken, EmailStatus, EmailPriority, EmailType
 from app.models.appointment import Appointment, AppointmentStatus, AppointmentType, CancelledBy
 from app.models.data_export import DataExportRequest, ExportStatus, ExportFormat
+from app.models.mfa import UserMFA, MFABackupCode
 
 __all__ = [
     "User",
@@ -55,4 +56,6 @@ __all__ = [
     "DataExportRequest",
     "ExportStatus",
     "ExportFormat",
+    "UserMFA",
+    "MFABackupCode",
 ]

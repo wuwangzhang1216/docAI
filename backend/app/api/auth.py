@@ -22,8 +22,20 @@ from app.schemas.user import (
     DoctorResponse,
     PasswordChange,
 )
-from app.utils.security import hash_password, verify_password, create_access_token
+from app.utils.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    get_token_expiration,
+    get_token_jti,
+    decode_token,
+)
 from app.utils.deps import get_current_active_user, get_current_patient, get_current_doctor
+from app.services.token_blacklist import TokenBlacklist
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+# HTTP Bearer for logout endpoint
+security = HTTPBearer()
 
 
 # Password reset schemas
@@ -112,7 +124,11 @@ async def login(
     Login with email and password.
 
     Returns a JWT token for authentication.
+    If MFA is enabled, a partial token is returned and mfa_required=True.
+    The client must then call /auth/login/mfa to complete authentication.
     """
+    from app.services.mfa_service import MFAService
+
     # Find user by email
     result = await db.execute(
         select(User).where(User.email == request.email)
@@ -132,21 +148,142 @@ async def login(
             detail="User account is disabled"
         )
 
-    # Generate token
+    # Check if MFA is enabled
+    mfa_enabled = await MFAService.is_mfa_enabled(db, user.id)
+
+    # Check if password must be changed (for doctor-created accounts)
+    password_must_change = getattr(user, 'password_must_change', False) or False
+
+    if mfa_enabled:
+        # Generate a temporary token for MFA verification
+        # This token has limited scope and short expiration
+        temp_token = create_access_token(
+            {
+                "sub": str(user.id),
+                "type": user.user_type.value,
+                "mfa_pending": True,  # Mark as pending MFA
+            },
+            expires_delta=timedelta(minutes=5)  # Short expiration for MFA flow
+        )
+
+        return TokenResponse(
+            access_token=temp_token,
+            user_type=user.user_type,
+            user_id=user.id,
+            password_must_change=password_must_change,
+            mfa_required=True
+        )
+
+    # Generate full access token
     token = create_access_token({
         "sub": str(user.id),
         "type": user.user_type.value
     })
 
-    # Check if password must be changed (for doctor-created accounts)
+    return TokenResponse(
+        access_token=token,
+        user_type=user.user_type,
+        user_id=user.id,
+        password_must_change=password_must_change,
+        mfa_required=False
+    )
+
+
+class MFALoginRequest(BaseModel):
+    """Request to complete MFA login."""
+    code: str = Field(..., min_length=6, max_length=10)
+
+
+@router.post("/login/mfa", response_model=TokenResponse)
+async def login_with_mfa(
+    request: MFALoginRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Complete login with MFA verification.
+
+    Requires the temporary token from /login and a valid MFA code.
+    Returns a full access token upon successful verification.
+    """
+    from app.services.mfa_service import MFAService
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = decode_token(credentials.credentials)
+        user_id = payload.get("sub")
+        mfa_pending = payload.get("mfa_pending", False)
+
+        if not user_id or not mfa_pending:
+            raise credentials_exception
+
+    except Exception:
+        raise credentials_exception
+
+    # Get user
+    result = await db.execute(
+        select(User).where(User.id == user_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user or not user.is_active:
+        raise credentials_exception
+
+    # Verify MFA code
+    is_valid, code_type = await MFAService.verify_mfa_code(db, user, request.code)
+
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid MFA code"
+        )
+
+    # Generate full access token
+    token = create_access_token({
+        "sub": str(user.id),
+        "type": user.user_type.value
+    })
+
     password_must_change = getattr(user, 'password_must_change', False) or False
 
     return TokenResponse(
         access_token=token,
         user_type=user.user_type,
         user_id=user.id,
-        password_must_change=password_must_change
+        password_must_change=password_must_change,
+        mfa_required=False
     )
+
+
+@router.post("/logout")
+async def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Logout the current user by blacklisting their token.
+
+    The token will be added to a blacklist and rejected on future requests.
+    The blacklist entry automatically expires when the token would have expired.
+    """
+    token = credentials.credentials
+    jti = get_token_jti(token)
+    expires_at = get_token_expiration(token)
+
+    if jti and expires_at:
+        await TokenBlacklist.add_to_blacklist(
+            jti=jti,
+            expires_at=expires_at,
+            user_id=str(current_user.id),
+            reason="logout"
+        )
+
+    return {"message": "Successfully logged out"}
 
 
 @router.get("/me", response_model=UserResponse)
