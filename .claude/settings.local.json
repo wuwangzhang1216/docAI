@@ -54,7 +54,11 @@
       "Bash(ffprobe:*)",
       "Read(//e/**)",
       "Bash(cd /d e:workdocAI)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: docAI healthcare platform\n\n- Backend: FastAPI with SQLAlchemy, Alembic migrations\n- Frontend: Next.js with TypeScript, Tailwind CSS\n- Features: Patient/Doctor portals, AI chat, appointments, messaging\n- Multi-language support \\(12 languages\\)\n- Email notifications, data export, risk detection\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git remote add:*)",
+      "Bash(cd:*)",
+      "Bash(move:*)"
     ],
     "deny": [],
     "ask": []

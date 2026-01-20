@@ -1,0 +1,298 @@
+name: Docker Build & Push
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/Dockerfile'
+      - 'frontend/Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker-build.yml'
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ${{ github.repository }}/backend
+  FRONTEND_IMAGE: ${{ github.repository }}/frontend
+
+jobs:
+  build-backend:
+    name: Build Backend Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        if: github.event_name != 'pull_request'
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-backend-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: github.event_name != 'pull_request' && always()
+        with:
+          sarif_file: 'trivy-backend-results.sarif'
+        continue-on-error: true
+
+  build-frontend:
+    name: Build Frontend Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Frontend Dockerfile
+        run: |
+          cat > frontend/Dockerfile << 'EOF'
+          # Build stage
+          FROM node:20-alpine AS builder
+
+          WORKDIR /app
+
+          # Copy package files
+          COPY package*.json ./
+
+          # Install dependencies
+          RUN npm ci
+
+          # Copy source code
+          COPY . .
+
+          # Build arguments
+          ARG NEXT_PUBLIC_API_URL
+          ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+          # Build the application
+          RUN npm run build
+
+          # Production stage
+          FROM node:20-alpine AS runner
+
+          WORKDIR /app
+
+          ENV NODE_ENV=production
+
+          # Create non-root user
+          RUN addgroup --system --gid 1001 nodejs && \
+              adduser --system --uid 1001 nextjs
+
+          # Copy built files
+          COPY --from=builder /app/public ./public
+          COPY --from=builder /app/.next/standalone ./
+          COPY --from=builder /app/.next/static ./.next/static
+
+          # Set correct permissions
+          RUN chown -R nextjs:nodejs /app
+
+          USER nextjs
+
+          EXPOSE 3000
+
+          ENV PORT=3000
+          ENV HOSTNAME="0.0.0.0"
+
+          HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+            CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+          CMD ["node", "server.js"]
+          EOF
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1' }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        if: github.event_name != 'pull_request'
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-frontend-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: github.event_name != 'pull_request' && always()
+        with:
+          sarif_file: 'trivy-frontend-results.sarif'
+        continue-on-error: true
+
+  integration-test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create test docker-compose
+        run: |
+          cat > docker-compose.test.yml << 'EOF'
+          version: '3.8'
+
+          services:
+            postgres:
+              image: postgres:15-alpine
+              environment:
+                POSTGRES_USER: testuser
+                POSTGRES_PASSWORD: testpass
+                POSTGRES_DB: testdb
+              healthcheck:
+                test: ["CMD-SHELL", "pg_isready -U testuser -d testdb"]
+                interval: 5s
+                timeout: 5s
+                retries: 5
+
+            redis:
+              image: redis:7-alpine
+              healthcheck:
+                test: ["CMD", "redis-cli", "ping"]
+                interval: 5s
+                timeout: 5s
+                retries: 5
+
+            backend:
+              image: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+              environment:
+                DATABASE_URL: postgresql+asyncpg://testuser:testpass@postgres:5432/testdb
+                REDIS_URL: redis://redis:6379/0
+                SECRET_KEY: test-secret-key
+                TESTING: 'true'
+              depends_on:
+                postgres:
+                  condition: service_healthy
+                redis:
+                  condition: service_healthy
+              ports:
+                - "8000:8000"
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+                interval: 10s
+                timeout: 5s
+                retries: 10
+          EOF
+
+      - name: Start services
+        run: docker compose -f docker-compose.test.yml up -d
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for backend to be healthy..."
+          timeout 120 bash -c 'until curl -sf http://localhost:8000/health; do sleep 5; done'
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests..."
+          # Health check
+          curl -sf http://localhost:8000/health
+          # API docs
+          curl -sf http://localhost:8000/docs
+          echo "Smoke tests passed!"
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
