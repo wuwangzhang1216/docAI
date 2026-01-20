@@ -26,7 +26,7 @@ respx==0.20.2  # Mock httpx requests
 # Profiling
 py-spy==0.3.14
 memory-profiler==0.61.0
-line-profiler==4.1.2
+line-profiler==5.0.0
 
 # Coverage
 coverage[toml]==7.4.1
