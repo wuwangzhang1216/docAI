@@ -1,121 +1,63 @@
 # Dependabot configuration
 # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+# Reduced frequency to minimize PR noise - only security updates are prioritized
 
 version: 2
 updates:
-  # Python dependencies (backend)
+  # Python dependencies (backend) - Monthly, security only
   - package-ecosystem: "pip"
     directory: "/backend"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Asia/Shanghai"
-    open-pull-requests-limit: 10
-    reviewers:
-      - "maintainers"
+      interval: "monthly"
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
-      - "python"
       - "backend"
     commit-message:
       prefix: "chore(deps)"
     groups:
-      # Group minor and patch updates together
-      python-minor:
+      # Group ALL updates into a single PR
+      all-python:
         patterns:
           - "*"
-        update-types:
-          - "minor"
-          - "patch"
-      # Security updates always separate
+    # Only allow security updates and patch versions
     ignore:
-      # Ignore major version updates for critical packages
-      - dependency-name: "sqlalchemy"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "fastapi"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "pydantic"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
-  # NPM dependencies (frontend)
+  # NPM dependencies (frontend) - Monthly, security only
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Asia/Shanghai"
-    open-pull-requests-limit: 10
-    reviewers:
-      - "maintainers"
+      interval: "monthly"
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
-      - "javascript"
       - "frontend"
     commit-message:
       prefix: "chore(deps)"
     groups:
-      # Group React ecosystem updates
-      react:
-        patterns:
-          - "react"
-          - "react-dom"
-          - "@types/react*"
-      # Group Next.js ecosystem
-      nextjs:
-        patterns:
-          - "next"
-          - "next-*"
-          - "@next/*"
-      # Group all other minor/patch updates
-      npm-minor:
+      # Group ALL updates into a single PR
+      all-npm:
         patterns:
           - "*"
-        exclude-patterns:
-          - "react*"
-          - "next*"
-        update-types:
-          - "minor"
-          - "patch"
+    # Only allow security updates and patch versions
     ignore:
-      # Be careful with major Next.js updates
-      - dependency-name: "next"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react-dom"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
-  # GitHub Actions
+  # GitHub Actions - Monthly
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Asia/Shanghai"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 1
     labels:
       - "dependencies"
       - "github-actions"
     commit-message:
       prefix: "chore(ci)"
     groups:
-      actions:
+      all-actions:
         patterns:
           - "*"
-
-  # Docker base images
-  - package-ecosystem: "docker"
-    directory: "/backend"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Asia/Shanghai"
-    labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "chore(docker)"
