@@ -123,36 +123,9 @@ jobs:
       run:
         working-directory: backend
 
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpass
-          POSTGRES_DB: testdb
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
+    # Tests use in-memory SQLite (see tests/conftest.py), no external services needed
     env:
-      DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
-      REDIS_URL: redis://localhost:6379/0
       SECRET_KEY: test-secret-key-for-ci
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       TESTING: 'true'
 
     steps:
@@ -177,9 +150,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-
-      - name: Run database migrations
-        run: alembic upgrade head
 
       - name: Run tests with coverage
         run: |
@@ -226,34 +196,8 @@ jobs:
       run:
         working-directory: backend
 
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpass
-          POSTGRES_DB: testdb
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
+    # Tests use in-memory SQLite (see tests/conftest.py), no external services needed
     env:
-      DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
-      REDIS_URL: redis://localhost:6379/0
       SECRET_KEY: test-secret-key-for-ci
       TESTING: 'true'
 
@@ -271,9 +215,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-
-      - name: Run database migrations
-        run: alembic upgrade head
 
       - name: Run tests
         run: pytest -v --ignore=tests/load --ignore=tests/performance -x
