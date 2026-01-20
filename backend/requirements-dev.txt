@@ -6,7 +6,7 @@
 
 # Performance Testing
 locust==2.24.0
-gevent==24.2.1
+gevent==25.9.1
 
 # Load Testing & Benchmarking
 pytest-benchmark==4.0.0
