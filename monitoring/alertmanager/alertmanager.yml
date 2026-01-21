@@ -1,0 +1,114 @@
+# Alertmanager configuration for XinShouCai
+
+global:
+  # SMTP configuration for email alerts
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@xinshoucai.com'
+  smtp_auth_username: ''  # Set via environment variable
+  smtp_auth_password: ''  # Set via environment variable
+  smtp_require_tls: true
+
+  # Slack configuration (optional)
+  # slack_api_url: 'https://hooks.slack.com/services/xxx/xxx/xxx'
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route tree for alert routing
+route:
+  # Default receiver
+  receiver: 'default-receiver'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'severity', 'service']
+
+  # Wait time before sending first notification
+  group_wait: 30s
+
+  # Wait time between notifications for same group
+  group_interval: 5m
+
+  # Wait time before re-sending notification
+  repeat_interval: 4h
+
+  # Child routes for specific alerts
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Risk event alerts - high priority
+    - match:
+        alertname: CriticalRiskEventDetected
+      receiver: 'risk-receiver'
+      group_wait: 0s
+      repeat_interval: 30m
+
+    # Warning alerts
+    - match:
+        severity: warning
+      receiver: 'warning-receiver'
+      repeat_interval: 4h
+
+    # Info alerts - lower priority
+    - match:
+        severity: info
+      receiver: 'default-receiver'
+      repeat_interval: 24h
+
+# Receivers define notification channels
+receivers:
+  # Default receiver
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'ops@xinshoucai.com'
+        send_resolved: true
+
+  # Critical alerts receiver
+  - name: 'critical-receiver'
+    email_configs:
+      - to: 'oncall@xinshoucai.com'
+        send_resolved: true
+        headers:
+          Subject: '[CRITICAL] {{ .GroupLabels.alertname }}'
+    # Uncomment for Slack integration
+    # slack_configs:
+    #   - channel: '#alerts-critical'
+    #     send_resolved: true
+    #     title: '{{ .Status | toUpper }}: {{ .GroupLabels.alertname }}'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+  # Risk event receiver - for clinical team
+  - name: 'risk-receiver'
+    email_configs:
+      - to: 'clinical-team@xinshoucai.com'
+        send_resolved: false
+        headers:
+          Subject: '[URGENT] Patient Risk Alert'
+          Priority: 'urgent'
+
+  # Warning alerts receiver
+  - name: 'warning-receiver'
+    email_configs:
+      - to: 'ops@xinshoucai.com'
+        send_resolved: true
+
+# Inhibition rules to prevent alert storms
+inhibit_rules:
+  # If critical alert is firing, suppress warnings for same alertname
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']
+
+  # If service is down, suppress all other alerts for that service
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match_re:
+      alertname: '.+'
+    equal: ['service']

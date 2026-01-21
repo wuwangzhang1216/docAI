@@ -1,0 +1,94 @@
+# Promtail configuration for XinShouCai log shipping
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # XinShouCai backend application logs
+  - job_name: xinshoucai-backend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: xinshoucai-backend
+          service: backend
+          __path__: /var/log/xinshoucai/*.log
+    pipeline_stages:
+      # Parse JSON logs
+      - json:
+          expressions:
+            level: level
+            logger: logger
+            message: message
+            request_id: request_id
+            user_id: user_id
+            timestamp: timestamp
+      # Set labels from parsed JSON
+      - labels:
+          level:
+          logger:
+      # Set timestamp from log entry
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      # Extract metrics from logs
+      - metrics:
+          log_lines_total:
+            type: Counter
+            description: "Total log lines by level"
+            prefix: xinshoucai_
+            source: level
+            config:
+              action: inc
+
+  # Docker container logs
+  - job_name: docker-containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Only keep xinshoucai containers
+      - source_labels: ['__meta_docker_container_name']
+        regex: '.*xinshoucai.*'
+        action: keep
+      # Set container name as label
+      - source_labels: ['__meta_docker_container_name']
+        target_label: container
+      # Set log path
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: stream
+    pipeline_stages:
+      - docker: {}
+      # Try to parse as JSON
+      - json:
+          expressions:
+            level: level
+            message: message
+            request_id: request_id
+      - labels:
+          level:
+
+  # System logs (optional)
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: system
+          __path__: /var/log/syslog
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\w+ \d+ \d+:\d+:\d+) (?P<host>\w+) (?P<process>\w+)(\[(?P<pid>\d+)\])?: (?P<message>.*)$'
+      - labels:
+          host:
+          process:
+      - timestamp:
+          source: timestamp
+          format: 'Jan 2 15:04:05'
