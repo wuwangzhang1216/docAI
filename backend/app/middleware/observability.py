@@ -24,7 +24,6 @@ from app.utils.logging_config import (
 from app.utils.monitoring import (
     record_error,
     record_request,
-    track_request_latency,
 )
 
 logger = get_logger("middleware.observability")

@@ -11,7 +11,7 @@ This module provides:
 import time
 from contextlib import asynccontextmanager
 from functools import wraps
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
