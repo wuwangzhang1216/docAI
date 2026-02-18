@@ -77,7 +77,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/50 dark:from-background dark:to-background relative overflow-hidden p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/50 dark:from-background dark:via-background dark:to-muted/20 relative overflow-hidden p-4">
       {/* Language Switcher & Theme Toggle */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         <ThemeToggle className="bg-card/80 backdrop-blur-sm shadow-sm rounded-lg border border-border/50" />
@@ -95,7 +95,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form Card */}
-        <Card className="border-border shadow-xl bg-card dark:bg-card/95">
+        <Card className="border-border/50 shadow-apple-xl bg-card dark:bg-card/95 dark:border-white/[0.06]">
           <CardContent className="p-6">
             {/* Mode Toggle */}
             <div className="grid grid-cols-2 gap-1 bg-muted/50 dark:bg-muted p-1 rounded-lg mb-6">

@@ -15,6 +15,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+const springTransition = { type: "spring" as const, stiffness: 200, damping: 25 };
+
 export default function DashboardPage() {
     const t = useTranslations('patient.nav'); // Reusing nav translations for now or generic
     // In a real app we would check time of day
@@ -59,12 +61,13 @@ export default function DashboardPage() {
     ];
 
     return (
-        <div className="px-6 py-8 space-y-8 pb-24">
+        <div className="px-6 py-10 space-y-8 pb-24">
             {/* Greeting Section */}
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-3"
+                transition={springTransition}
+                className="flex items-center gap-4"
             >
                 <div className="p-3 bg-primary/10 rounded-full">
                     <Icon className="w-6 h-6 text-primary" />
@@ -75,13 +78,13 @@ export default function DashboardPage() {
                 </div>
             </motion.div>
 
-            {/* Mood Quick Select (Mock) */}
+            {/* Mood Quick Select */}
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+                transition={{ ...springTransition, delay: 0.1 }}
             >
-                <Card className="border-border/50 shadow-sm">
+                <Card className="border-border/50 shadow-apple-sm">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-base font-medium">Quick Mood Check</CardTitle>
                     </CardHeader>
@@ -90,7 +93,7 @@ export default function DashboardPage() {
                             {['😢', '😕', '😐', '🙂', '😄'].map((emoji, i) => (
                                 <button
                                     key={i}
-                                    className="text-2xl p-3 hover:bg-muted rounded-xl transition-colors w-full flex items-center justify-center bg-muted/20"
+                                    className="text-2xl p-3 hover:bg-muted rounded-xl transition-all duration-200 w-full flex items-center justify-center bg-muted/20 hover:scale-105 active:scale-95"
                                 >
                                     {emoji}
                                 </button>
@@ -107,10 +110,10 @@ export default function DashboardPage() {
                         key={action.title}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 + (i * 0.1) }}
+                        transition={{ ...springTransition, delay: 0.2 + (i * 0.08) }}
                     >
                         <Link href={action.href}>
-                            <Card className="hover:bg-muted/30 transition-colors border-border/50 shadow-sm cursor-pointer group">
+                            <Card className="transition-all duration-300 border-border/50 shadow-apple-sm cursor-pointer group hover:shadow-apple-md hover:-translate-y-0.5">
                                 <CardContent className="p-4 flex items-center gap-4">
                                     <div className={`p-3 rounded-xl ${action.bg}`}>
                                         <action.icon className={`w-6 h-6 ${action.color}`} />
@@ -119,7 +122,7 @@ export default function DashboardPage() {
                                         <h3 className="font-semibold">{action.title}</h3>
                                         <p className="text-xs text-muted-foreground">{action.desc}</p>
                                     </div>
-                                    <ArrowRight className="w-5 h-5 text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                    <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
                                 </CardContent>
                             </Card>
                         </Link>
@@ -127,17 +130,17 @@ export default function DashboardPage() {
                 ))}
             </div>
 
-            {/* Quote of the day placeholder */}
+            {/* Quote of the day */}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-center p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10"
+                transition={{ ...springTransition, delay: 0.5 }}
+                className="text-center p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10"
             >
-                <p className="italic text-sm text-foreground/80">
+                <p className="italic text-sm text-foreground/80 leading-relaxed">
                     &ldquo;The only journey is the one within.&rdquo;
                 </p>
-                <p className="text-xs text-muted-foreground mt-2">— Rainer Maria Rilke</p>
+                <p className="text-xs text-muted-foreground mt-3">— Rainer Maria Rilke</p>
             </motion.div>
         </div>
     );

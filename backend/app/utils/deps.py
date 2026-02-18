@@ -13,12 +13,12 @@ from app.models.user import User, UserType
 from app.services.token_blacklist import TokenBlacklist
 from app.utils.security import decode_token
 
-# HTTP Bearer security scheme
-security = HTTPBearer()
+# HTTP Bearer security scheme - auto_error=False so we return 401 (not 403) for missing credentials
+security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """
@@ -39,6 +39,9 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if credentials is None:
+        raise credentials_exception
 
     token_revoked_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

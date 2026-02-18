@@ -155,10 +155,10 @@ docAI/
 
 ## Quick Start
 
-### 1. Start Base Services
+### 1. Start Infrastructure Services
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 This will start:
@@ -188,28 +188,34 @@ pip install -r requirements.txt
 
 # Run database migrations
 alembic upgrade head
-
-# Start the server
-uvicorn app.main:app --reload --port 8000
 ```
-
-Backend service will run at http://localhost:8000
-- API Documentation: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
 
 ### 3. Frontend Setup
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
 ```
 
-Frontend will run at http://localhost:3000
+### 4. Start Development
+
+From the project root, start both frontend and backend simultaneously:
+
+```bash
+npm run dev:all
+```
+
+Or start them individually:
+
+```bash
+npm run dev:frontend   # Next.js dev server at http://localhost:3000
+npm run dev:backend    # Uvicorn server at http://localhost:8000
+```
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
 
 ## Feature Modules
 
@@ -548,14 +554,14 @@ locust -f tests/load/locustfile.py
 
 ## Deployment
 
-### Docker Deployment
+### Development
 
 ```bash
-# Start all services
-docker-compose up -d
+# Start infrastructure
+docker compose up -d
 
-# View logs
-docker-compose logs -f backend
+# Start frontend + backend
+npm run dev:all
 ```
 
 ### Production Environment Considerations

@@ -86,7 +86,7 @@ export default function DoctorLayout({
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-50 transition-all duration-200">
+      <header className="bg-background/70 backdrop-blur-xl backdrop-saturate-150 border-b border-border/40 sticky top-0 z-50 transition-all duration-200">
         <div className="max-w-6xl mx-auto px-4 md:px-6">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">

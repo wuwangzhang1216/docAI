@@ -11,6 +11,7 @@ import { MessageCircle, Heart, UserCircle2, User, Calendar, Home } from 'lucide-
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { OnboardingModal } from '@/components/OnboardingModal';
+import { motion } from 'framer-motion';
 
 export default function PatientLayout({
   children,
@@ -60,7 +61,7 @@ export default function PatientLayout({
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <header className="absolute top-0 w-full bg-background/80 backdrop-blur-md border-b border-border z-50">
+      <header className="absolute top-0 w-full bg-background/70 backdrop-blur-xl backdrop-saturate-150 border-b border-border/40 z-50">
         <div className="max-w-lg mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="bg-primary/10 p-2 rounded-xl">
@@ -90,8 +91,8 @@ export default function PatientLayout({
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="flex-none bg-background/90 backdrop-blur-md border-t border-border z-50">
-        <div className="max-w-lg mx-auto px-6">
+      <nav className="flex-none bg-background/70 backdrop-blur-xl backdrop-saturate-150 border-t border-border/40 z-50">
+        <div className="max-w-lg mx-auto px-4">
           <div className="flex justify-between items-center py-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -101,14 +102,27 @@ export default function PatientLayout({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex flex-col items-center py-2 px-3 rounded-2xl transition-all duration-300",
+                    "relative flex flex-col items-center min-h-[44px] min-w-[44px] py-2 px-3 rounded-2xl transition-colors duration-200",
                     isActive
-                      ? "text-primary bg-primary/10 transform scale-105"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  <Icon className={cn("w-6 h-6 mb-1", isActive && "fill-current opacity-20")} strokeWidth={isActive ? 2.5 : 2} />
-                  <span className={cn("text-[10px] font-medium", isActive ? "text-primary" : "text-muted-foreground")}>
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute inset-0 bg-primary/10 rounded-2xl"
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                  <Icon
+                    className={cn("w-6 h-6 mb-1 relative z-10")}
+                    strokeWidth={isActive ? 2.5 : 1.8}
+                  />
+                  <span className={cn(
+                    "text-[11px] font-medium relative z-10",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}>
                     {item.label}
                   </span>
                 </Link>
