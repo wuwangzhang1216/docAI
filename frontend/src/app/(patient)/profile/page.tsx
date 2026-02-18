@@ -255,7 +255,7 @@ export default function ProfilePage() {
 
   return (
     <div className="p-4">
-      <div className="space-y-4 max-w-2xl mx-auto pb-20">
+      <div className="space-y-4 max-w-2xl mx-auto pb-20 md:pb-8">
         <h1 className="text-xl font-bold mb-4">{t('title', { defaultValue: 'My Profile' })}</h1>
 
         {/* Connection Requests Section */}

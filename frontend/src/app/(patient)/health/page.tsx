@@ -118,7 +118,7 @@ export default function HealthPage() {
 
   if (loading) {
     return (
-      <div className="h-full overflow-y-auto p-4 space-y-4 pb-28">
+      <div className="h-full overflow-y-auto p-4 space-y-4 pb-28 md:pb-8 max-w-3xl md:mx-auto">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-muted animate-shimmer" />
           <div className="space-y-2">
@@ -137,7 +137,7 @@ export default function HealthPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4 space-y-4 pb-28">
+    <div className="h-full overflow-y-auto p-4 space-y-4 pb-28 md:pb-8 max-w-3xl md:mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-2">
         <div className="bg-primary/10 p-2 rounded-xl">

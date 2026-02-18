@@ -118,7 +118,7 @@ export default function CheckinPage() {
   // Show loading skeleton during initial load
   if (initialLoading) {
     return (
-      <div className="h-full overflow-y-auto p-4">
+      <div className="h-full overflow-y-auto p-4 max-w-2xl md:mx-auto">
         <CheckinFormSkeleton />
       </div>
     );
@@ -128,7 +128,7 @@ export default function CheckinPage() {
   if ((todayCheckin && !isEditing) || submitted) {
     const record = todayCheckin;
     return (
-      <div className="h-full overflow-y-auto p-4 space-y-4">
+      <div className="h-full overflow-y-auto p-4 space-y-4 max-w-2xl md:mx-auto">
         {/* Success Header */}
         <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl p-6 text-white">
           <div className="flex items-center gap-3 mb-2">
@@ -242,7 +242,7 @@ export default function CheckinPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4 space-y-4">
+    <div className="h-full overflow-y-auto p-4 space-y-4 max-w-2xl md:mx-auto">
       <h1 className="text-xl font-bold">
         {t('title')}
       </h1>

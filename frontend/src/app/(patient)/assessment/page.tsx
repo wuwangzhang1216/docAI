@@ -147,7 +147,7 @@ export default function AssessmentPage() {
   // Type selection screen
   if (!selectedType) {
     return (
-      <div className="h-full overflow-y-auto p-4 space-y-4">
+      <div className="h-full overflow-y-auto p-4 space-y-4 max-w-2xl md:mx-auto">
         <h1 className="text-xl font-bold">
           {t('title')}
         </h1>
@@ -227,7 +227,7 @@ export default function AssessmentPage() {
     };
 
     return (
-      <div className="h-full overflow-y-auto p-4 space-y-6">
+      <div className="h-full overflow-y-auto p-4 space-y-6 max-w-2xl md:mx-auto">
         <h1 className="text-xl font-bold">
           {t('resultTitle')}
         </h1>
@@ -287,7 +287,7 @@ export default function AssessmentPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-4 space-y-4">
+    <div className="h-full overflow-y-auto p-4 space-y-4 max-w-2xl md:mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <button onClick={resetAssessment} className="text-muted-foreground hover:text-foreground transition-colors">

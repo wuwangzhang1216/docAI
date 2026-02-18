@@ -218,7 +218,7 @@ export default function PatientAppointmentsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-4 space-y-4 pb-28">
+      <div className="p-4 space-y-4 pb-28 md:pb-8 max-w-3xl md:mx-auto">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 rounded-xl bg-muted animate-shimmer" />
           <div className="space-y-2">
@@ -237,7 +237,7 @@ export default function PatientAppointmentsPage() {
   }
 
   return (
-    <div className="p-4 pb-28 space-y-4">
+    <div className="p-4 pb-28 md:pb-8 space-y-4 max-w-3xl md:mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-2">
         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -282,7 +282,7 @@ export default function PatientAppointmentsPage() {
           <p className="text-sm text-muted-foreground">{t('emptyHint')}</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
           {displayedAppointments.map((apt) => (
             <AppointmentCard
               key={apt.id}
