@@ -240,7 +240,7 @@ class RiskDetector:
 
         try:
             response = await self.client.messages.create(
-                model="claude-haiku-4-5",
+                model="claude-sonnet-4-6",
                 max_tokens=200,
                 messages=[{"role": "user", "content": RISK_DETECTION_PROMPT.format(text=text)}],
             )

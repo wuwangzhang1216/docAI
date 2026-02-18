@@ -253,7 +253,7 @@ class HybridChatEngine:
 
             # Call Claude API with tools
             response = await self.client.messages.create(
-                model="claude-haiku-4-5",
+                model="claude-sonnet-4-6",
                 max_tokens=800,
                 system=system_prompt,
                 messages=messages,
@@ -490,7 +490,7 @@ class HybridChatEngine:
 
             # Stream the response
             async with self.client.messages.stream(
-                model="claude-haiku-4-5",
+                model="claude-sonnet-4-6",
                 max_tokens=800,
                 system=system_prompt,
                 messages=messages,
@@ -614,7 +614,7 @@ class HybridChatEngine:
             )
 
             response = await self.client.messages.create(
-                model="claude-haiku-4-5",
+                model="claude-sonnet-4-6",
                 max_tokens=300,
                 messages=[
                     {

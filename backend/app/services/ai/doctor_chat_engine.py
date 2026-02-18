@@ -216,7 +216,7 @@ class DoctorChatEngine:
 
             # Call Claude API
             response = await self.client.messages.create(
-                model="claude-haiku-4-5",
+                model="claude-sonnet-4-6",
                 max_tokens=1500,
                 system=system_prompt,
                 messages=messages,
@@ -327,7 +327,7 @@ class DoctorChatEngine:
             )
 
             response = await self.client.messages.create(
-                model="claude-haiku-4-5",
+                model="claude-sonnet-4-6",
                 max_tokens=200,
                 messages=[
                     {
