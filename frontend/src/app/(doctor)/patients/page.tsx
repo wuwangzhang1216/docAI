@@ -21,6 +21,7 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@/components/u
 import { PatientTableSkeleton } from '@/components/ui/skeleton'
 import { SearchInput } from '@/components/ui/search-input'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Pagination, PaginationInfo } from '@/components/ui/pagination'
 import { Button } from '@/components/ui/button'
 
@@ -149,7 +150,7 @@ export default function PatientsPage() {
       return (
         <span
           aria-label={`Severity: ${t('severity.normal')}`}
-          className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-md text-xs font-medium"
+          className="bg-success/10 text-success border border-success/20 px-2.5 py-1 rounded-md text-xs font-medium"
         >
           {t('severity.normal')}
         </span>
@@ -175,7 +176,7 @@ export default function PatientsPage() {
     return (
       <span
         aria-label={`Severity: ${t('severity.severe')}`}
-        className="bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-2.5 py-1 rounded-md text-xs font-medium"
+        className="bg-destructive/10 text-destructive border border-destructive/20 px-2.5 py-1 rounded-md text-xs font-medium"
       >
         {t('severity.severe')}
       </span>
@@ -184,9 +185,9 @@ export default function PatientsPage() {
 
   const getMoodColor = (mood: number | null) => {
     if (mood === null) return 'text-muted-foreground'
-    if (mood < 4) return 'text-red-500 font-medium'
-    if (mood < 6) return 'text-yellow-500 font-medium'
-    return 'text-emerald-500 font-medium'
+    if (mood < 4) return 'text-destructive font-medium'
+    if (mood < 6) return 'text-warning font-medium'
+    return 'text-success font-medium'
   }
 
   // Show initial loading skeleton only on first load
@@ -224,7 +225,7 @@ export default function PatientsPage() {
         <div className="flex items-center flex-wrap gap-2">
           <Link
             href="/patients/create"
-            className="flex items-center space-x-2 px-3 md:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md"
+            className="flex items-center space-x-2 px-3 md:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm bg-success text-success-foreground hover:bg-success/90 hover:shadow-md"
           >
             <UserPlusIcon className="w-4 h-4" />
             <span className="hidden md:inline">Create Patient</span>
@@ -243,14 +244,14 @@ export default function PatientsPage() {
             className={cn(
               'flex items-center space-x-2 px-3 md:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm',
               pendingRequestsCount > 0
-                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20'
+                ? 'bg-warning/10 text-warning border border-warning/20 hover:bg-warning/20'
                 : 'bg-card text-muted-foreground border border-border hover:bg-muted'
             )}
           >
             <ClockIcon className="w-4 h-4" />
             <span className="hidden md:inline">{t('pendingRequests')}</span>
             {pendingRequestsCount > 0 && (
-              <span className="bg-amber-500 text-white px-2 py-0.5 rounded-full text-xs font-bold leading-none min-w-[20px] text-center">
+              <span className="bg-warning text-warning-foreground px-2 py-0.5 rounded-full text-xs font-bold leading-none min-w-[20px] text-center">
                 {pendingRequestsCount}
               </span>
             )}
@@ -261,14 +262,14 @@ export default function PatientsPage() {
             className={cn(
               'flex items-center space-x-2 px-3 md:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm',
               riskCount > 0
-                ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 hover:bg-red-500/20'
+                ? 'bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20'
                 : 'bg-card text-muted-foreground border border-border hover:bg-muted'
             )}
           >
             <AlertTriangleIcon className={cn('w-4 h-4', riskCount > 0 && 'fill-current')} />
             <span className="hidden md:inline">{t('riskQueue')}</span>
             {riskCount > 0 && (
-              <span className="bg-red-600 text-white px-2 py-0.5 rounded-full text-xs font-bold leading-none min-w-[20px] text-center">
+              <span className="bg-destructive text-destructive-foreground px-2 py-0.5 rounded-full text-xs font-bold leading-none min-w-[20px] text-center">
                 {riskCount}
               </span>
             )}
@@ -322,30 +323,77 @@ export default function PatientsPage() {
       <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden relative">
         {/* Loading overlay for pagination/search */}
         {loading && (
-          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
+          <div
+            className="absolute inset-0 bg-background/50 flex items-center justify-center z-10"
+            role="status"
+            aria-live="polite"
+          >
             <Loader2Icon className="w-6 h-6 animate-spin text-primary" />
+            <span className="sr-only">{common('loading')}</span>
           </div>
         )}
         <div className="overflow-x-auto">
           <table className="w-full">
+            <caption className="sr-only">
+              {t('title')} - {t('subtitle')}
+            </caption>
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                  aria-sort={
+                    sortBy === 'name'
+                      ? sortOrder === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                      : undefined
+                  }
+                >
                   {t('columns.patientName')}
                 </th>
-                <th className="text-center px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="text-center px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                  aria-sort={
+                    sortBy === 'mood'
+                      ? sortOrder === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                      : undefined
+                  }
+                >
                   {t('columns.moodAvg')}
                 </th>
-                <th className="text-center px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="text-center px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
                   {t('columns.phq9')}
                 </th>
-                <th className="text-center px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="text-center px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
                   {t('columns.gad7')}
                 </th>
-                <th className="text-center px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="text-center px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                  aria-sort={
+                    sortBy === 'risk'
+                      ? sortOrder === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                      : undefined
+                  }
+                >
                   {t('columns.pendingRisks')}
                 </th>
-                <th className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="text-right px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
                   {t('columns.actions')}
                 </th>
               </tr>
@@ -425,7 +473,7 @@ export default function PatientsPage() {
                     </td>
                     <td className="text-center px-6 py-4">
                       {patient.unreviewed_risks > 0 ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 animate-pulse">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive animate-pulse">
                           {t('pendingItems', { count: patient.unreviewed_risks })}
                         </span>
                       ) : (
@@ -443,7 +491,7 @@ export default function PatientsPage() {
                         </Link>
                         <Link
                           href={`/doctor-messages?patient=${patient.patient_id}`}
-                          className="inline-flex items-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium text-sm transition-colors"
+                          className="inline-flex items-center text-success hover:text-success/80 font-medium text-sm transition-colors"
                           title={t('sendMessage', { defaultValue: 'Send message' })}
                         >
                           <MessageSquareIcon className="w-4 h-4" />
@@ -490,11 +538,11 @@ export default function PatientsPage() {
         </p>
         <div className="flex flex-wrap gap-3 text-xs">
           <div className="flex items-center space-x-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className="w-2 h-2 rounded-full bg-success"></span>
             <span className="text-muted-foreground">{t('legendNormal')}</span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
+            <span className="w-2 h-2 rounded-full bg-warning"></span>
             <span className="text-muted-foreground">{t('legendMild')}</span>
           </div>
           <div className="flex items-center space-x-1.5">
@@ -502,7 +550,7 @@ export default function PatientsPage() {
             <span className="text-muted-foreground">{t('legendModerate')}</span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+            <span className="w-2 h-2 rounded-full bg-destructive"></span>
             <span className="text-muted-foreground">{t('legendSevere')}</span>
           </div>
         </div>
@@ -542,12 +590,11 @@ export default function PatientsPage() {
               <label className="block text-sm font-medium text-foreground mb-1">
                 {t('addPatient.messageLabel')}
               </label>
-              <textarea
+              <Textarea
                 value={requestMessage}
                 onChange={(e) => setRequestMessage(e.target.value)}
                 placeholder={t('addPatient.messagePlaceholder')}
                 rows={3}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all duration-200 resize-none"
               />
             </div>
 
@@ -558,7 +605,7 @@ export default function PatientsPage() {
             )}
 
             {requestSuccess && (
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-sm text-emerald-600 dark:text-emerald-400">
+              <div className="p-3 bg-success/10 border border-success/20 rounded-lg text-sm text-success">
                 {requestSuccess}
               </div>
             )}

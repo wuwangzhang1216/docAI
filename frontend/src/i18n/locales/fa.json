@@ -97,6 +97,38 @@
         "severe": "شدید"
       }
     },
+    "dashboard": {
+      "greetingMorning": "صبح بخیر",
+      "greetingAfternoon": "بعدازظهر بخیر",
+      "greetingEvening": "عصر بخیر",
+      "feelingQuestion": "امروز چه احساسی دارید؟",
+      "talkToAI": "صحبت با هوش مصنوعی",
+      "talkToAIDesc": "دریافت پشتیبانی عاطفی فوری",
+      "healthCenter": "مرکز سلامت",
+      "healthCenterDesc": "ثبت‌ها و ارزیابی‌ها",
+      "appointments": "قرار ملاقات‌ها",
+      "appointmentsDesc": "مشاهده جلسات آینده",
+      "quickMoodCheck": "بررسی سریع خلق و خو",
+      "moodVeryLow": "بسیار پایین",
+      "moodLow": "پایین",
+      "moodNeutral": "متوسط",
+      "moodGood": "خوب",
+      "moodExcellent": "عالی",
+      "moodRecorded": "خلق و خو ثبت شد!",
+      "quoteOfDay": "نقل قول روز",
+      "quotes": [
+        { "text": "تنها سفر، سفر درون است.", "author": "Rainer Maria Rilke" },
+        { "text": "تو افکارت نیستی.", "author": "Eckhart Tolle" },
+        { "text": "با خودت مهربان باش، داری بهترین کارت را انجام می‌دهی.", "author": "Unknown" },
+        { "text": "هر روز یک آغاز جدید است.", "author": "Unknown" },
+        { "text": "بهبودی خطی نیست.", "author": "Unknown" },
+        {
+          "text": "لازم نیست افکارت را کنترل کنی. فقط باید اجازه ندهی آنها تو را کنترل کنند.",
+          "author": "Dan Millman"
+        },
+        { "text": "اشکالی ندارد که حالت خوب نباشد.", "author": "Unknown" }
+      ]
+    },
     "onboarding": {
       "skip": "رد شدن",
       "back": "بازگشت",
@@ -594,7 +626,20 @@
         "reason": "دلیل قرار ملاقات",
         "reasonPlaceholder": "دلیل قرار ملاقات را به طور خلاصه توضیح دهید..."
       },
-      "months": ["ژانویه", "فوریه", "مارس", "آوریل", "می", "ژوئن", "ژوئیه", "آگوست", "سپتامبر", "اکتبر", "نوامبر", "دسامبر"]
+      "months": [
+        "ژانویه",
+        "فوریه",
+        "مارس",
+        "آوریل",
+        "می",
+        "ژوئن",
+        "ژوئیه",
+        "آگوست",
+        "سپتامبر",
+        "اکتبر",
+        "نوامبر",
+        "دسامبر"
+      ]
     },
     "riskQueue": {
       "title": "صف رویدادهای خطر",
@@ -660,5 +705,23 @@
     },
     "startFromPatientList": "یک گفتگو از لیست بیماران شروع کنید",
     "goToPatients": "رفتن به بیماران"
+  },
+  "landing": {
+    "heroTitle1": "همراه شخصی",
+    "heroTitle2": "هوش مصنوعی سلامت روان شما",
+    "heroDescription": "نگهبان قلب هوش مصنوعی پشتیبانی عاطفی ۲۴ ساعته، پیگیری خلق و خو و ارتباط حرفه‌ای ارائه می‌دهد. فضایی امن برای سلامت روان شما، هر زمان که نیاز دارید.",
+    "getStarted": "شروع کنید",
+    "learnMore": "بیشتر بدانید",
+    "featureChat": "چت هوش مصنوعی ۲۴/۷",
+    "featureChatDesc": "همیشه آماده گوش دادن و پشتیبانی از شما.",
+    "featureSecurity": "خصوصی و امن",
+    "featureSecurityDesc": "داده‌های شما رمزگذاری و محافظت شده‌اند.",
+    "featureMood": "پیگیری خلق و خو",
+    "featureMoodDesc": "سفر عاطفی خود را در طول زمان پیگیری کنید.",
+    "brandName": "Heart Guardian",
+    "headerFeatures": "ویژگی‌ها",
+    "headerAbout": "درباره ما",
+    "headerSignIn": "ورود",
+    "footerCopyright": "© 2024 Heart Guardian AI. تمامی حقوق محفوظ است."
   }
 }

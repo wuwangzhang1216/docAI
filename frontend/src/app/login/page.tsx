@@ -1,11 +1,11 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { useAuth, getRedirectPath } from '@/lib/auth';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { ThemeToggle } from '@/components/ThemeSwitcher';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useAuth, getRedirectPath } from '@/lib/auth'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { ThemeToggle } from '@/components/ThemeSwitcher'
 import {
   User,
   Stethoscope,
@@ -14,67 +14,70 @@ import {
   UserCircle2,
   Loader2,
   ArrowRight,
-  AlertCircle
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+  AlertCircle,
+  Eye,
+  EyeOff,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
 
-type Mode = 'login' | 'register';
-type UserType = 'PATIENT' | 'DOCTOR';
+type Mode = 'login' | 'register'
+type UserType = 'PATIENT' | 'DOCTOR'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login, register, sessionExpired, clearSessionExpired } = useAuth();
-  const t = useTranslations('login');
-  const common = useTranslations('common');
+  const router = useRouter()
+  const { login, register, sessionExpired, clearSessionExpired } = useAuth()
+  const t = useTranslations('login')
+  const common = useTranslations('common')
 
   // Clear session expired flag when user navigates away or logs in successfully
   useEffect(() => {
     return () => {
       if (sessionExpired) {
-        clearSessionExpired();
+        clearSessionExpired()
       }
-    };
-  }, [sessionExpired, clearSessionExpired]);
+    }
+  }, [sessionExpired, clearSessionExpired])
 
-  const [mode, setMode] = useState<Mode>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [userType, setUserType] = useState<UserType>('PATIENT');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<Mode>('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [userType, setUserType] = useState<UserType>('PATIENT')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+    e.preventDefault()
+    setError('')
+    setLoading(true)
 
     try {
       if (mode === 'login') {
-        const result = await login(email, password);
+        const result = await login(email, password)
 
         // Check if password must be changed (for doctor-created accounts)
         if (result.passwordMustChange) {
-          router.push('/change-password');
-          return;
+          router.push('/change-password')
+          return
         }
       } else {
-        await register(email, password, userType, firstName, lastName);
+        await register(email, password, userType, firstName, lastName)
       }
 
       // Get user type from localStorage after login/register
-      const storedUserType = localStorage.getItem('user_type') as UserType;
-      router.push(getRedirectPath(storedUserType));
+      const storedUserType = localStorage.getItem('user_type') as UserType
+      router.push(getRedirectPath(storedUserType))
     } catch (err) {
-      setError(err instanceof Error ? err.message : common('error'));
+      setError(err instanceof Error ? err.message : common('error'))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/50 dark:from-background dark:via-background dark:to-muted/20 relative overflow-hidden p-4">
@@ -104,10 +107,10 @@ export default function LoginPage() {
                 size="sm"
                 onClick={() => setMode('login')}
                 className={cn(
-                  "w-full shadow-none",
+                  'w-full shadow-none',
                   mode === 'login'
-                    ? "bg-background dark:bg-background text-foreground hover:bg-background hover:text-foreground shadow-sm"
-                    : "hover:bg-transparent text-muted-foreground"
+                    ? 'bg-background dark:bg-background text-foreground hover:bg-background hover:text-foreground shadow-sm'
+                    : 'hover:bg-transparent text-muted-foreground'
                 )}
               >
                 {t('loginTab')}
@@ -117,10 +120,10 @@ export default function LoginPage() {
                 size="sm"
                 onClick={() => setMode('register')}
                 className={cn(
-                  "w-full shadow-none",
+                  'w-full shadow-none',
                   mode === 'register'
-                    ? "bg-background dark:bg-background text-foreground hover:bg-background hover:text-foreground shadow-sm"
-                    : "hover:bg-transparent text-muted-foreground"
+                    ? 'bg-background dark:bg-background text-foreground hover:bg-background hover:text-foreground shadow-sm'
+                    : 'hover:bg-transparent text-muted-foreground'
                 )}
               >
                 {t('registerTab')}
@@ -129,9 +132,11 @@ export default function LoginPage() {
 
             {/* Session Expired Message */}
             {sessionExpired && (
-              <div className="mb-6 p-3 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm rounded-md flex items-center font-medium border border-amber-500/20">
+              <div className="mb-6 p-3 bg-warning/10 text-warning text-sm rounded-md flex items-center font-medium border border-warning/20">
                 <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                {t('sessionExpired', { defaultValue: 'Your session has expired. Please log in again.' })}
+                {t('sessionExpired', {
+                  defaultValue: 'Your session has expired. Please log in again.',
+                })}
               </div>
             )}
 
@@ -149,12 +154,16 @@ export default function LoginPage() {
               {mode === 'register' && (
                 <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                    <label
+                      htmlFor="firstName"
+                      className="text-xs font-semibold uppercase tracking-wide text-foreground/70"
+                    >
                       {t('firstNameLabel')}
                     </label>
                     <div className="relative">
                       <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
+                        id="firstName"
                         type="text"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
@@ -165,29 +174,40 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                    <label
+                      htmlFor="lastName"
+                      className="text-xs font-semibold uppercase tracking-wide text-foreground/70"
+                    >
                       {t('lastNameLabel')}
                     </label>
-                    <Input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                      placeholder={t('lastNamePlaceholder')}
-                      className="bg-muted/50 dark:bg-muted border-border"
-                    />
+                    <div className="relative">
+                      <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="lastName"
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                        placeholder={t('lastNamePlaceholder')}
+                        className="pl-9 bg-muted/50 dark:bg-muted border-border"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Email */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                <label
+                  htmlFor="email"
+                  className="text-xs font-semibold uppercase tracking-wide text-foreground/70"
+                >
                   {t('emailLabel')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
+                    id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -200,20 +220,32 @@ export default function LoginPage() {
 
               {/* Password */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                <label
+                  htmlFor="password"
+                  className="text-xs font-semibold uppercase tracking-wide text-foreground/70"
+                >
                   {t('passwordLabel')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    type="password"
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    className="pl-9 bg-muted/50 dark:bg-muted border-border"
+                    className="pl-9 pr-10 bg-muted/50 dark:bg-muted border-border"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -228,10 +260,10 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => setUserType('PATIENT')}
                       className={cn(
-                        "flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all",
+                        'flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all',
                         userType === 'PATIENT'
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border bg-muted/30 dark:bg-muted/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-muted/30 dark:bg-muted/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                       )}
                     >
                       <User className="w-5 h-5 mb-2" />
@@ -241,10 +273,10 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => setUserType('DOCTOR')}
                       className={cn(
-                        "flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all",
+                        'flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all',
                         userType === 'DOCTOR'
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border bg-muted/30 dark:bg-muted/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-muted/30 dark:bg-muted/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                       )}
                     >
                       <Stethoscope className="w-5 h-5 mb-2" />
@@ -255,11 +287,7 @@ export default function LoginPage() {
               )}
 
               {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full mt-4"
-              >
+              <Button type="submit" disabled={loading} className="w-full mt-4">
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -284,5 +312,5 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
-  );
+  )
 }

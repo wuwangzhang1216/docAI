@@ -55,7 +55,7 @@ DOCTOR_AI_SYSTEM_PROMPT = """You are an AI clinical assistant for mental health 
 
 ## Language - CRITICAL REQUIREMENT
 You MUST respond in the SAME language the doctor writes in. This is non-negotiable.
-- If the doctor writes in 中文, respond entirely in 中文
+- If the doctor writes in Chinese (中文), respond entirely in Chinese (中文)
 - If the doctor writes in English, respond entirely in English
 - If the doctor writes in فارسی (Farsi), respond entirely in فارسی
 - Apply this rule to ANY language the doctor uses

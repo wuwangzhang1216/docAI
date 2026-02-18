@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useRef } from 'react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
-import { Loader2, Wrench, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { cn } from '@/lib/utils'
+import { Loader2, Wrench, CheckCircle2, AlertCircle } from 'lucide-react'
 
 // Tool name to display name mapping
 const TOOL_DISPLAY_NAMES: Record<string, string> = {
@@ -13,20 +13,20 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
   get_coping_strategies: 'Finding coping strategies',
   get_known_triggers: 'Checking triggers',
   get_recent_conversation_summary: 'Reviewing past conversations',
-};
+}
 
 interface ToolCall {
-  id: string;
-  name: string;
-  status: 'running' | 'completed';
-  resultPreview?: string;
+  id: string
+  name: string
+  status: 'running' | 'completed'
+  resultPreview?: string
 }
 
 interface StreamingMessageProps {
-  isStreaming: boolean;
-  content: string;
-  toolCalls: ToolCall[];
-  className?: string;
+  isStreaming: boolean
+  content: string
+  toolCalls: ToolCall[]
+  className?: string
 }
 
 export function StreamingMessage({
@@ -35,14 +35,14 @@ export function StreamingMessage({
   toolCalls,
   className,
 }: StreamingMessageProps) {
-  const contentRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll as content updates
   useEffect(() => {
     if (contentRef.current) {
-      contentRef.current.scrollTop = contentRef.current.scrollHeight;
+      contentRef.current.scrollTop = contentRef.current.scrollHeight
     }
-  }, [content]);
+  }, [content])
 
   return (
     <div className={cn('flex gap-3 animate-message-left', className)}>
@@ -73,9 +73,18 @@ export function StreamingMessage({
               <p className="whitespace-pre-wrap">{content}</p>
             ) : isStreaming && toolCalls.length === 0 ? (
               <div className="flex items-center space-x-1">
-                <div className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                <div className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                <div className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div
+                  className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce"
+                  style={{ animationDelay: '0s' }}
+                />
+                <div
+                  className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce"
+                  style={{ animationDelay: '0.1s' }}
+                />
+                <div
+                  className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce"
+                  style={{ animationDelay: '0.2s' }}
+                />
               </div>
             ) : null}
 
@@ -87,16 +96,16 @@ export function StreamingMessage({
         )}
       </div>
     </div>
-  );
+  )
 }
 
 interface ToolCallItemProps {
-  tool: ToolCall;
+  tool: ToolCall
 }
 
 function ToolCallItem({ tool }: ToolCallItemProps) {
-  const displayName = TOOL_DISPLAY_NAMES[tool.name] || tool.name;
-  const isRunning = tool.status === 'running';
+  const displayName = TOOL_DISPLAY_NAMES[tool.name] || tool.name
+  const isRunning = tool.status === 'running'
 
   return (
     <div
@@ -110,22 +119,18 @@ function ToolCallItem({ tool }: ToolCallItemProps) {
       {isRunning ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
       ) : (
-        <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+        <CheckCircle2 className="w-3.5 h-3.5 text-success" />
       )}
 
       <Wrench className="w-3 h-3 text-muted-foreground" />
 
-      <span className="text-muted-foreground">
-        {isRunning ? displayName : `${displayName}`}
-      </span>
+      <span className="text-muted-foreground">{isRunning ? displayName : `${displayName}`}</span>
 
       {!isRunning && tool.resultPreview && (
-        <span className="text-muted-foreground/70 truncate max-w-[200px]">
-          - Done
-        </span>
+        <span className="text-muted-foreground/70 truncate max-w-[200px]">- Done</span>
       )}
     </div>
-  );
+  )
 }
 
 // Thinking indicator component (like Claude.ai)
@@ -141,17 +146,11 @@ export function ThinkingIndicator({ className }: { className?: string }) {
         <span className="text-sm text-muted-foreground">Thinking...</span>
       </div>
     </div>
-  );
+  )
 }
 
 // Error message component
-export function ErrorMessage({
-  message,
-  className,
-}: {
-  message: string;
-  className?: string;
-}) {
+export function ErrorMessage({ message, className }: { message: string; className?: string }) {
   return (
     <div className={cn('flex gap-3 animate-message-left', className)}>
       <Avatar className="w-8 h-8 shrink-0">
@@ -164,5 +163,5 @@ export function ErrorMessage({
         {message}
       </div>
     </div>
-  );
+  )
 }

@@ -95,6 +95,38 @@
         "severe": "গুরুতর"
       }
     },
+    "dashboard": {
+      "greetingMorning": "শুভ সকাল",
+      "greetingAfternoon": "শুভ অপরাহ্ন",
+      "greetingEvening": "শুভ সন্ধ্যা",
+      "feelingQuestion": "আজ আপনি কেমন অনুভব করছেন?",
+      "talkToAI": "AI এর সাথে কথা বলুন",
+      "talkToAIDesc": "তাৎক্ষণিক মানসিক সহায়তা পান",
+      "healthCenter": "স্বাস্থ্য কেন্দ্র",
+      "healthCenterDesc": "চেক-ইন এবং মূল্যায়ন",
+      "appointments": "অ্যাপয়েন্টমেন্ট",
+      "appointmentsDesc": "আসন্ন সেশন দেখুন",
+      "quickMoodCheck": "দ্রুত মেজাজ পরীক্ষা",
+      "moodVeryLow": "খুব কম",
+      "moodLow": "কম",
+      "moodNeutral": "মাঝারি",
+      "moodGood": "ভালো",
+      "moodExcellent": "চমৎকার",
+      "moodRecorded": "মেজাজ রেকর্ড করা হয়েছে!",
+      "quoteOfDay": "আজকের উক্তি",
+      "quotes": [
+        { "text": "একমাত্র যাত্রা হলো নিজের ভিতরের যাত্রা।", "author": "Rainer Maria Rilke" },
+        { "text": "তুমি তোমার চিন্তা নও।", "author": "Eckhart Tolle" },
+        { "text": "নিজের প্রতি কোমল হও, তুমি তোমার সাধ্যমতো করছ।", "author": "Unknown" },
+        { "text": "প্রতিটি দিন একটি নতুন শুরু।", "author": "Unknown" },
+        { "text": "নিরাময় রৈখিক নয়।", "author": "Unknown" },
+        {
+          "text": "তোমাকে তোমার চিন্তা নিয়ন্ত্রণ করতে হবে না। তুমি শুধু তাদের তোমাকে নিয়ন্ত্রণ করা বন্ধ করো।",
+          "author": "Dan Millman"
+        },
+        { "text": "ঠিক না থাকলেও ঠিক আছে।", "author": "Unknown" }
+      ]
+    },
     "onboarding": {
       "skip": "এড়িয়ে যান",
       "back": "পিছনে",
@@ -592,7 +624,20 @@
         "reason": "অ্যাপয়েন্টমেন্টের কারণ",
         "reasonPlaceholder": "অ্যাপয়েন্টমেন্টের কারণ সংক্ষেপে বর্ণনা করুন..."
       },
-      "months": ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"]
+      "months": [
+        "জানুয়ারি",
+        "ফেব্রুয়ারি",
+        "মার্চ",
+        "এপ্রিল",
+        "মে",
+        "জুন",
+        "জুলাই",
+        "আগস্ট",
+        "সেপ্টেম্বর",
+        "অক্টোবর",
+        "নভেম্বর",
+        "ডিসেম্বর"
+      ]
     },
     "riskQueue": {
       "title": "ঝুঁকি ইভেন্ট কিউ",
@@ -658,5 +703,23 @@
     },
     "startFromPatientList": "আপনার রোগী তালিকা থেকে কথোপকথন শুরু করুন",
     "goToPatients": "রোগীদের কাছে যান"
+  },
+  "landing": {
+    "heroTitle1": "আপনার ব্যক্তিগত",
+    "heroTitle2": "AI মানসিক স্বাস্থ্য সঙ্গী",
+    "heroDescription": "Heart Guardian AI ২৪/৭ মানসিক সহায়তা, মেজাজ ট্র্যাকিং এবং পেশাদার সংযোগ প্রদান করে। আপনার মানসিক সুস্থতার জন্য একটি নিরাপদ জায়গা, যখনই আপনার প্রয়োজন।",
+    "getStarted": "শুরু করুন",
+    "learnMore": "আরও জানুন",
+    "featureChat": "২৪/৭ AI চ্যাট",
+    "featureChatDesc": "সর্বদা শোনার এবং সহায়তা করার জন্য প্রস্তুত।",
+    "featureSecurity": "ব্যক্তিগত ও সুরক্ষিত",
+    "featureSecurityDesc": "আপনার ডেটা এনক্রিপ্টেড এবং সুরক্ষিত।",
+    "featureMood": "মেজাজ ট্র্যাকিং",
+    "featureMoodDesc": "সময়ের সাথে আপনার আবেগের যাত্রা পর্যবেক্ষণ করুন।",
+    "brandName": "Heart Guardian",
+    "headerFeatures": "বৈশিষ্ট্য",
+    "headerAbout": "সম্পর্কে",
+    "headerSignIn": "সাইন ইন",
+    "footerCopyright": "© 2024 Heart Guardian AI। সর্বস্বত্ব সংরক্ষিত।"
   }
 }

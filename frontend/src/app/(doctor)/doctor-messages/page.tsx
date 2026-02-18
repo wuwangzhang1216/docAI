@@ -1,24 +1,24 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
-import { ArrowLeftIcon, Loader2Icon, UsersIcon } from '@/components/ui/icons';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ThreadList, MessageBubble, MessageInput } from '@/components/messaging';
-import { useMessagingStore, type MessageType } from '@/lib/messaging';
-import { useWebSocket, type WSMessage } from '@/hooks/useWebSocket';
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
+import { ArrowLeftIcon, Loader2Icon, UsersIcon } from '@/components/ui/icons'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { ThreadList, MessageBubble, MessageInput } from '@/components/messaging'
+import { useMessagingStore, type MessageType } from '@/lib/messaging'
+import { useWebSocket, type WSMessage } from '@/hooks/useWebSocket'
 
 export default function DoctorMessagesPage() {
-  const t = useTranslations('messaging');
-  const searchParams = useSearchParams();
-  const patientIdFromUrl = searchParams.get('patient');
+  const t = useTranslations('messaging')
+  const searchParams = useSearchParams()
+  const patientIdFromUrl = searchParams.get('patient')
 
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
-  const [hasProcessedPatientId, setHasProcessedPatientId] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null)
+  const [hasProcessedPatientId, setHasProcessedPatientId] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const {
     threads,
@@ -36,89 +36,93 @@ export default function DoctorMessagesPage() {
     handleNewMessage,
     handleMessageRead,
     clearCurrentThread,
-  } = useMessagingStore();
+  } = useMessagingStore()
 
   // WebSocket connection
-  const handleWSMessage = useCallback((message: WSMessage) => {
-    if (message.type === 'new_message' && message.payload) {
-      handleNewMessage(message.payload as unknown as Parameters<typeof handleNewMessage>[0]);
-    } else if (message.type === 'message_read' && message.payload) {
-      const payload = message.payload as unknown as { thread_id: string; reader_type: 'DOCTOR' | 'PATIENT' };
-      handleMessageRead(payload.thread_id, payload.reader_type);
-    }
-  }, [handleNewMessage, handleMessageRead]);
+  const handleWSMessage = useCallback(
+    (message: WSMessage) => {
+      if (message.type === 'new_message' && message.payload) {
+        handleNewMessage(message.payload as unknown as Parameters<typeof handleNewMessage>[0])
+      } else if (message.type === 'message_read' && message.payload) {
+        const payload = message.payload as unknown as {
+          thread_id: string
+          reader_type: 'DOCTOR' | 'PATIENT'
+        }
+        handleMessageRead(payload.thread_id, payload.reader_type)
+      }
+    },
+    [handleNewMessage, handleMessageRead]
+  )
 
   const { subscribeToThread, unsubscribeFromThread } = useWebSocket({
     onMessage: handleWSMessage,
     autoConnect: true,
-  });
+  })
 
   // Load threads on mount
   useEffect(() => {
-    loadThreads();
-  }, [loadThreads]);
+    loadThreads()
+  }, [loadThreads])
 
   // Handle patient ID from URL (when navigating from patient list)
   useEffect(() => {
     const initFromPatientId = async () => {
       // Only process once and only after threads have finished loading
       if (!patientIdFromUrl || hasProcessedPatientId || isLoadingThreads) {
-        return;
+        return
       }
 
-      setHasProcessedPatientId(true);
+      setHasProcessedPatientId(true)
 
       // Check if thread exists for this patient
-      const existingThread = threads.find(
-        (t) => t.other_party_id === patientIdFromUrl
-      );
+      const existingThread = threads.find((t) => t.other_party_id === patientIdFromUrl)
 
       if (existingThread) {
-        setSelectedThreadId(existingThread.id);
+        setSelectedThreadId(existingThread.id)
       } else {
         // Start a new thread with this patient
-        const newThread = await startThreadWithPatient(patientIdFromUrl);
+        const newThread = await startThreadWithPatient(patientIdFromUrl)
         if (newThread) {
-          setSelectedThreadId(newThread.id);
+          setSelectedThreadId(newThread.id)
         }
       }
-    };
+    }
 
-    initFromPatientId();
-  }, [patientIdFromUrl, threads, isLoadingThreads, hasProcessedPatientId, startThreadWithPatient]);
+    initFromPatientId()
+  }, [patientIdFromUrl, threads, isLoadingThreads, hasProcessedPatientId, startThreadWithPatient])
 
   // Load thread when selected
   useEffect(() => {
     if (selectedThreadId) {
-      loadThread(selectedThreadId);
-      subscribeToThread(selectedThreadId);
-      markAsRead(selectedThreadId);
+      loadThread(selectedThreadId)
+      subscribeToThread(selectedThreadId)
+      markAsRead(selectedThreadId)
     }
 
     return () => {
       if (selectedThreadId) {
-        unsubscribeFromThread(selectedThreadId);
+        unsubscribeFromThread(selectedThreadId)
       }
-    };
-  }, [selectedThreadId, loadThread, subscribeToThread, unsubscribeFromThread, markAsRead]);
+    }
+  }, [selectedThreadId, loadThread, subscribeToThread, unsubscribeFromThread, markAsRead])
 
   // Scroll to bottom when messages change
   useEffect(() => {
     if (currentThread?.messages && currentThread.messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [currentThread?.messages]);
+  }, [currentThread?.messages])
 
   // Handle thread selection
   const handleSelectThread = (threadId: string) => {
-    setSelectedThreadId(threadId);
-  };
+    setSelectedThreadId(threadId)
+  }
 
   // Handle back button
   const handleBack = () => {
-    setSelectedThreadId(null);
-    clearCurrentThread();
-  };
+    setSelectedThreadId(null)
+    clearCurrentThread()
+  }
 
   // Handle send message
   const handleSendMessage = async (
@@ -126,23 +130,23 @@ export default function DoctorMessagesPage() {
     messageType: MessageType,
     attachmentIds?: string[]
   ) => {
-    if (!selectedThreadId) return;
-    await sendMessage(selectedThreadId, content, messageType, attachmentIds);
-  };
+    if (!selectedThreadId) return
+    await sendMessage(selectedThreadId, content, messageType, attachmentIds)
+  }
 
   // Handle load more messages
   const handleLoadMore = () => {
     if (selectedThreadId && currentThread?.has_more) {
-      loadThread(selectedThreadId, true);
+      loadThread(selectedThreadId, true)
     }
-  };
+  }
 
   // Handle load more threads
   const handleLoadMoreThreads = useCallback(() => {
     if (threadsHasMore) {
-      loadThreads({ append: true });
+      loadThreads({ append: true })
     }
-  }, [threadsHasMore, loadThreads]);
+  }, [threadsHasMore, loadThreads])
 
   // Thread list view
   if (!selectedThreadId) {
@@ -169,7 +173,9 @@ export default function DoctorMessagesPage() {
           emptyStateAction={
             <div className="mt-4">
               <p className="text-sm text-muted-foreground mb-3">
-                {t('startFromPatientList', { defaultValue: 'Start a conversation from your patient list' })}
+                {t('startFromPatientList', {
+                  defaultValue: 'Start a conversation from your patient list',
+                })}
               </p>
               <Link
                 href="/patients"
@@ -182,36 +188,29 @@ export default function DoctorMessagesPage() {
           }
         />
       </div>
-    );
+    )
   }
 
   // Get current thread info
-  const threadInfo = currentThread || threads.find((t) => t.id === selectedThreadId);
+  const threadInfo = currentThread || threads.find((t) => t.id === selectedThreadId)
 
   // Conversation view
   return (
     <div className="flex flex-col h-full min-h-[600px] bg-background">
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleBack}
-          className="shrink-0"
-        >
+        <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0">
           <ArrowLeftIcon className="w-5 h-5" />
         </Button>
 
         <Avatar className="w-10 h-10 shrink-0">
-          <AvatarFallback className="bg-emerald-100 text-emerald-600">
+          <AvatarFallback className="bg-success/10 text-success">
             {threadInfo?.other_party_name?.charAt(0).toUpperCase() || 'P'}
           </AvatarFallback>
         </Avatar>
 
         <div className="min-w-0">
-          <h3 className="font-semibold truncate">
-            {threadInfo?.other_party_name || t('loading')}
-          </h3>
+          <h3 className="font-semibold truncate">{threadInfo?.other_party_name || t('loading')}</h3>
           <p className="text-xs text-muted-foreground">{t('patient')}</p>
         </div>
       </div>
@@ -221,12 +220,7 @@ export default function DoctorMessagesPage() {
         {/* Load more button */}
         {currentThread?.has_more && (
           <div className="text-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLoadMore}
-              disabled={isLoadingMessages}
-            >
+            <Button variant="ghost" size="sm" onClick={handleLoadMore} disabled={isLoadingMessages}>
               {isLoadingMessages ? (
                 <Loader2Icon className="w-4 h-4 animate-spin" />
               ) : (
@@ -273,17 +267,12 @@ export default function DoctorMessagesPage() {
 
       {/* Input */}
       {currentThread?.can_send_message ? (
-        <MessageInput
-          onSend={handleSendMessage}
-          disabled={!currentThread?.can_send_message}
-        />
+        <MessageInput onSend={handleSendMessage} disabled={!currentThread?.can_send_message} />
       ) : (
         <div className="p-4 border-t border-border bg-muted/50 text-center">
-          <p className="text-sm text-muted-foreground">
-            {t('connectionRequired')}
-          </p>
+          <p className="text-sm text-muted-foreground">{t('connectionRequired')}</p>
         </div>
       )}
     </div>
-  );
+  )
 }

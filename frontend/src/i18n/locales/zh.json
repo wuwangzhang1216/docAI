@@ -95,6 +95,35 @@
         "severe": "重度"
       }
     },
+    "dashboard": {
+      "greetingMorning": "早上好",
+      "greetingAfternoon": "下午好",
+      "greetingEvening": "晚上好",
+      "feelingQuestion": "今天感觉怎么样？",
+      "talkToAI": "与AI对话",
+      "talkToAIDesc": "获取即时情绪支持",
+      "healthCenter": "健康中心",
+      "healthCenterDesc": "打卡与评估",
+      "appointments": "预约",
+      "appointmentsDesc": "查看即将到来的预约",
+      "quickMoodCheck": "快速心情检测",
+      "moodVeryLow": "很低落",
+      "moodLow": "低落",
+      "moodNeutral": "一般",
+      "moodGood": "不错",
+      "moodExcellent": "很好",
+      "moodRecorded": "心情已记录！",
+      "quoteOfDay": "每日一句",
+      "quotes": [
+        { "text": "唯一的旅程是内心的旅程。", "author": "Rainer Maria Rilke" },
+        { "text": "你不是你的思想。", "author": "Eckhart Tolle" },
+        { "text": "对自己温柔一点，你已经在尽力了。", "author": "Unknown" },
+        { "text": "每一天都是新的开始。", "author": "Unknown" },
+        { "text": "康复不是线性的。", "author": "Unknown" },
+        { "text": "你不必控制你的思想，只需停止让它们控制你。", "author": "Dan Millman" },
+        { "text": "不好也没关系。", "author": "Unknown" }
+      ]
+    },
     "onboarding": {
       "skip": "跳过",
       "back": "返回",
@@ -592,7 +621,20 @@
         "reason": "预约原因",
         "reasonPlaceholder": "简述预约原因..."
       },
-      "months": ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"]
+      "months": [
+        "一月",
+        "二月",
+        "三月",
+        "四月",
+        "五月",
+        "六月",
+        "七月",
+        "八月",
+        "九月",
+        "十月",
+        "十一月",
+        "十二月"
+      ]
     },
     "riskQueue": {
       "title": "风险事件队列",
@@ -658,5 +700,23 @@
     },
     "startFromPatientList": "从患者列表开始对话",
     "goToPatients": "前往患者列表"
+  },
+  "landing": {
+    "heroTitle1": "您的专属",
+    "heroTitle2": "AI心理健康伙伴",
+    "heroDescription": "心守AI提供全天候情绪支持、心情追踪和专业连接。一个关爱您心理健康的安全空间，随时为您服务。",
+    "getStarted": "立即开始",
+    "learnMore": "了解更多",
+    "featureChat": "24/7 AI对话",
+    "featureChatDesc": "随时倾听并支持您。",
+    "featureSecurity": "隐私与安全",
+    "featureSecurityDesc": "您的数据经过加密和保护。",
+    "featureMood": "心情追踪",
+    "featureMoodDesc": "随时监测您的情绪变化。",
+    "brandName": "Heart Guardian",
+    "headerFeatures": "功能",
+    "headerAbout": "关于",
+    "headerSignIn": "登录",
+    "footerCopyright": "© 2024 Heart Guardian AI. 保留所有权利。"
   }
 }

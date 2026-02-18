@@ -1,53 +1,61 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { api } from '@/lib/api';
-import { ArrowLeftIcon, Loader2Icon, UserPlusIcon, CopyIcon, CheckIcon, EyeIcon, EyeOffIcon } from '@/components/ui/icons';
-import { cn } from '@/lib/utils';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { api } from '@/lib/api'
+import {
+  ArrowLeftIcon,
+  Loader2Icon,
+  UserPlusIcon,
+  CopyIcon,
+  CheckIcon,
+  EyeIcon,
+  EyeOffIcon,
+} from '@/components/ui/icons'
+import { cn } from '@/lib/utils'
 
 interface FormData {
-  email: string;
-  first_name: string;
-  last_name: string;
-  date_of_birth: string;
-  gender: string;
-  phone: string;
-  address: string;
-  city: string;
-  country: string;
-  preferred_language: string;
-  emergency_contact: string;
-  emergency_phone: string;
-  emergency_contact_relationship: string;
-  current_medications: string;
-  medical_conditions: string;
-  allergies: string;
-  therapy_history: string;
-  mental_health_goals: string;
-  support_system: string;
-  triggers_notes: string;
-  coping_strategies: string;
+  email: string
+  first_name: string
+  last_name: string
+  date_of_birth: string
+  gender: string
+  phone: string
+  address: string
+  city: string
+  country: string
+  preferred_language: string
+  emergency_contact: string
+  emergency_phone: string
+  emergency_contact_relationship: string
+  current_medications: string
+  medical_conditions: string
+  allergies: string
+  therapy_history: string
+  mental_health_goals: string
+  support_system: string
+  triggers_notes: string
+  coping_strategies: string
 }
 
 interface CreatedPatient {
-  patient_id: string;
-  user_id: string;
-  email: string;
-  full_name: string;
-  default_password: string;
-  message: string;
+  patient_id: string
+  user_id: string
+  email: string
+  full_name: string
+  default_password: string
+  message: string
 }
 
 export default function CreatePatientPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [createdPatient, setCreatedPatient] = useState<CreatedPatient | null>(null);
-  const [copiedPassword, setCopiedPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [activeSection, setActiveSection] = useState<'basic' | 'medical' | 'mental'>('basic');
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [createdPatient, setCreatedPatient] = useState<CreatedPatient | null>(null)
+  const [copiedPassword, setCopiedPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [activeSection, setActiveSection] = useState<'basic' | 'medical' | 'mental'>('basic')
 
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -71,32 +79,32 @@ export default function CreatePatientPage() {
     support_system: '',
     triggers_notes: '',
     coping_strategies: '',
-  });
+  })
 
   const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setError('');
-  };
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    setError('')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
     // Validation
     if (!formData.email.trim()) {
-      setError('Email is required');
-      return;
+      setError('Email is required')
+      return
     }
     if (!formData.first_name.trim()) {
-      setError('First name is required');
-      return;
+      setError('First name is required')
+      return
     }
     if (!formData.last_name.trim()) {
-      setError('Last name is required');
-      return;
+      setError('Last name is required')
+      return
     }
 
-    setLoading(true);
-    setError('');
+    setLoading(true)
+    setError('')
 
     try {
       // Build request data, only including non-empty fields
@@ -104,34 +112,36 @@ export default function CreatePatientPage() {
         email: formData.email.trim(),
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
-      };
+      }
 
       // Add optional fields if they have values
       Object.entries(formData).forEach(([key, value]) => {
         if (value && value.trim() && !['email', 'first_name', 'last_name'].includes(key)) {
-          requestData[key] = value.trim();
+          requestData[key] = value.trim()
         }
-      });
+      })
 
-      const result = await api.createPatient(requestData as unknown as Parameters<typeof api.createPatient>[0]);
-      setCreatedPatient(result);
+      const result = await api.createPatient(
+        requestData as unknown as Parameters<typeof api.createPatient>[0]
+      )
+      setCreatedPatient(result)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create patient');
+      setError(err instanceof Error ? err.message : 'Failed to create patient')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleCopyPassword = async () => {
     if (createdPatient) {
-      await navigator.clipboard.writeText(createdPatient.default_password);
-      setCopiedPassword(true);
-      setTimeout(() => setCopiedPassword(false), 2000);
+      await navigator.clipboard.writeText(createdPatient.default_password)
+      setCopiedPassword(true)
+      setTimeout(() => setCopiedPassword(false), 2000)
     }
-  };
+  }
 
   const handleCreateAnother = () => {
-    setCreatedPatient(null);
+    setCreatedPatient(null)
     setFormData({
       email: '',
       first_name: '',
@@ -154,8 +164,8 @@ export default function CreatePatientPage() {
       support_system: '',
       triggers_notes: '',
       coping_strategies: '',
-    });
-  };
+    })
+  }
 
   // Success state - show created patient info
   if (createdPatient) {
@@ -163,8 +173,8 @@ export default function CreatePatientPage() {
       <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
           <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckIcon className="w-8 h-8 text-emerald-500" />
+            <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckIcon className="w-8 h-8 text-success" />
             </div>
             <h2 className="text-2xl font-bold text-foreground">Patient Created Successfully</h2>
             <p className="text-muted-foreground mt-2">
@@ -185,10 +195,12 @@ export default function CreatePatientPage() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Default Password</span>
                 <div className="flex items-center gap-2">
-                  <code className={cn(
-                    "px-3 py-1 bg-background rounded border border-border font-mono text-sm",
-                    !showPassword && "tracking-widest"
-                  )}>
+                  <code
+                    className={cn(
+                      'px-3 py-1 bg-background rounded border border-border font-mono text-sm',
+                      !showPassword && 'tracking-widest'
+                    )}
+                  >
                     {showPassword ? createdPatient.default_password : '••••••••••'}
                   </code>
                   <button
@@ -208,15 +220,16 @@ export default function CreatePatientPage() {
                     title="Copy password"
                   >
                     {copiedPassword ? (
-                      <CheckIcon className="w-4 h-4 text-emerald-500" />
+                      <CheckIcon className="w-4 h-4 text-success" />
                     ) : (
                       <CopyIcon className="w-4 h-4 text-muted-foreground" />
                     )}
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                Please share this password with the patient. They will be required to change it on first login.
+              <p className="text-xs text-warning mt-2">
+                Please share this password with the patient. They will be required to change it on
+                first login.
               </p>
             </div>
           </div>
@@ -237,17 +250,14 @@ export default function CreatePatientPage() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Link
-          href="/patients"
-          className="p-2 hover:bg-muted rounded-lg transition-colors"
-        >
+        <Link href="/patients" className="p-2 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeftIcon className="w-5 h-5 text-muted-foreground" />
         </Link>
         <div>
@@ -263,10 +273,10 @@ export default function CreatePatientPage() {
         <button
           onClick={() => setActiveSection('basic')}
           className={cn(
-            "flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+            'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
             activeSection === 'basic'
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted"
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-muted'
           )}
         >
           Basic Information
@@ -274,10 +284,10 @@ export default function CreatePatientPage() {
         <button
           onClick={() => setActiveSection('medical')}
           className={cn(
-            "flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+            'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
             activeSection === 'medical'
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted"
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-muted'
           )}
         >
           Medical History
@@ -285,10 +295,10 @@ export default function CreatePatientPage() {
         <button
           onClick={() => setActiveSection('mental')}
           className={cn(
-            "flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+            'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
             activeSection === 'mental'
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted"
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-muted'
           )}
         >
           Mental Health
@@ -359,9 +369,7 @@ export default function CreatePatientPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">
-                    Gender
-                  </label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Gender</label>
                   <select
                     value={formData.gender}
                     onChange={(e) => handleInputChange('gender', e.target.value)}
@@ -376,9 +384,7 @@ export default function CreatePatientPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">
-                    Phone
-                  </label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Phone</label>
                   <input
                     type="tel"
                     value={formData.phone}
@@ -408,9 +414,7 @@ export default function CreatePatientPage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-foreground mb-1">
-                    Address
-                  </label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Address</label>
                   <input
                     type="text"
                     value={formData.address}
@@ -421,9 +425,7 @@ export default function CreatePatientPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">
-                    City
-                  </label>
+                  <label className="block text-sm font-medium text-foreground mb-1">City</label>
                   <input
                     type="text"
                     value={formData.city}
@@ -434,9 +436,7 @@ export default function CreatePatientPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">
-                    Country
-                  </label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Country</label>
                   <input
                     type="text"
                     value={formData.country}
@@ -482,7 +482,9 @@ export default function CreatePatientPage() {
                     <input
                       type="text"
                       value={formData.emergency_contact_relationship}
-                      onChange={(e) => handleInputChange('emergency_contact_relationship', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('emergency_contact_relationship', e.target.value)
+                      }
                       placeholder="e.g., Spouse, Parent"
                       className="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     />
@@ -522,9 +524,7 @@ export default function CreatePatientPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Allergies
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-1">Allergies</label>
                 <textarea
                   value={formData.allergies}
                   onChange={(e) => handleInputChange('allergies', e.target.value)}
@@ -642,5 +642,5 @@ export default function CreatePatientPage() {
         </div>
       </form>
     </div>
-  );
+  )
 }

@@ -95,6 +95,38 @@
         "severe": "Grav"
       }
     },
+    "dashboard": {
+      "greetingMorning": "Bonjou",
+      "greetingAfternoon": "Bon Apremidi",
+      "greetingEvening": "Bonswa",
+      "feelingQuestion": "Kijan ou santi ou jodi a?",
+      "talkToAI": "Pale ak AI",
+      "talkToAIDesc": "Jwenn sipò emosyonèl imedyatman",
+      "healthCenter": "Sant Sante",
+      "healthCenterDesc": "Antre ak evalyasyon",
+      "appointments": "Randevou",
+      "appointmentsDesc": "Gade sesyon k ap vini",
+      "quickMoodCheck": "Verifikasyon Imè Rapid",
+      "moodVeryLow": "Trè Ba",
+      "moodLow": "Ba",
+      "moodNeutral": "Nòmal",
+      "moodGood": "Bon",
+      "moodExcellent": "Ekselan",
+      "moodRecorded": "Imè anrejistre!",
+      "quoteOfDay": "Sitasyon Jou a",
+      "quotes": [
+        { "text": "Sèl vwayaj la se sa ki anndan ou.", "author": "Rainer Maria Rilke" },
+        { "text": "Ou se pa panse ou yo.", "author": "Eckhart Tolle" },
+        { "text": "Aji dousman ak tèt ou, ou ap fè sa ou kapab.", "author": "Enkoni" },
+        { "text": "Chak jou se yon nouvo kòmansman.", "author": "Enkoni" },
+        { "text": "Gerizon pa lineè.", "author": "Enkoni" },
+        {
+          "text": "Ou pa oblije kontwole panse ou yo. Ou jis bezwen sispann kite yo kontwole ou.",
+          "author": "Dan Millman"
+        },
+        { "text": "Li nòmal pou ou pa nòmal.", "author": "Enkoni" }
+      ]
+    },
     "onboarding": {
       "skip": "Sote",
       "back": "Retounen",
@@ -592,7 +624,20 @@
         "reason": "Rezon Randevou",
         "reasonPlaceholder": "Dekri byen kout rezon pou randevou a..."
       },
-      "months": ["Janvye", "Fevriye", "Mas", "Avril", "Me", "Jen", "Jiyè", "Out", "Septanm", "Oktòb", "Novanm", "Desanm"]
+      "months": [
+        "Janvye",
+        "Fevriye",
+        "Mas",
+        "Avril",
+        "Me",
+        "Jen",
+        "Jiyè",
+        "Out",
+        "Septanm",
+        "Oktòb",
+        "Novanm",
+        "Desanm"
+      ]
     },
     "riskQueue": {
       "title": "Fil Evènman Risk",
@@ -658,5 +703,23 @@
     },
     "startFromPatientList": "Kòmanse yon konvèsasyon nan lis pasyan ou",
     "goToPatients": "Ale nan pasyan"
+  },
+  "landing": {
+    "heroTitle1": "Konpayon Pèsonèl Ou",
+    "heroTitle2": "AI pou Sante Mantal",
+    "heroDescription": "Heart Guardian AI bay sipò emosyonèl 24/7, swiv imè, ak koneksyon pwofesyonèl. Yon espas sekirite pou byennèt mantal ou, disponib chak fwa ou bezwen li.",
+    "getStarted": "Kòmanse",
+    "learnMore": "Aprann plis",
+    "featureChat": "Chat AI 24/7",
+    "featureChatDesc": "Toujou la pou koute ou ak sipòte ou.",
+    "featureSecurity": "Prive ak Sekirize",
+    "featureSecurityDesc": "Done ou yo ankripte ak pwoteje.",
+    "featureMood": "Swiv Imè",
+    "featureMoodDesc": "Sivèye vwayaj emosyonèl ou ak tan.",
+    "brandName": "Heart Guardian",
+    "headerFeatures": "Fonksyonalite",
+    "headerAbout": "Apwopo",
+    "headerSignIn": "Konekte",
+    "footerCopyright": "© 2024 Heart Guardian AI. Tout dwa rezève."
   }
 }

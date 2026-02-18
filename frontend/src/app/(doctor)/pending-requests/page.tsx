@@ -1,140 +1,146 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import { useI18n } from '@/lib/i18n';
-import { api, type ConnectionRequestResponse, type ConnectionRequestParams } from '@/lib/api';
-import { ArrowLeftIcon, ClockIcon, XMarkIcon, CheckIcon, Loader2Icon, MailIcon } from '@/components/ui/icons';
-import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@/components/ui/dialog';
-import { SearchInput } from '@/components/ui/search-input';
-import { Pagination, PaginationInfo } from '@/components/ui/pagination';
-import { cn } from '@/lib/utils';
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { useI18n } from '@/lib/i18n'
+import { api, type ConnectionRequestResponse, type ConnectionRequestParams } from '@/lib/api'
+import {
+  ArrowLeftIcon,
+  ClockIcon,
+  XMarkIcon,
+  CheckIcon,
+  Loader2Icon,
+  MailIcon,
+} from '@/components/ui/icons'
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@/components/ui/dialog'
+import { SearchInput } from '@/components/ui/search-input'
+import { Pagination, PaginationInfo } from '@/components/ui/pagination'
+import { cn } from '@/lib/utils'
 
-const PAGE_SIZE = 20;
-type RequestStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
+const PAGE_SIZE = 20
+type RequestStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED'
 
 export default function PendingRequestsPage() {
-  const [requests, setRequests] = useState<ConnectionRequestResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedRequest, setSelectedRequest] = useState<ConnectionRequestResponse | null>(null);
-  const [cancelling, setCancelling] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | RequestStatus>('all');
+  const [requests, setRequests] = useState<ConnectionRequestResponse[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedRequest, setSelectedRequest] = useState<ConnectionRequestResponse | null>(null)
+  const [cancelling, setCancelling] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<'all' | RequestStatus>('all')
 
   // Pagination & search state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [searchQuery, setSearchQuery] = useState('')
 
-  const t = useTranslations('doctor.pendingRequests');
-  const common = useTranslations('common');
-  const { locale } = useI18n();
+  const t = useTranslations('doctor.pendingRequests')
+  const common = useTranslations('common')
+  const { locale } = useI18n()
 
   const fetchRequests = useCallback(async () => {
-    setLoading(true);
+    setLoading(true)
     try {
       const params: ConnectionRequestParams = {
         limit: PAGE_SIZE,
         offset: (currentPage - 1) * PAGE_SIZE,
-      };
-      if (searchQuery) params.search = searchQuery;
-      if (statusFilter !== 'all') params.status = statusFilter;
+      }
+      if (searchQuery) params.search = searchQuery
+      if (statusFilter !== 'all') params.status = statusFilter
 
-      const data = await api.getConnectionRequests(params);
-      setRequests(data.items);
-      setTotalItems(data.total);
+      const data = await api.getConnectionRequests(params)
+      setRequests(data.items)
+      setTotalItems(data.total)
     } catch (error) {
-      console.error('Error fetching requests:', error);
+      console.error('Error fetching requests:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [currentPage, searchQuery, statusFilter]);
+  }, [currentPage, searchQuery, statusFilter])
 
   useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
+    fetchRequests()
+  }, [fetchRequests])
 
   // Reset to page 1 when search or filter changes
   const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
-  };
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
 
   const handleStatusFilter = (status: 'all' | RequestStatus) => {
-    setStatusFilter(status);
-    setCurrentPage(1);
-  };
+    setStatusFilter(status)
+    setCurrentPage(1)
+  }
 
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE)
 
   const handleCancelRequest = async () => {
-    if (!selectedRequest) return;
+    if (!selectedRequest) return
 
-    setCancelling(true);
+    setCancelling(true)
     try {
-      await api.cancelConnectionRequest(selectedRequest.id);
+      await api.cancelConnectionRequest(selectedRequest.id)
       // Update request status in place
       setRequests((prev) =>
-        prev.map((r) =>
-          r.id === selectedRequest.id ? { ...r, status: 'CANCELLED' as const } : r
-        )
-      );
-      setSelectedRequest(null);
+        prev.map((r) => (r.id === selectedRequest.id ? { ...r, status: 'CANCELLED' as const } : r))
+      )
+      setSelectedRequest(null)
     } catch (error) {
-      console.error('Error cancelling request:', error);
-      alert(common('error'));
+      console.error('Error cancelling request:', error)
+      alert(common('error'))
     } finally {
-      setCancelling(false);
+      setCancelling(false)
     }
-  };
+  }
 
   // Initial loading state
-  const isInitialLoading = loading && requests.length === 0 && !searchQuery && statusFilter === 'all';
+  const isInitialLoading =
+    loading && requests.length === 0 && !searchQuery && statusFilter === 'all'
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const date = new Date(dateStr)
     return date.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    });
-  };
+    })
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-warning/10 text-warning border border-warning/20">
             <ClockIcon className="w-3 h-3 mr-1" />
             {t('status.pending')}
           </span>
-        );
+        )
       case 'ACCEPTED':
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-success/10 text-success border border-success/20">
             <CheckIcon className="w-3 h-3 mr-1" />
             {t('status.accepted')}
           </span>
-        );
+        )
       case 'REJECTED':
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
             <XMarkIcon className="w-3 h-3 mr-1" />
             {t('status.rejected')}
           </span>
-        );
+        )
       case 'CANCELLED':
         return (
           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
             {t('status.cancelled')}
           </span>
-        );
+        )
       default:
-        return null;
+        return null
     }
-  };
+  }
 
   if (isInitialLoading) {
     return (
@@ -142,7 +148,7 @@ export default function PendingRequestsPage() {
         <Loader2Icon className="w-8 h-8 text-primary animate-spin mb-3" />
         <p className="text-muted-foreground text-sm">{common('loading')}</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -150,10 +156,7 @@ export default function PendingRequestsPage() {
       {/* Header */}
       <div className="flex justify-between items-center bg-card p-4 rounded-xl border border-border shadow-sm">
         <div className="flex items-center space-x-4">
-          <Link
-            href="/patients"
-            className="p-2 hover:bg-muted rounded-lg transition-colors"
-          >
+          <Link href="/patients" className="p-2 hover:bg-muted rounded-lg transition-colors">
             <ArrowLeftIcon className="w-5 h-5 text-muted-foreground" />
           </Link>
           <div>
@@ -182,10 +185,10 @@ export default function PendingRequestsPage() {
                 key={status}
                 onClick={() => handleStatusFilter(status)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
                   statusFilter === status
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
                 {status === 'all' ? common('all') : t(`status.${status.toLowerCase()}`)}
@@ -218,9 +221,9 @@ export default function PendingRequestsPage() {
             {(searchQuery || statusFilter !== 'all') && (
               <button
                 onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('all');
-                  setCurrentPage(1);
+                  setSearchQuery('')
+                  setStatusFilter('all')
+                  setCurrentPage(1)
                 }}
                 className="mt-2 text-sm text-primary hover:underline"
               >
@@ -259,15 +262,15 @@ export default function PendingRequestsPage() {
                           <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold mr-3">
                             {request.patient_name[0]}
                           </div>
-                          <span className="font-semibold text-foreground">{request.patient_name}</span>
+                          <span className="font-semibold text-foreground">
+                            {request.patient_name}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground text-sm">
                         {request.patient_email}
                       </td>
-                      <td className="text-center px-6 py-4">
-                        {getStatusBadge(request.status)}
-                      </td>
+                      <td className="text-center px-6 py-4">{getStatusBadge(request.status)}</td>
                       <td className="px-6 py-4 text-muted-foreground text-sm">
                         {formatDate(request.created_at)}
                       </td>
@@ -275,7 +278,7 @@ export default function PendingRequestsPage() {
                         {request.status === 'PENDING' && (
                           <button
                             onClick={() => setSelectedRequest(request)}
-                            className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-medium text-sm"
+                            className="text-destructive hover:text-destructive/80 font-medium text-sm"
                           >
                             {t('cancel')}
                           </button>
@@ -314,10 +317,7 @@ export default function PendingRequestsPage() {
       </div>
 
       {/* Cancel Confirmation Modal */}
-      <Dialog
-        open={!!selectedRequest}
-        onClose={() => setSelectedRequest(null)}
-      >
+      <Dialog open={!!selectedRequest} onClose={() => setSelectedRequest(null)}>
         <DialogBackdrop />
         <DialogPanel>
           <DialogTitle>{t('cancelModal.title')}</DialogTitle>
@@ -364,5 +364,5 @@ export default function PendingRequestsPage() {
         </DialogPanel>
       </Dialog>
     </div>
-  );
+  )
 }

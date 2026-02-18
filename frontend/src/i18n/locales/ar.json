@@ -95,6 +95,38 @@
         "severe": "شديد"
       }
     },
+    "dashboard": {
+      "greetingMorning": "صباح الخير",
+      "greetingAfternoon": "مساء الخير",
+      "greetingEvening": "مساء الخير",
+      "feelingQuestion": "كيف تشعر اليوم؟",
+      "talkToAI": "تحدث مع الذكاء الاصطناعي",
+      "talkToAIDesc": "احصل على دعم عاطفي فوري",
+      "healthCenter": "مركز الصحة",
+      "healthCenterDesc": "التسجيلات والتقييمات",
+      "appointments": "المواعيد",
+      "appointmentsDesc": "عرض الجلسات القادمة",
+      "quickMoodCheck": "فحص المزاج السريع",
+      "moodVeryLow": "منخفض جداً",
+      "moodLow": "منخفض",
+      "moodNeutral": "محايد",
+      "moodGood": "جيد",
+      "moodExcellent": "ممتاز",
+      "moodRecorded": "تم تسجيل المزاج!",
+      "quoteOfDay": "اقتباس اليوم",
+      "quotes": [
+        { "text": "الرحلة الوحيدة هي تلك التي بداخلك.", "author": "Rainer Maria Rilke" },
+        { "text": "أنت لست أفكارك.", "author": "Eckhart Tolle" },
+        { "text": "كن لطيفاً مع نفسك، أنت تبذل أفضل ما لديك.", "author": "مجهول" },
+        { "text": "كل يوم هو بداية جديدة.", "author": "مجهول" },
+        { "text": "الشفاء ليس خطياً.", "author": "مجهول" },
+        {
+          "text": "لا يتعين عليك التحكم في أفكارك. عليك فقط التوقف عن السماح لها بالتحكم فيك.",
+          "author": "Dan Millman"
+        },
+        { "text": "لا بأس أن لا تكون بخير.", "author": "مجهول" }
+      ]
+    },
     "onboarding": {
       "skip": "تخطي",
       "back": "رجوع",
@@ -592,7 +624,20 @@
         "reason": "سبب الموعد",
         "reasonPlaceholder": "صف سبب الموعد بإيجاز..."
       },
-      "months": ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+      "months": [
+        "يناير",
+        "فبراير",
+        "مارس",
+        "أبريل",
+        "مايو",
+        "يونيو",
+        "يوليو",
+        "أغسطس",
+        "سبتمبر",
+        "أكتوبر",
+        "نوفمبر",
+        "ديسمبر"
+      ]
     },
     "riskQueue": {
       "title": "قائمة أحداث المخاطر",
@@ -658,5 +703,23 @@
     },
     "startFromPatientList": "ابدأ محادثة من قائمة المرضى",
     "goToPatients": "الذهاب إلى المرضى"
+  },
+  "landing": {
+    "heroTitle1": "رفيقك الشخصي",
+    "heroTitle2": "للصحة النفسية بالذكاء الاصطناعي",
+    "heroDescription": "يوفر حارس القلب AI دعماً عاطفياً على مدار الساعة، وتتبع المزاج، والتواصل المهني. مساحة آمنة لصحتك النفسية، متاحة كلما احتجت إليها.",
+    "getStarted": "ابدأ الآن",
+    "learnMore": "اعرف المزيد",
+    "featureChat": "محادثة AI على مدار الساعة",
+    "featureChatDesc": "دائماً موجود للاستماع ودعمك.",
+    "featureSecurity": "خاص وآمن",
+    "featureSecurityDesc": "بياناتك مشفرة ومحمية.",
+    "featureMood": "تتبع المزاج",
+    "featureMoodDesc": "راقب رحلتك العاطفية بمرور الوقت.",
+    "brandName": "Heart Guardian",
+    "headerFeatures": "المميزات",
+    "headerAbout": "حول",
+    "headerSignIn": "تسجيل الدخول",
+    "footerCopyright": "© 2024 Heart Guardian AI. جميع الحقوق محفوظة."
   }
 }

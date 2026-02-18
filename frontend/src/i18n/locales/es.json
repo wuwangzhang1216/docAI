@@ -95,6 +95,41 @@
         "severe": "Severo"
       }
     },
+    "dashboard": {
+      "greetingMorning": "Buenos días",
+      "greetingAfternoon": "Buenas tardes",
+      "greetingEvening": "Buenas noches",
+      "feelingQuestion": "¿Cómo te sientes hoy?",
+      "talkToAI": "Hablar con IA",
+      "talkToAIDesc": "Obtén apoyo emocional inmediato",
+      "healthCenter": "Centro de salud",
+      "healthCenterDesc": "Registros y evaluaciones",
+      "appointments": "Citas",
+      "appointmentsDesc": "Ver próximas sesiones",
+      "quickMoodCheck": "Control rápido de ánimo",
+      "moodVeryLow": "Muy bajo",
+      "moodLow": "Bajo",
+      "moodNeutral": "Neutral",
+      "moodGood": "Bien",
+      "moodExcellent": "Excelente",
+      "moodRecorded": "¡Ánimo registrado!",
+      "quoteOfDay": "Cita del día",
+      "quotes": [
+        { "text": "El único viaje es el interior.", "author": "Rainer Maria Rilke" },
+        { "text": "No eres tus pensamientos.", "author": "Eckhart Tolle" },
+        {
+          "text": "Sé amable contigo mismo, estás haciendo lo mejor que puedes.",
+          "author": "Unknown"
+        },
+        { "text": "Cada día es un nuevo comienzo.", "author": "Unknown" },
+        { "text": "La sanación no es lineal.", "author": "Unknown" },
+        {
+          "text": "No tienes que controlar tus pensamientos. Solo tienes que dejar de permitir que te controlen.",
+          "author": "Dan Millman"
+        },
+        { "text": "Está bien no estar bien.", "author": "Unknown" }
+      ]
+    },
     "onboarding": {
       "skip": "Omitir",
       "back": "Volver",
@@ -592,7 +627,20 @@
         "reason": "Razón de la cita",
         "reasonPlaceholder": "Describa brevemente la razón de la cita..."
       },
-      "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+      "months": [
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre"
+      ]
     },
     "riskQueue": {
       "title": "Cola de eventos de riesgo",
@@ -658,5 +706,23 @@
     },
     "startFromPatientList": "Iniciar una conversación desde tu lista de pacientes",
     "goToPatients": "Ir a pacientes"
+  },
+  "landing": {
+    "heroTitle1": "Tu",
+    "heroTitle2": "Compañero de IA para la salud mental",
+    "heroDescription": "Guardián del Corazón IA ofrece apoyo emocional las 24 horas, seguimiento del estado de ánimo y conexión profesional. Un espacio seguro para tu bienestar mental, disponible cuando lo necesites.",
+    "getStarted": "Comenzar",
+    "learnMore": "Más información",
+    "featureChat": "Chat IA 24/7",
+    "featureChatDesc": "Siempre ahí para escucharte y apoyarte.",
+    "featureSecurity": "Privado y seguro",
+    "featureSecurityDesc": "Tus datos están encriptados y protegidos.",
+    "featureMood": "Seguimiento del ánimo",
+    "featureMoodDesc": "Monitorea tu viaje emocional a lo largo del tiempo.",
+    "brandName": "Heart Guardian",
+    "headerFeatures": "Características",
+    "headerAbout": "Acerca de",
+    "headerSignIn": "Iniciar sesión",
+    "footerCopyright": "© 2024 Heart Guardian AI. Todos los derechos reservados."
   }
 }

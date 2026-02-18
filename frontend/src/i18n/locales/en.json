@@ -95,6 +95,38 @@
         "severe": "Severe"
       }
     },
+    "dashboard": {
+      "greetingMorning": "Good Morning",
+      "greetingAfternoon": "Good Afternoon",
+      "greetingEvening": "Good Evening",
+      "feelingQuestion": "How are you feeling today?",
+      "talkToAI": "Talk to AI",
+      "talkToAIDesc": "Get immediate emotional support",
+      "healthCenter": "Health Center",
+      "healthCenterDesc": "Check-ins & assessments",
+      "appointments": "Appointments",
+      "appointmentsDesc": "View upcoming sessions",
+      "quickMoodCheck": "Quick Mood Check",
+      "moodVeryLow": "Very Low",
+      "moodLow": "Low",
+      "moodNeutral": "Neutral",
+      "moodGood": "Good",
+      "moodExcellent": "Excellent",
+      "moodRecorded": "Mood recorded!",
+      "quoteOfDay": "Quote of the Day",
+      "quotes": [
+        { "text": "The only journey is the one within.", "author": "Rainer Maria Rilke" },
+        { "text": "You are not your thoughts.", "author": "Eckhart Tolle" },
+        { "text": "Be gentle with yourself, you're doing the best you can.", "author": "Unknown" },
+        { "text": "Every day is a new beginning.", "author": "Unknown" },
+        { "text": "Healing is not linear.", "author": "Unknown" },
+        {
+          "text": "You don't have to control your thoughts. You just have to stop letting them control you.",
+          "author": "Dan Millman"
+        },
+        { "text": "It's okay to not be okay.", "author": "Unknown" }
+      ]
+    },
     "onboarding": {
       "skip": "Skip",
       "back": "Back",
@@ -592,7 +624,20 @@
         "reason": "Appointment Reason",
         "reasonPlaceholder": "Briefly describe the reason for appointment..."
       },
-      "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+      "months": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ]
     },
     "riskQueue": {
       "title": "Risk Event Queue",
@@ -658,5 +703,23 @@
     },
     "startFromPatientList": "Start a conversation from your patient list",
     "goToPatients": "Go to Patients"
+  },
+  "landing": {
+    "heroTitle1": "Your Personal",
+    "heroTitle2": "AI Mental Health Companion",
+    "heroDescription": "Heart Guardian AI provides 24/7 emotional support, mood tracking, and professional connection. A safe space for your mental well-being, available whenever you need it.",
+    "getStarted": "Get Started",
+    "learnMore": "Learn more",
+    "featureChat": "24/7 AI Chat",
+    "featureChatDesc": "Always there to listen and support you.",
+    "featureSecurity": "Private & Secure",
+    "featureSecurityDesc": "Your data is encrypted and protected.",
+    "featureMood": "Mood Tracking",
+    "featureMoodDesc": "Monitor your emotional journey over time.",
+    "brandName": "Heart Guardian",
+    "headerFeatures": "Features",
+    "headerAbout": "About",
+    "headerSignIn": "Sign In",
+    "footerCopyright": "\u00a9 2024 Heart Guardian AI. All rights reserved."
   }
 }

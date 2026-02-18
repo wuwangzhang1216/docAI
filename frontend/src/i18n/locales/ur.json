@@ -95,6 +95,41 @@
         "severe": "شدید"
       }
     },
+    "dashboard": {
+      "greetingMorning": "صبح بخیر",
+      "greetingAfternoon": "سہ پہر بخیر",
+      "greetingEvening": "شام بخیر",
+      "feelingQuestion": "آج آپ کیسا محسوس کر رہے ہیں؟",
+      "talkToAI": "AI سے بات کریں",
+      "talkToAIDesc": "فوری جذباتی مدد حاصل کریں",
+      "healthCenter": "صحت مرکز",
+      "healthCenterDesc": "چیک انز اور تشخیصات",
+      "appointments": "ملاقاتیں",
+      "appointmentsDesc": "آنے والے سیشنز دیکھیں",
+      "quickMoodCheck": "فوری موڈ چیک",
+      "moodVeryLow": "بہت کم",
+      "moodLow": "کم",
+      "moodNeutral": "معمولی",
+      "moodGood": "اچھا",
+      "moodExcellent": "بہترین",
+      "moodRecorded": "موڈ ریکارڈ ہو گیا!",
+      "quoteOfDay": "آج کا اقتباس",
+      "quotes": [
+        { "text": "واحد سفر وہ ہے جو اندر ہے۔", "author": "Rainer Maria Rilke" },
+        { "text": "آپ اپنے خیالات نہیں ہیں۔", "author": "Eckhart Tolle" },
+        {
+          "text": "اپنے آپ سے نرمی سے پیش آئیں، آپ اپنی پوری کوشش کر رہے ہیں۔",
+          "author": "نامعلوم"
+        },
+        { "text": "ہر دن ایک نئی شروعات ہے۔", "author": "نامعلوم" },
+        { "text": "شفا یابی سیدھی لکیر میں نہیں ہوتی۔", "author": "نامعلوم" },
+        {
+          "text": "آپ کو اپنے خیالات پر قابو پانے کی ضرورت نہیں۔ آپ کو بس انہیں اپنے اوپر قابو پانے سے روکنا ہے۔",
+          "author": "Dan Millman"
+        },
+        { "text": "ٹھیک نہ ہونا بھی ٹھیک ہے۔", "author": "نامعلوم" }
+      ]
+    },
     "onboarding": {
       "skip": "چھوڑیں",
       "back": "واپس",
@@ -592,7 +627,20 @@
         "reason": "ملاقات کی وجہ",
         "reasonPlaceholder": "ملاقات کی وجہ مختصراً بیان کریں..."
       },
-      "months": ["جنوری", "فروری", "مارچ", "اپریل", "مئی", "جون", "جولائی", "اگست", "ستمبر", "اکتوبر", "نومبر", "دسمبر"]
+      "months": [
+        "جنوری",
+        "فروری",
+        "مارچ",
+        "اپریل",
+        "مئی",
+        "جون",
+        "جولائی",
+        "اگست",
+        "ستمبر",
+        "اکتوبر",
+        "نومبر",
+        "دسمبر"
+      ]
     },
     "riskQueue": {
       "title": "خطرے کے واقعات کی قطار",
@@ -658,5 +706,23 @@
     },
     "startFromPatientList": "اپنی مریضوں کی فہرست سے گفتگو شروع کریں",
     "goToPatients": "مریضوں پر جائیں"
+  },
+  "landing": {
+    "heroTitle1": "آپ کا ذاتی",
+    "heroTitle2": "AI ذہنی صحت ساتھی",
+    "heroDescription": "Heart Guardian AI چوبیس گھنٹے جذباتی مدد، موڈ ٹریکنگ، اور پیشہ ورانہ رابطہ فراہم کرتا ہے۔ آپ کی ذہنی تندرستی کے لیے ایک محفوظ جگہ، جب بھی آپ کو ضرورت ہو۔",
+    "getStarted": "شروع کریں",
+    "learnMore": "مزید جانیں",
+    "featureChat": "24/7 AI چیٹ",
+    "featureChatDesc": "ہمیشہ آپ کی بات سننے اور مدد کرنے کے لیے موجود۔",
+    "featureSecurity": "نجی اور محفوظ",
+    "featureSecurityDesc": "آپ کا ڈیٹا انکرپٹڈ اور محفوظ ہے۔",
+    "featureMood": "موڈ ٹریکنگ",
+    "featureMoodDesc": "وقت کے ساتھ اپنے جذباتی سفر کا جائزہ لیں۔",
+    "brandName": "Heart Guardian",
+    "headerFeatures": "خصوصیات",
+    "headerAbout": "ہمارے بارے میں",
+    "headerSignIn": "لاگ ان",
+    "footerCopyright": "© 2024 Heart Guardian AI. جملہ حقوق محفوظ ہیں۔"
   }
 }

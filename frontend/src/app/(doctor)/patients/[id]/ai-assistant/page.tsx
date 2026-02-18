@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
-import { useState, useRef, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { api, DoctorConversationListItem, DoctorConversationMessage } from '@/lib/api';
+import { useState, useRef, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { api, DoctorConversationListItem, DoctorConversationMessage } from '@/lib/api'
 import {
   SendIcon,
   BotIcon,
@@ -14,158 +14,181 @@ import {
   Loader2Icon,
   SparklesIcon,
   ChevronRightIcon,
-} from '@/components/ui/icons';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
+} from '@/components/ui/icons'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb'
+import { cn } from '@/lib/utils'
 
 interface Message {
-  role: 'user' | 'assistant';
-  content: string;
+  role: 'user' | 'assistant'
+  content: string
 }
 
 interface PatientInfo {
-  id: string;
-  first_name: string;
-  last_name: string;
-  full_name?: string;
+  id: string
+  first_name: string
+  last_name: string
+  full_name?: string
 }
 
 export default function DoctorAIAssistantPage() {
-  const params = useParams();
-  const router = useRouter();
-  const patientId = params.id as string;
-  const t = useTranslations('doctor.aiAssistant');
-  const common = useTranslations('common');
+  const params = useParams()
+  const router = useRouter()
+  const patientId = params.id as string
+  const t = useTranslations('doctor.aiAssistant')
+  const common = useTranslations('common')
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [patientInfo, setPatientInfo] = useState<PatientInfo | null>(null);
-  const [conversations, setConversations] = useState<DoctorConversationListItem[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [loadingPatient, setLoadingPatient] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [patientInfo, setPatientInfo] = useState<PatientInfo | null>(null)
+  const [conversations, setConversations] = useState<DoctorConversationListItem[]>([])
+  const [showHistory, setShowHistory] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  const [loadingPatient, setLoadingPatient] = useState(true)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    scrollToBottom()
+  }, [messages])
 
   // Fetch patient info
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const profile = await api.getPatientProfile(patientId);
-        setPatientInfo(profile);
+        const profile = await api.getPatientProfile(patientId)
+        setPatientInfo(profile)
       } catch (error) {
-        console.error('Error fetching patient:', error);
+        console.error('Error fetching patient:', error)
       } finally {
-        setLoadingPatient(false);
+        setLoadingPatient(false)
       }
-    };
-    fetchPatient();
-  }, [patientId]);
+    }
+    fetchPatient()
+  }, [patientId])
 
   // Fetch conversation history
   const fetchConversations = async () => {
-    setLoadingHistory(true);
+    setLoadingHistory(true)
     try {
-      const data = await api.getDoctorAIConversations(patientId, 10);
-      setConversations(data);
+      const data = await api.getDoctorAIConversations(patientId, 10)
+      setConversations(data)
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      console.error('Error fetching conversations:', error)
     } finally {
-      setLoadingHistory(false);
+      setLoadingHistory(false)
     }
-  };
+  }
 
   // Load a previous conversation
   const loadConversation = async (convId: string) => {
     try {
-      const detail = await api.getDoctorAIConversationDetail(patientId, convId);
-      setMessages(detail.messages.map(m => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })));
-      setConversationId(convId);
-      setShowHistory(false);
+      const detail = await api.getDoctorAIConversationDetail(patientId, convId)
+      setMessages(
+        detail.messages.map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        }))
+      )
+      setConversationId(convId)
+      setShowHistory(false)
     } catch (error) {
-      console.error('Error loading conversation:', error);
+      console.error('Error loading conversation:', error)
     }
-  };
+  }
 
   // Start a new conversation
   const startNewConversation = () => {
-    setMessages([]);
-    setConversationId(null);
-    setShowHistory(false);
-  };
+    setMessages([])
+    setConversationId(null)
+    setShowHistory(false)
+  }
 
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading) return
 
-    const userMessage = input.trim();
-    setInput('');
-    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
-    setLoading(true);
+    const userMessage = input.trim()
+    setInput('')
+    setMessages((prev) => [...prev, { role: 'user', content: userMessage }])
+    setLoading(true)
 
     try {
-      const res = await api.sendDoctorAIChat(
-        patientId,
-        userMessage,
-        conversationId || undefined
-      );
+      const res = await api.sendDoctorAIChat(patientId, userMessage, conversationId || undefined)
 
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: res.response },
-      ]);
-      setConversationId(res.conversation_id);
+      setMessages((prev) => [...prev, { role: 'assistant', content: res.response }])
+      setConversationId(res.conversation_id)
     } catch (error) {
-      console.error('AI chat error:', error);
+      console.error('AI chat error:', error)
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: t('errorMessage', { defaultValue: 'Sorry, an error occurred. Please try again.' }),
+          content: t('errorMessage', {
+            defaultValue: 'Sorry, an error occurred. Please try again.',
+          }),
         },
-      ]);
+      ])
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+      e.preventDefault()
+      sendMessage()
     }
-  };
+  }
 
   const suggestedPrompts = [
     t('prompt1', { defaultValue: "Analyze this patient's mood trends over the past 2 weeks" }),
     t('prompt2', { defaultValue: 'What risk factors should I be aware of?' }),
     t('prompt3', { defaultValue: "Summarize the patient's recent check-ins" }),
     t('prompt4', { defaultValue: 'What treatment approaches might be helpful?' }),
-  ];
+  ]
 
   if (loadingPatient) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2Icon className="w-8 h-8 animate-spin text-primary" />
       </div>
-    );
+    )
   }
 
   return (
     <div className="flex flex-col h-full bg-background">
+      {/* Breadcrumb */}
+      <div className="px-4 py-2 border-b border-border">
+        <Breadcrumb>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/patients">{common('back')}</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/patients/${patientId}`}>
+              {patientInfo?.first_name} {patientInfo?.last_name}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{t('title')}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </Breadcrumb>
+      </div>
+
       {/* Header */}
       <div className="bg-primary px-4 py-3 text-primary-foreground">
         <div className="flex items-center justify-between">
@@ -181,9 +204,7 @@ export default function DoctorAIAssistantPage() {
                 <SparklesIcon className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="font-semibold">
-                  {t('title', { defaultValue: 'AI Assistant' })}
-                </h1>
+                <h1 className="font-semibold">{t('title', { defaultValue: 'AI Assistant' })}</h1>
                 <p className="text-sm text-white/80">
                   {patientInfo?.full_name || `${patientInfo?.first_name} ${patientInfo?.last_name}`}
                 </p>
@@ -195,8 +216,8 @@ export default function DoctorAIAssistantPage() {
               variant="ghost"
               size="sm"
               onClick={() => {
-                setShowHistory(!showHistory);
-                if (!showHistory) fetchConversations();
+                setShowHistory(!showHistory)
+                if (!showHistory) fetchConversations()
               }}
               className="text-white hover:bg-white/10"
             >
@@ -256,7 +277,8 @@ export default function DoctorAIAssistantPage() {
                       {conv.summary || t('conversation', { defaultValue: 'Conversation' })}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(conv.created_at).toLocaleDateString()} · {conv.message_count} {t('messages', { defaultValue: 'messages' })}
+                      {new Date(conv.created_at).toLocaleDateString()} · {conv.message_count}{' '}
+                      {t('messages', { defaultValue: 'messages' })}
                     </p>
                   </button>
                 ))}
@@ -278,7 +300,10 @@ export default function DoctorAIAssistantPage() {
                 {t('welcomeTitle', { defaultValue: 'AI Clinical Assistant' })}
               </h3>
               <p className="max-w-md text-sm text-muted-foreground mb-6">
-                {t('welcomeMessage', { defaultValue: "I can help you analyze this patient's data, identify patterns, and discuss treatment considerations. What would you like to know?" })}
+                {t('welcomeMessage', {
+                  defaultValue:
+                    "I can help you analyze this patient's data, identify patterns, and discuss treatment considerations. What would you like to know?",
+                })}
               </p>
 
               {/* Suggested Prompts */}
@@ -287,7 +312,7 @@ export default function DoctorAIAssistantPage() {
                   <button
                     key={idx}
                     onClick={() => {
-                      setInput(prompt);
+                      setInput(prompt)
                     }}
                     className="text-left p-3 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-sm"
                   >
@@ -314,7 +339,11 @@ export default function DoctorAIAssistantPage() {
                           : 'bg-primary text-primary-foreground'
                       }
                     >
-                      {msg.role === 'user' ? <UserIcon className="w-4 h-4" /> : <BotIcon className="w-4 h-4" />}
+                      {msg.role === 'user' ? (
+                        <UserIcon className="w-4 h-4" />
+                      ) : (
+                        <BotIcon className="w-4 h-4" />
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <div
@@ -338,9 +367,18 @@ export default function DoctorAIAssistantPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center space-x-1">
-                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    <div
+                      className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"
+                      style={{ animationDelay: '0s' }}
+                    />
+                    <div
+                      className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.1s' }}
+                    />
+                    <div
+                      className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.2s' }}
+                    />
                   </div>
                 </div>
               )}
@@ -354,7 +392,10 @@ export default function DoctorAIAssistantPage() {
       <div className="bg-background/80 backdrop-blur-md p-4 border-t border-border">
         <form
           className="flex items-end space-x-2 max-w-3xl mx-auto"
-          onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            sendMessage()
+          }}
         >
           <Input
             value={input}
@@ -374,9 +415,12 @@ export default function DoctorAIAssistantPage() {
           </Button>
         </form>
         <p className="text-xs text-muted-foreground text-center mt-2 max-w-3xl mx-auto">
-          {t('disclaimer', { defaultValue: 'AI suggestions are for informational purposes only. Clinical decisions remain with the treating physician.' })}
+          {t('disclaimer', {
+            defaultValue:
+              'AI suggestions are for informational purposes only. Clinical decisions remain with the treating physician.',
+          })}
         </p>
       </div>
     </div>
-  );
+  )
 }

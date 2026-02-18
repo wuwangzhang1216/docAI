@@ -1,8 +1,8 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { api } from '@/lib/api';
+import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
+import { api } from '@/lib/api'
 import {
   UserIcon,
   PhoneIcon,
@@ -16,83 +16,83 @@ import {
   SaveIcon,
   Loader2Icon,
   ShieldIcon,
-} from '@/components/ui/icons';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@/components/ui/disclosure';
+} from '@/components/ui/icons'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Disclosure, DisclosureButton, DisclosurePanel } from '@/components/ui/disclosure'
 
 interface DoctorProfile {
-  id: string;
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  full_name?: string;
-  license_number?: string;
-  specialty?: string;
-  created_at: string;
-  updated_at?: string;
-  phone?: string;
-  bio?: string;
-  years_of_experience?: string;
-  education?: string;
-  languages?: string;
-  clinic_name?: string;
-  clinic_address?: string;
-  clinic_city?: string;
-  clinic_country?: string;
-  consultation_hours?: string;
+  id: string
+  user_id: string
+  first_name: string
+  last_name: string
+  full_name?: string
+  license_number?: string
+  specialty?: string
+  created_at: string
+  updated_at?: string
+  phone?: string
+  bio?: string
+  years_of_experience?: string
+  education?: string
+  languages?: string
+  clinic_name?: string
+  clinic_address?: string
+  clinic_city?: string
+  clinic_country?: string
+  consultation_hours?: string
 }
 
 export default function DoctorProfilePage() {
-  const t = useTranslations('doctor.profile');
-  const common = useTranslations('common');
+  const t = useTranslations('doctor.profile')
+  const common = useTranslations('common')
 
-  const [profile, setProfile] = useState<DoctorProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [profile, setProfile] = useState<DoctorProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
 
-  const [formData, setFormData] = useState<Partial<DoctorProfile>>({});
+  const [formData, setFormData] = useState<Partial<DoctorProfile>>({})
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const data = await api.getDoctorProfile();
-        setProfile(data);
-        setFormData(data);
+        const data = await api.getDoctorProfile()
+        setProfile(data)
+        setFormData(data)
       } catch (err) {
-        console.error('Error fetching profile:', err);
-        setError(common('error'));
+        console.error('Error fetching profile:', err)
+        setError(common('error'))
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchProfile();
-  }, [common]);
+    }
+    fetchProfile()
+  }, [common])
 
   const handleChange = (field: keyof DoctorProfile, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setSuccess(false);
-  };
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    setSuccess(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setError('');
-    setSuccess(false);
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    setSuccess(false)
 
     try {
-      const updatedProfile = await api.updateDoctorProfile(formData);
-      setProfile(updatedProfile);
-      setSuccess(true);
+      const updatedProfile = await api.updateDoctorProfile(formData)
+      setProfile(updatedProfile)
+      setSuccess(true)
     } catch (err) {
-      console.error('Error saving profile:', err);
-      setError(t('saveError', { defaultValue: 'Failed to save profile' }));
+      console.error('Error saving profile:', err)
+      setError(t('saveError', { defaultValue: 'Failed to save profile' }))
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   if (loading) {
     return (
@@ -100,7 +100,7 @@ export default function DoctorProfilePage() {
         <Loader2Icon className="w-8 h-8 text-primary animate-spin mb-3" />
         <p className="text-muted-foreground text-sm">{common('loading')}</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -108,15 +108,19 @@ export default function DoctorProfilePage() {
       {/* Header */}
       <div className="flex justify-between items-center bg-card p-4 rounded-xl border border-border shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-foreground">{t('title', { defaultValue: 'My Profile' })}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{t('subtitle', { defaultValue: 'Manage your professional profile' })}</p>
+          <h2 className="text-xl font-bold text-foreground">
+            {t('title', { defaultValue: 'My Profile' })}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t('subtitle', { defaultValue: 'Manage your professional profile' })}
+          </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
         {/* Success Message */}
         {success && (
-          <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm rounded-lg flex items-center">
+          <div className="p-3 bg-success/10 text-success text-sm rounded-lg flex items-center">
             <ShieldIcon className="w-4 h-4 mr-2" />
             {t('saveSuccess', { defaultValue: 'Profile saved successfully' })}
           </div>
@@ -124,9 +128,7 @@ export default function DoctorProfilePage() {
 
         {/* Error Message */}
         {error && (
-          <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg">
-            {error}
-          </div>
+          <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg">{error}</div>
         )}
 
         {/* Personal Information */}
@@ -134,7 +136,9 @@ export default function DoctorProfilePage() {
           <DisclosureButton className="w-full">
             <div className="flex items-center">
               <UserIcon className="w-5 h-5 mr-2 text-primary" />
-              <span className="font-medium">{t('personalInfo', { defaultValue: 'Personal Information' })}</span>
+              <span className="font-medium">
+                {t('personalInfo', { defaultValue: 'Personal Information' })}
+              </span>
             </div>
           </DisclosureButton>
           <DisclosurePanel>
@@ -207,7 +211,9 @@ export default function DoctorProfilePage() {
           <DisclosureButton className="w-full">
             <div className="flex items-center">
               <BriefcaseIcon className="w-5 h-5 mr-2 text-primary" />
-              <span className="font-medium">{t('professionalBackground', { defaultValue: 'Professional Background' })}</span>
+              <span className="font-medium">
+                {t('professionalBackground', { defaultValue: 'Professional Background' })}
+              </span>
             </div>
           </DisclosureButton>
           <DisclosurePanel>
@@ -220,7 +226,9 @@ export default function DoctorProfilePage() {
                 <textarea
                   value={formData.bio || ''}
                   onChange={(e) => handleChange('bio', e.target.value)}
-                  placeholder={t('bioPlaceholder', { defaultValue: 'Brief description of your background and approach...' })}
+                  placeholder={t('bioPlaceholder', {
+                    defaultValue: 'Brief description of your background and approach...',
+                  })}
                   rows={4}
                   className="w-full px-3 py-2 bg-background border border-input rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all resize-none"
                 />
@@ -260,7 +268,9 @@ export default function DoctorProfilePage() {
                 <textarea
                   value={formData.education || ''}
                   onChange={(e) => handleChange('education', e.target.value)}
-                  placeholder={t('educationPlaceholder', { defaultValue: 'Medical school, residency, certifications...' })}
+                  placeholder={t('educationPlaceholder', {
+                    defaultValue: 'Medical school, residency, certifications...',
+                  })}
                   rows={3}
                   className="w-full px-3 py-2 bg-background border border-input rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all resize-none"
                 />
@@ -274,7 +284,9 @@ export default function DoctorProfilePage() {
           <DisclosureButton className="w-full">
             <div className="flex items-center">
               <BuildingIcon className="w-5 h-5 mr-2 text-primary" />
-              <span className="font-medium">{t('clinicInfo', { defaultValue: 'Clinic Information' })}</span>
+              <span className="font-medium">
+                {t('clinicInfo', { defaultValue: 'Clinic Information' })}
+              </span>
             </div>
           </DisclosureButton>
           <DisclosurePanel>
@@ -286,7 +298,9 @@ export default function DoctorProfilePage() {
                 <Input
                   value={formData.clinic_name || ''}
                   onChange={(e) => handleChange('clinic_name', e.target.value)}
-                  placeholder={t('clinicNamePlaceholder', { defaultValue: 'City Mental Health Center' })}
+                  placeholder={t('clinicNamePlaceholder', {
+                    defaultValue: 'City Mental Health Center',
+                  })}
                 />
               </div>
 
@@ -342,11 +356,7 @@ export default function DoctorProfilePage() {
         </Disclosure>
 
         {/* Save Button */}
-        <Button
-          type="submit"
-          disabled={saving}
-          className="w-full"
-        >
+        <Button type="submit" disabled={saving} className="w-full">
           {saving ? (
             <>
               <Loader2Icon className="w-5 h-5 mr-2 animate-spin" />
@@ -361,5 +371,5 @@ export default function DoctorProfilePage() {
         </Button>
       </form>
     </div>
-  );
+  )
 }

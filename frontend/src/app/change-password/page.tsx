@@ -1,101 +1,101 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
-import { Loader2, Lock, Eye, EyeOff, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { api } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
+import { Loader2, Lock, Eye, EyeOff, Shield } from 'lucide-react'
 
 export default function ChangePasswordPage() {
-  const router = useRouter();
-  const { isAuthenticated, userType, clearAuth } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const router = useRouter()
+  const { isAuthenticated, userType, clearAuth } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const [formData, setFormData] = useState({
     current_password: '',
     new_password: '',
     confirm_password: '',
-  });
+  })
 
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push('/login')
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router])
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setError('');
-  };
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    setError('')
+  }
 
   const validateForm = (): boolean => {
     if (!formData.current_password) {
-      setError('Current password is required');
-      return false;
+      setError('Current password is required')
+      return false
     }
     if (!formData.new_password) {
-      setError('New password is required');
-      return false;
+      setError('New password is required')
+      return false
     }
     if (formData.new_password.length < 6) {
-      setError('New password must be at least 6 characters');
-      return false;
+      setError('New password must be at least 6 characters')
+      return false
     }
     if (formData.new_password !== formData.confirm_password) {
-      setError('Passwords do not match');
-      return false;
+      setError('Passwords do not match')
+      return false
     }
     if (formData.current_password === formData.new_password) {
-      setError('New password must be different from current password');
-      return false;
+      setError('New password must be different from current password')
+      return false
     }
-    return true;
-  };
+    return true
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!validateForm()) {
-      return;
+      return
     }
 
-    setLoading(true);
-    setError('');
+    setLoading(true)
+    setError('')
 
     try {
       await api.changePassword({
         current_password: formData.current_password,
         new_password: formData.new_password,
-      });
+      })
 
-      setSuccess(true);
+      setSuccess(true)
 
       // Redirect after success
       setTimeout(() => {
         // Determine redirect based on user type
-        const redirectPath = userType === 'DOCTOR' ? '/patients' : '/chat';
-        router.push(redirectPath);
-      }, 2000);
+        const redirectPath = userType === 'DOCTOR' ? '/patients' : '/chat'
+        router.push(redirectPath)
+      }, 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change password');
+      setError(err instanceof Error ? err.message : 'Failed to change password')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="w-full max-w-md">
           <div className="bg-card rounded-2xl shadow-lg border border-border p-8 text-center">
-            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-emerald-500" />
+            <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-success" />
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-2">Password Changed</h2>
             <p className="text-muted-foreground">
@@ -104,7 +104,7 @@ export default function ChangePasswordPage() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -116,9 +116,7 @@ export default function ChangePasswordPage() {
               <Lock className="w-8 h-8 text-primary" />
             </div>
             <h1 className="text-2xl font-bold text-foreground">Change Password</h1>
-            <p className="text-muted-foreground mt-2">
-              Please update your password to continue
-            </p>
+            <p className="text-muted-foreground mt-2">Please update your password to continue</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -140,16 +138,18 @@ export default function ChangePasswordPage() {
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showCurrentPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
 
             {/* New Password */}
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                New Password
-              </label>
+              <label className="block text-sm font-medium text-foreground mb-1">New Password</label>
               <div className="relative">
                 <input
                   type={showNewPassword ? 'text' : 'password'}
@@ -186,7 +186,11 @@ export default function ChangePasswordPage() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -217,5 +221,5 @@ export default function ChangePasswordPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

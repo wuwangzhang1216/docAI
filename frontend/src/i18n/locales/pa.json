@@ -95,6 +95,38 @@
         "severe": "ਗੰਭੀਰ"
       }
     },
+    "dashboard": {
+      "greetingMorning": "ਸ਼ੁਭ ਸਵੇਰ",
+      "greetingAfternoon": "ਸ਼ੁਭ ਦੁਪਹਿਰ",
+      "greetingEvening": "ਸ਼ੁਭ ਸ਼ਾਮ",
+      "feelingQuestion": "ਅੱਜ ਤੁਸੀਂ ਕਿਵੇਂ ਮਹਿਸੂਸ ਕਰ ਰਹੇ ਹੋ?",
+      "talkToAI": "AI ਨਾਲ ਗੱਲ ਕਰੋ",
+      "talkToAIDesc": "ਤੁਰੰਤ ਭਾਵਨਾਤਮਕ ਸਹਾਇਤਾ ਪ੍ਰਾਪਤ ਕਰੋ",
+      "healthCenter": "ਸਿਹਤ ਕੇਂਦਰ",
+      "healthCenterDesc": "ਚੈੱਕ-ਇਨ ਅਤੇ ਮੁਲਾਂਕਣ",
+      "appointments": "ਅਪਾਇੰਟਮੈਂਟ",
+      "appointmentsDesc": "ਆਉਣ ਵਾਲੇ ਸੈਸ਼ਨ ਵੇਖੋ",
+      "quickMoodCheck": "ਤੁਰੰਤ ਮੂਡ ਜਾਂਚ",
+      "moodVeryLow": "ਬਹੁਤ ਘੱਟ",
+      "moodLow": "ਘੱਟ",
+      "moodNeutral": "ਆਮ",
+      "moodGood": "ਚੰਗਾ",
+      "moodExcellent": "ਸ਼ਾਨਦਾਰ",
+      "moodRecorded": "ਮੂਡ ਰਿਕਾਰਡ ਕੀਤਾ ਗਿਆ!",
+      "quoteOfDay": "ਅੱਜ ਦਾ ਹਵਾਲਾ",
+      "quotes": [
+        { "text": "ਇੱਕੋ-ਇੱਕ ਯਾਤਰਾ ਅੰਦਰ ਦੀ ਯਾਤਰਾ ਹੈ।", "author": "Rainer Maria Rilke" },
+        { "text": "ਤੁਸੀਂ ਆਪਣੇ ਵਿਚਾਰ ਨਹੀਂ ਹੋ।", "author": "Eckhart Tolle" },
+        { "text": "ਆਪਣੇ ਨਾਲ ਨਰਮ ਰਹੋ, ਤੁਸੀਂ ਆਪਣੀ ਪੂਰੀ ਕੋਸ਼ਿਸ਼ ਕਰ ਰਹੇ ਹੋ।", "author": "Unknown" },
+        { "text": "ਹਰ ਦਿਨ ਇੱਕ ਨਵੀਂ ਸ਼ੁਰੂਆਤ ਹੈ।", "author": "Unknown" },
+        { "text": "ਇਲਾਜ ਸਿੱਧੀ ਲਾਈਨ ਵਿੱਚ ਨਹੀਂ ਹੁੰਦਾ।", "author": "Unknown" },
+        {
+          "text": "ਤੁਹਾਨੂੰ ਆਪਣੇ ਵਿਚਾਰਾਂ ਨੂੰ ਕਾਬੂ ਕਰਨ ਦੀ ਲੋੜ ਨਹੀਂ। ਬੱਸ ਉਨ੍ਹਾਂ ਨੂੰ ਤੁਹਾਨੂੰ ਕਾਬੂ ਕਰਨ ਤੋਂ ਰੋਕੋ।",
+          "author": "Dan Millman"
+        },
+        { "text": "ਠੀਕ ਨਾ ਹੋਣਾ ਵੀ ਠੀਕ ਹੈ।", "author": "Unknown" }
+      ]
+    },
     "onboarding": {
       "skip": "ਛੱਡੋ",
       "back": "ਵਾਪਸ",
@@ -592,7 +624,20 @@
         "reason": "ਅਪਾਇੰਟਮੈਂਟ ਦਾ ਕਾਰਨ",
         "reasonPlaceholder": "ਅਪਾਇੰਟਮੈਂਟ ਦੇ ਕਾਰਨ ਦਾ ਸੰਖੇਪ ਵਰਣਨ ਕਰੋ..."
       },
-      "months": ["ਜਨਵਰੀ", "ਫਰਵਰੀ", "ਮਾਰਚ", "ਅਪ੍ਰੈਲ", "ਮਈ", "ਜੂਨ", "ਜੁਲਾਈ", "ਅਗਸਤ", "ਸਤੰਬਰ", "ਅਕਤੂਬਰ", "ਨਵੰਬਰ", "ਦਸੰਬਰ"]
+      "months": [
+        "ਜਨਵਰੀ",
+        "ਫਰਵਰੀ",
+        "ਮਾਰਚ",
+        "ਅਪ੍ਰੈਲ",
+        "ਮਈ",
+        "ਜੂਨ",
+        "ਜੁਲਾਈ",
+        "ਅਗਸਤ",
+        "ਸਤੰਬਰ",
+        "ਅਕਤੂਬਰ",
+        "ਨਵੰਬਰ",
+        "ਦਸੰਬਰ"
+      ]
     },
     "riskQueue": {
       "title": "ਜੋਖਮ ਘਟਨਾ ਕਤਾਰ",
@@ -658,5 +703,23 @@
     },
     "startFromPatientList": "ਆਪਣੀ ਮਰੀਜ਼ ਸੂਚੀ ਤੋਂ ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ",
     "goToPatients": "ਮਰੀਜ਼ਾਂ ਤੇ ਜਾਓ"
+  },
+  "landing": {
+    "heroTitle1": "ਤੁਹਾਡਾ ਨਿੱਜੀ",
+    "heroTitle2": "AI ਮਾਨਸਿਕ ਸਿਹਤ ਸਾਥੀ",
+    "heroDescription": "Heart Guardian AI 24/7 ਭਾਵਨਾਤਮਕ ਸਹਾਇਤਾ, ਮੂਡ ਟ੍ਰੈਕਿੰਗ ਅਤੇ ਪੇਸ਼ੇਵਰ ਕਨੈਕਸ਼ਨ ਪ੍ਰਦਾਨ ਕਰਦਾ ਹੈ। ਤੁਹਾਡੀ ਮਾਨਸਿਕ ਤੰਦਰੁਸਤੀ ਲਈ ਇੱਕ ਸੁਰੱਖਿਅਤ ਥਾਂ, ਜਦੋਂ ਵੀ ਤੁਹਾਨੂੰ ਲੋੜ ਹੋਵੇ।",
+    "getStarted": "ਸ਼ੁਰੂ ਕਰੋ",
+    "learnMore": "ਹੋਰ ਜਾਣੋ",
+    "featureChat": "24/7 AI ਚੈਟ",
+    "featureChatDesc": "ਹਮੇਸ਼ਾ ਸੁਣਨ ਅਤੇ ਸਹਾਇਤਾ ਕਰਨ ਲਈ ਮੌਜੂਦ।",
+    "featureSecurity": "ਨਿੱਜੀ ਅਤੇ ਸੁਰੱਖਿਅਤ",
+    "featureSecurityDesc": "ਤੁਹਾਡਾ ਡਾਟਾ ਐਨਕ੍ਰਿਪਟਡ ਅਤੇ ਸੁਰੱਖਿਅਤ ਹੈ।",
+    "featureMood": "ਮੂਡ ਟ੍ਰੈਕਿੰਗ",
+    "featureMoodDesc": "ਸਮੇਂ ਦੇ ਨਾਲ ਆਪਣੀ ਭਾਵਨਾਤਮਕ ਯਾਤਰਾ ਦੀ ਨਿਗਰਾਨੀ ਕਰੋ।",
+    "brandName": "Heart Guardian",
+    "headerFeatures": "ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ",
+    "headerAbout": "ਬਾਰੇ",
+    "headerSignIn": "ਸਾਈਨ ਇਨ",
+    "footerCopyright": "© 2024 Heart Guardian AI। ਸਾਰੇ ਹੱਕ ਰਾਖਵੇਂ ਹਨ।"
   }
 }

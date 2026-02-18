@@ -93,13 +93,13 @@ export default function HealthPage() {
 
   const getSeverityColor = (severity: string) => {
     const colors: Record<string, string> = {
-      MINIMAL: 'text-green-600 dark:text-green-400 bg-green-500/10',
-      MILD: 'text-yellow-600 dark:text-yellow-400 bg-yellow-500/10',
+      MINIMAL: 'text-success bg-success/10',
+      MILD: 'text-warning bg-warning/10',
       MODERATE: 'text-orange-600 dark:text-orange-400 bg-orange-500/10',
-      MODERATELY_SEVERE: 'text-red-500 dark:text-red-400 bg-red-500/10',
-      SEVERE: 'text-red-700 dark:text-red-400 bg-red-500/20',
+      MODERATELY_SEVERE: 'text-destructive bg-destructive/10',
+      SEVERE: 'text-destructive bg-destructive/20',
     }
-    return colors[severity] || 'text-gray-600 bg-gray-100'
+    return colors[severity] || 'text-muted-foreground bg-muted'
   }
 
   const getSeverityLabel = (severity: string) => {
@@ -180,7 +180,7 @@ export default function HealthPage() {
                 </div>
                 <div className="text-center">
                   <div
-                    className={`flex items-center gap-1 ${todayCheckin.medication_taken ? 'text-green-600' : 'text-red-500'}`}
+                    className={`flex items-center gap-1 ${todayCheckin.medication_taken ? 'text-success' : 'text-destructive'}`}
                   >
                     <Pill className="w-4 h-4" />
                     <span className="font-medium">{todayCheckin.medication_taken ? '✓' : '✗'}</span>
@@ -190,7 +190,7 @@ export default function HealthPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+              <div className="flex items-center gap-1 text-success">
                 <CheckCircle2 className="w-4 h-4" />
                 <span className="text-xs font-medium">
                   {t('checkedIn', { defaultValue: 'Checked in' })}

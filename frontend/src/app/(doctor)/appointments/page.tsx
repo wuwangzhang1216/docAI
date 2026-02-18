@@ -1,9 +1,15 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { api, AppointmentListItem, CalendarMonthView, AppointmentStats, AppointmentStatus } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
+import {
+  api,
+  AppointmentListItem,
+  CalendarMonthView,
+  AppointmentStats,
+  AppointmentStatus,
+} from '@/lib/api'
+import { cn } from '@/lib/utils'
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -14,41 +20,62 @@ import {
   XMarkIcon,
   AlertCircleIcon,
   Loader2Icon,
-} from '@/components/ui/icons';
+} from '@/components/ui/icons'
 
 // Status badge component
-function StatusBadge({ status, t }: { status: AppointmentStatus; t: ReturnType<typeof useTranslations<'doctor.appointments'>> }) {
+function StatusBadge({
+  status,
+  t,
+}: {
+  status: AppointmentStatus
+  t: ReturnType<typeof useTranslations<'doctor.appointments'>>
+}) {
   const statusConfig: Record<AppointmentStatus, { key: string; className: string }> = {
-    PENDING: { key: 'pending', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
-    CONFIRMED: { key: 'confirmed', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
-    COMPLETED: { key: 'completed', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-    CANCELLED: { key: 'cancelled', className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
-    NO_SHOW: { key: 'noShow', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
-  };
+    PENDING: { key: 'pending', className: 'bg-warning/10 text-warning' },
+    CONFIRMED: { key: 'confirmed', className: 'bg-info/10 text-info' },
+    COMPLETED: { key: 'completed', className: 'bg-success/10 text-success' },
+    CANCELLED: { key: 'cancelled', className: 'bg-muted text-muted-foreground' },
+    NO_SHOW: { key: 'noShow', className: 'bg-destructive/10 text-destructive' },
+  }
 
-  const config = statusConfig[status] || statusConfig.PENDING;
+  const config = statusConfig[status] || statusConfig.PENDING
   return (
     <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', config.className)}>
       {t(`status.${config.key}` as 'status.pending')}
     </span>
-  );
+  )
 }
 
 // Type badge component
-function TypeBadge({ type, t }: { type: string; t: ReturnType<typeof useTranslations<'doctor.appointments'>> }) {
+function TypeBadge({
+  type,
+  t,
+}: {
+  type: string
+  t: ReturnType<typeof useTranslations<'doctor.appointments'>>
+}) {
   const typeConfig: Record<string, { key: string; className: string }> = {
-    INITIAL: { key: 'initial', className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' },
-    FOLLOW_UP: { key: 'followUp', className: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400' },
-    EMERGENCY: { key: 'emergency', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
-    CONSULTATION: { key: 'consultation', className: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400' },
-  };
+    INITIAL: {
+      key: 'initial',
+      className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+    },
+    FOLLOW_UP: {
+      key: 'followUp',
+      className: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+    },
+    EMERGENCY: { key: 'emergency', className: 'bg-destructive/10 text-destructive' },
+    CONSULTATION: {
+      key: 'consultation',
+      className: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
+    },
+  }
 
-  const config = typeConfig[type] || typeConfig.FOLLOW_UP;
+  const config = typeConfig[type] || typeConfig.FOLLOW_UP
   return (
     <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', config.className)}>
       {t(`type.${config.key}` as 'type.initial')}
     </span>
-  );
+  )
 }
 
 // Calendar component
@@ -60,35 +87,35 @@ function AppointmentCalendar({
   selectedDate,
   t,
 }: {
-  year: number;
-  month: number;
-  calendarData: CalendarMonthView | null;
-  onDateSelect: (date: string) => void;
-  selectedDate: string | null;
-  t: ReturnType<typeof useTranslations<'doctor.appointments'>>;
+  year: number
+  month: number
+  calendarData: CalendarMonthView | null
+  onDateSelect: (date: string) => void
+  selectedDate: string | null
+  t: ReturnType<typeof useTranslations<'doctor.appointments'>>
 }) {
-  const daysOfWeek = t.raw('calendar.daysOfWeek') as string[];
+  const daysOfWeek = t.raw('calendar.daysOfWeek') as string[]
 
-  const firstDay = new Date(year, month - 1, 1);
-  const lastDay = new Date(year, month, 0);
-  const startPadding = firstDay.getDay();
-  const totalDays = lastDay.getDate();
+  const firstDay = new Date(year, month - 1, 1)
+  const lastDay = new Date(year, month, 0)
+  const startPadding = firstDay.getDay()
+  const totalDays = lastDay.getDate()
 
-  const appointmentsByDate: Record<string, number> = {};
+  const appointmentsByDate: Record<string, number> = {}
   calendarData?.days.forEach((day) => {
-    appointmentsByDate[day.date] = day.total_count;
-  });
+    appointmentsByDate[day.date] = day.total_count
+  })
 
-  const days: (number | null)[] = [];
+  const days: (number | null)[] = []
   for (let i = 0; i < startPadding; i++) {
-    days.push(null);
+    days.push(null)
   }
   for (let i = 1; i <= totalDays; i++) {
-    days.push(i);
+    days.push(i)
   }
 
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const today = new Date()
+  const todayStr = today.toISOString().split('T')[0]
 
   return (
     <div className="bg-card rounded-xl border border-border p-4">
@@ -102,13 +129,13 @@ function AppointmentCalendar({
       <div className="grid grid-cols-7 gap-1">
         {days.map((day, idx) => {
           if (day === null) {
-            return <div key={`empty-${idx}`} className="aspect-square" />;
+            return <div key={`empty-${idx}`} className="aspect-square" />
           }
 
-          const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const count = appointmentsByDate[dateStr] || 0;
-          const isToday = dateStr === todayStr;
-          const isSelected = dateStr === selectedDate;
+          const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+          const count = appointmentsByDate[dateStr] || 0
+          const isToday = dateStr === todayStr
+          const isSelected = dateStr === selectedDate
 
           return (
             <button
@@ -124,19 +151,22 @@ function AppointmentCalendar({
             >
               <span>{day}</span>
               {count > 0 && (
-                <span className={cn(
-                  'text-[10px] leading-none mt-0.5',
-                  isSelected ? 'text-primary-foreground/80' : 'text-primary'
-                )}>
-                  {count}{t('calendar.appointments')}
+                <span
+                  className={cn(
+                    'text-[10px] leading-none mt-0.5',
+                    isSelected ? 'text-primary-foreground/80' : 'text-primary'
+                  )}
+                >
+                  {count}
+                  {t('calendar.appointments')}
                 </span>
               )}
             </button>
-          );
+          )
         })}
       </div>
     </div>
-  );
+  )
 }
 
 // Appointment card component
@@ -149,15 +179,15 @@ function AppointmentCard({
   isLoading,
   t,
 }: {
-  appointment: AppointmentListItem;
-  onConfirm: () => void;
-  onComplete: () => void;
-  onCancel: () => void;
-  onNoShow: () => void;
-  isLoading: boolean;
-  t: ReturnType<typeof useTranslations<'doctor.appointments'>>;
+  appointment: AppointmentListItem
+  onConfirm: () => void
+  onComplete: () => void
+  onCancel: () => void
+  onNoShow: () => void
+  isLoading: boolean
+  t: ReturnType<typeof useTranslations<'doctor.appointments'>>
 }) {
-  const formatTime = (time: string) => time.slice(0, 5);
+  const formatTime = (time: string) => time.slice(0, 5)
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -180,9 +210,7 @@ function AppointmentCard({
       </div>
 
       {appointment.reason && (
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-          {appointment.reason}
-        </p>
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{appointment.reason}</p>
       )}
 
       {appointment.is_cancellable && !appointment.is_past && (
@@ -202,7 +230,7 @@ function AppointmentCard({
               <button
                 onClick={onComplete}
                 disabled={isLoading}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-success text-success-foreground rounded-md hover:bg-success/90 disabled:opacity-50 transition-colors"
               >
                 <CheckIcon className="w-3 h-3" />
                 {t('actions.complete')}
@@ -228,12 +256,18 @@ function AppointmentCard({
         </div>
       )}
     </div>
-  );
+  )
 }
 
 // Stats card component
-function StatsCard({ stats, t }: { stats: AppointmentStats | null; t: ReturnType<typeof useTranslations<'doctor.appointments'>> }) {
-  if (!stats) return null;
+function StatsCard({
+  stats,
+  t,
+}: {
+  stats: AppointmentStats | null
+  t: ReturnType<typeof useTranslations<'doctor.appointments'>>
+}) {
+  if (!stats) return null
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -242,19 +276,19 @@ function StatsCard({ stats, t }: { stats: AppointmentStats | null; t: ReturnType
         <div className="text-xs text-muted-foreground">{t('stats.todayCount')}</div>
       </div>
       <div className="bg-card border border-border rounded-lg p-4 text-center">
-        <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+        <div className="text-2xl font-bold text-warning">{stats.pending}</div>
         <div className="text-xs text-muted-foreground">{t('stats.pending')}</div>
       </div>
       <div className="bg-card border border-border rounded-lg p-4 text-center">
-        <div className="text-2xl font-bold text-blue-600">{stats.confirmed}</div>
+        <div className="text-2xl font-bold text-info">{stats.confirmed}</div>
         <div className="text-xs text-muted-foreground">{t('stats.confirmed')}</div>
       </div>
       <div className="bg-card border border-border rounded-lg p-4 text-center">
-        <div className="text-2xl font-bold text-green-600">{stats.this_week_count}</div>
+        <div className="text-2xl font-bold text-success">{stats.this_week_count}</div>
         <div className="text-xs text-muted-foreground">{t('stats.weekTotal')}</div>
       </div>
     </div>
-  );
+  )
 }
 
 // Create appointment modal
@@ -264,13 +298,13 @@ function CreateAppointmentModal({
   onCreated,
   t,
 }: {
-  isOpen: boolean;
-  onClose: () => void;
-  onCreated: () => void;
-  t: ReturnType<typeof useTranslations<'doctor.appointments'>>;
+  isOpen: boolean
+  onClose: () => void
+  onCreated: () => void
+  t: ReturnType<typeof useTranslations<'doctor.appointments'>>
 }) {
-  const common = useTranslations('common');
-  const [patients, setPatients] = useState<Array<{ id: string; name: string }>>([]);
+  const common = useTranslations('common')
+  const [patients, setPatients] = useState<Array<{ id: string; name: string }>>([])
   const [formData, setFormData] = useState({
     patient_id: '',
     appointment_date: '',
@@ -278,29 +312,29 @@ function CreateAppointmentModal({
     end_time: '',
     appointment_type: 'FOLLOW_UP',
     reason: '',
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (isOpen) {
-      loadPatients();
+      loadPatients()
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   const loadPatients = async () => {
     try {
-      const result = await api.getDoctorPatients({ limit: 100 });
-      setPatients(result.items.map((p) => ({ id: p.patient_id, name: p.patient_name })));
+      const result = await api.getDoctorPatients({ limit: 100 })
+      setPatients(result.items.map((p) => ({ id: p.patient_id, name: p.patient_name })))
     } catch (err) {
-      console.error('Failed to load patients:', err);
+      console.error('Failed to load patients:', err)
     }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
 
     try {
       await api.createAppointment({
@@ -308,11 +342,15 @@ function CreateAppointmentModal({
         appointment_date: formData.appointment_date,
         start_time: formData.start_time,
         end_time: formData.end_time,
-        appointment_type: formData.appointment_type as 'INITIAL' | 'FOLLOW_UP' | 'EMERGENCY' | 'CONSULTATION',
+        appointment_type: formData.appointment_type as
+          | 'INITIAL'
+          | 'FOLLOW_UP'
+          | 'EMERGENCY'
+          | 'CONSULTATION',
         reason: formData.reason || undefined,
-      });
-      onCreated();
-      onClose();
+      })
+      onCreated()
+      onClose()
       setFormData({
         patient_id: '',
         appointment_date: '',
@@ -320,15 +358,15 @@ function CreateAppointmentModal({
         end_time: '',
         appointment_type: 'FOLLOW_UP',
         reason: '',
-      });
+      })
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('createFailed'));
+      setError(err instanceof Error ? err.message : t('createFailed'))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -441,43 +479,43 @@ function CreateAppointmentModal({
         </form>
       </div>
     </div>
-  );
+  )
 }
 
 export default function AppointmentsPage() {
-  const t = useTranslations('doctor.appointments');
+  const t = useTranslations('doctor.appointments')
   const [currentDate, setCurrentDate] = useState(() => {
-    const now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() + 1 };
-  });
-  const [calendarData, setCalendarData] = useState<CalendarMonthView | null>(null);
-  const [appointments, setAppointments] = useState<AppointmentListItem[]>([]);
-  const [stats, setStats] = useState<AppointmentStats | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const now = new Date()
+    return { year: now.getFullYear(), month: now.getMonth() + 1 }
+  })
+  const [calendarData, setCalendarData] = useState<CalendarMonthView | null>(null)
+  const [appointments, setAppointments] = useState<AppointmentListItem[]>([])
+  const [stats, setStats] = useState<AppointmentStats | null>(null)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const loadData = useCallback(async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       const [calendarResult, statsResult] = await Promise.all([
         api.getDoctorCalendar(currentDate.year, currentDate.month),
         api.getDoctorAppointmentStats(),
-      ]);
-      setCalendarData(calendarResult);
-      setStats(statsResult);
+      ])
+      setCalendarData(calendarResult)
+      setStats(statsResult)
 
       // Load appointments for today by default
-      const today = new Date().toISOString().split('T')[0];
-      setSelectedDate(today);
-      await loadAppointmentsForDate(today);
+      const today = new Date().toISOString().split('T')[0]
+      setSelectedDate(today)
+      await loadAppointmentsForDate(today)
     } catch (err) {
-      console.error('Failed to load appointments data:', err);
+      console.error('Failed to load appointments data:', err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [currentDate]);
+  }, [currentDate])
 
   const loadAppointmentsForDate = async (date: string) => {
     try {
@@ -485,78 +523,78 @@ export default function AppointmentsPage() {
         start_date: date,
         end_date: date,
         limit: 50,
-      });
-      setAppointments(result);
+      })
+      setAppointments(result)
     } catch (err) {
-      console.error('Failed to load appointments for date:', err);
+      console.error('Failed to load appointments for date:', err)
     }
-  };
+  }
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData()
+  }, [loadData])
 
   const handleDateSelect = async (date: string) => {
-    setSelectedDate(date);
-    await loadAppointmentsForDate(date);
-  };
+    setSelectedDate(date)
+    await loadAppointmentsForDate(date)
+  }
 
   const handlePrevMonth = () => {
     setCurrentDate((prev) => {
       if (prev.month === 1) {
-        return { year: prev.year - 1, month: 12 };
+        return { year: prev.year - 1, month: 12 }
       }
-      return { year: prev.year, month: prev.month - 1 };
-    });
-  };
+      return { year: prev.year, month: prev.month - 1 }
+    })
+  }
 
   const handleNextMonth = () => {
     setCurrentDate((prev) => {
       if (prev.month === 12) {
-        return { year: prev.year + 1, month: 1 };
+        return { year: prev.year + 1, month: 1 }
       }
-      return { year: prev.year, month: prev.month + 1 };
-    });
-  };
+      return { year: prev.year, month: prev.month + 1 }
+    })
+  }
 
   const handleAction = async (
     appointmentId: string,
     action: 'confirm' | 'complete' | 'cancel' | 'noshow'
   ) => {
-    setActionLoading(appointmentId);
+    setActionLoading(appointmentId)
     try {
       switch (action) {
         case 'confirm':
-          await api.confirmAppointment(appointmentId);
-          break;
+          await api.confirmAppointment(appointmentId)
+          break
         case 'complete':
-          await api.completeAppointment(appointmentId);
-          break;
+          await api.completeAppointment(appointmentId)
+          break
         case 'cancel':
-          await api.cancelAppointmentByDoctor(appointmentId);
-          break;
+          await api.cancelAppointmentByDoctor(appointmentId)
+          break
         case 'noshow':
-          await api.markAppointmentNoShow(appointmentId);
-          break;
+          await api.markAppointmentNoShow(appointmentId)
+          break
       }
       // Reload data
-      await loadData();
+      await loadData()
       if (selectedDate) {
-        await loadAppointmentsForDate(selectedDate);
+        await loadAppointmentsForDate(selectedDate)
       }
     } catch (err) {
-      console.error(`Failed to ${action} appointment:`, err);
+      console.error(`Failed to ${action} appointment:`, err)
     } finally {
-      setActionLoading(null);
+      setActionLoading(null)
     }
-  };
+  }
 
-  const monthNames = t.raw('months') as string[];
+  const monthNames = t.raw('months') as string[]
 
   const formatSelectedDate = (date: string) => {
-    const d = new Date(date);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
+    const d = new Date(date)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
 
   if (isLoading) {
     return (
@@ -566,7 +604,7 @@ export default function AppointmentsPage() {
           <p className="text-muted-foreground text-sm">{t('loading')}</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -578,9 +616,7 @@ export default function AppointmentsPage() {
             <CalendarIcon className="w-6 h-6" />
             {t('title')}
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {t('subtitle')}
-          </p>
+          <p className="text-muted-foreground text-sm mt-1">{t('subtitle')}</p>
         </div>
         <button
           onClick={() => setIsCreateModalOpen(true)}
@@ -668,5 +704,5 @@ export default function AppointmentsPage() {
         t={t}
       />
     </div>
-  );
+  )
 }
