@@ -12,14 +12,14 @@ clients:
 
 scrape_configs:
   # XinShouCai backend application logs
-  - job_name: xinshoucai-backend
+  - job_name: heartguardian-backend
     static_configs:
       - targets:
           - localhost
         labels:
-          job: xinshoucai-backend
+          job: heartguardian-backend
           service: backend
-          __path__: /var/log/xinshoucai/*.log
+          __path__: /var/log/heartguardian/*.log
     pipeline_stages:
       # Parse JSON logs
       - json:
@@ -42,8 +42,8 @@ scrape_configs:
       - metrics:
           log_lines_total:
             type: Counter
-            description: "Total log lines by level"
-            prefix: xinshoucai_
+            description: 'Total log lines by level'
+            prefix: heartguardian_
             source: level
             config:
               action: inc
@@ -54,9 +54,9 @@ scrape_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
     relabel_configs:
-      # Only keep xinshoucai containers
+      # Only keep heartguardian containers
       - source_labels: ['__meta_docker_container_name']
-        regex: '.*xinshoucai.*'
+        regex: '.*heartguardian.*'
         action: keep
       # Set container name as label
       - source_labels: ['__meta_docker_container_name']

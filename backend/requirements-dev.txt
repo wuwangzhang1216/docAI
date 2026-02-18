@@ -22,6 +22,7 @@ mypy==1.8.0
 faker==23.2.0
 factory-boy==3.3.0
 respx==0.20.2  # Mock httpx requests
+PyPDF2==3.0.1  # PDF reading for test assertions
 
 # Profiling
 py-spy==0.3.14

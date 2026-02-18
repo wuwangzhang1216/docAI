@@ -3,9 +3,9 @@
 global:
   # SMTP configuration for email alerts
   smtp_smarthost: 'smtp.gmail.com:587'
-  smtp_from: 'alerts@xinshoucai.com'
-  smtp_auth_username: ''  # Set via environment variable
-  smtp_auth_password: ''  # Set via environment variable
+  smtp_from: 'alerts@heartguardian.com'
+  smtp_auth_username: '' # Set via environment variable
+  smtp_auth_password: '' # Set via environment variable
   smtp_require_tls: true
 
   # Slack configuration (optional)
@@ -65,13 +65,13 @@ receivers:
   # Default receiver
   - name: 'default-receiver'
     email_configs:
-      - to: 'ops@xinshoucai.com'
+      - to: 'ops@heartguardian.com'
         send_resolved: true
 
   # Critical alerts receiver
   - name: 'critical-receiver'
     email_configs:
-      - to: 'oncall@xinshoucai.com'
+      - to: 'oncall@heartguardian.com'
         send_resolved: true
         headers:
           Subject: '[CRITICAL] {{ .GroupLabels.alertname }}'
@@ -85,7 +85,7 @@ receivers:
   # Risk event receiver - for clinical team
   - name: 'risk-receiver'
     email_configs:
-      - to: 'clinical-team@xinshoucai.com'
+      - to: 'clinical-team@heartguardian.com'
         send_resolved: false
         headers:
           Subject: '[URGENT] Patient Risk Alert'
@@ -94,7 +94,7 @@ receivers:
   # Warning alerts receiver
   - name: 'warning-receiver'
     email_configs:
-      - to: 'ops@xinshoucai.com'
+      - to: 'ops@heartguardian.com'
         send_resolved: true
 
 # Inhibition rules to prevent alert storms

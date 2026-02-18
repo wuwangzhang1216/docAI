@@ -6,7 +6,7 @@ providers:
   - name: 'XinShouCai Dashboards'
     orgId: 1
     folder: 'XinShouCai'
-    folderUid: 'xinshoucai'
+    folderUid: 'heartguardian'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30

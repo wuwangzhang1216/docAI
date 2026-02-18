@@ -9,48 +9,48 @@ groups:
       - alert: HighRequestLatency
         expr: |
           histogram_quantile(0.95,
-            sum(rate(xinshoucai_http_request_duration_seconds_bucket[5m])) by (le, endpoint)
+            sum(rate(heartguardian_http_request_duration_seconds_bucket[5m])) by (le, endpoint)
           ) > 1
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "High request latency on {{ $labels.endpoint }}"
-          description: "P95 latency is above 1 second (current: {{ $value | humanizeDuration }})"
+          summary: 'High request latency on {{ $labels.endpoint }}'
+          description: 'P95 latency is above 1 second (current: {{ $value | humanizeDuration }})'
 
       - alert: VeryHighRequestLatency
         expr: |
           histogram_quantile(0.95,
-            sum(rate(xinshoucai_http_request_duration_seconds_bucket[5m])) by (le, endpoint)
+            sum(rate(heartguardian_http_request_duration_seconds_bucket[5m])) by (le, endpoint)
           ) > 3
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "Very high request latency on {{ $labels.endpoint }}"
-          description: "P95 latency is above 3 seconds (current: {{ $value | humanizeDuration }})"
+          summary: 'Very high request latency on {{ $labels.endpoint }}'
+          description: 'P95 latency is above 3 seconds (current: {{ $value | humanizeDuration }})'
 
       - alert: HighErrorRate
         expr: |
-          sum(rate(xinshoucai_http_requests_total{status_code=~"5.."}[5m])) /
-          sum(rate(xinshoucai_http_requests_total[5m])) > 0.01
+          sum(rate(heartguardian_http_requests_total{status_code=~"5.."}[5m])) /
+          sum(rate(heartguardian_http_requests_total[5m])) > 0.01
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "High error rate detected"
-          description: "Error rate is above 1% (current: {{ $value | humanizePercentage }})"
+          summary: 'High error rate detected'
+          description: 'Error rate is above 1% (current: {{ $value | humanizePercentage }})'
 
       - alert: High4xxRate
         expr: |
-          sum(rate(xinshoucai_http_requests_total{status_code=~"4.."}[5m])) /
-          sum(rate(xinshoucai_http_requests_total[5m])) > 0.05
+          sum(rate(heartguardian_http_requests_total{status_code=~"4.."}[5m])) /
+          sum(rate(heartguardian_http_requests_total[5m])) > 0.05
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "High 4xx error rate"
-          description: "4xx error rate is above 5% (current: {{ $value | humanizePercentage }})"
+          summary: 'High 4xx error rate'
+          description: '4xx error rate is above 5% (current: {{ $value | humanizePercentage }})'
 
   # ============================================================================
   # AI Engine Alerts
@@ -60,36 +60,36 @@ groups:
       - alert: AIRequestLatencyHigh
         expr: |
           histogram_quantile(0.95,
-            sum(rate(xinshoucai_ai_request_duration_seconds_bucket[5m])) by (le, engine_type)
+            sum(rate(heartguardian_ai_request_duration_seconds_bucket[5m])) by (le, engine_type)
           ) > 30
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "AI request latency high for {{ $labels.engine_type }}"
-          description: "P95 AI latency is above 30 seconds"
+          summary: 'AI request latency high for {{ $labels.engine_type }}'
+          description: 'P95 AI latency is above 30 seconds'
 
       - alert: AIErrorRateHigh
         expr: |
-          sum(rate(xinshoucai_ai_requests_total{status="error"}[5m])) by (engine_type) /
-          sum(rate(xinshoucai_ai_requests_total[5m])) by (engine_type) > 0.05
+          sum(rate(heartguardian_ai_requests_total{status="error"}[5m])) by (engine_type) /
+          sum(rate(heartguardian_ai_requests_total[5m])) by (engine_type) > 0.05
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "High AI error rate for {{ $labels.engine_type }}"
-          description: "AI error rate is above 5%"
+          summary: 'High AI error rate for {{ $labels.engine_type }}'
+          description: 'AI error rate is above 5%'
 
       - alert: AITokenUsageSpike
         expr: |
-          rate(xinshoucai_ai_tokens_total[1h]) >
-          1.5 * avg_over_time(rate(xinshoucai_ai_tokens_total[1h])[24h:1h])
+          rate(heartguardian_ai_tokens_total[1h]) >
+          1.5 * avg_over_time(rate(heartguardian_ai_tokens_total[1h])[24h:1h])
         for: 30m
         labels:
           severity: warning
         annotations:
-          summary: "Unusual spike in AI token usage"
-          description: "Token usage is 50% higher than 24h average"
+          summary: 'Unusual spike in AI token usage'
+          description: 'Token usage is 50% higher than 24h average'
 
   # ============================================================================
   # Risk Detection Alerts
@@ -97,31 +97,31 @@ groups:
   - name: risk_detection
     rules:
       - alert: CriticalRiskEventDetected
-        expr: increase(xinshoucai_risk_events_total{level="CRITICAL"}[5m]) > 0
+        expr: increase(heartguardian_risk_events_total{level="CRITICAL"}[5m]) > 0
         for: 0m
         labels:
           severity: critical
         annotations:
-          summary: "Critical risk event detected"
-          description: "A critical risk event has been detected that requires immediate attention"
+          summary: 'Critical risk event detected'
+          description: 'A critical risk event has been detected that requires immediate attention'
 
       - alert: HighRiskEventsUnreviewed
-        expr: xinshoucai_risk_events_unreviewed > 10
+        expr: heartguardian_risk_events_unreviewed > 10
         for: 30m
         labels:
           severity: warning
         annotations:
-          summary: "Many unreviewed risk events"
-          description: "{{ $value }} risk events are pending review for more than 30 minutes"
+          summary: 'Many unreviewed risk events'
+          description: '{{ $value }} risk events are pending review for more than 30 minutes'
 
       - alert: VeryHighRiskEventsUnreviewed
-        expr: xinshoucai_risk_events_unreviewed > 25
+        expr: heartguardian_risk_events_unreviewed > 25
         for: 15m
         labels:
           severity: critical
         annotations:
-          summary: "Critical: Too many unreviewed risk events"
-          description: "{{ $value }} risk events are pending review - requires immediate attention"
+          summary: 'Critical: Too many unreviewed risk events'
+          description: '{{ $value }} risk events are pending review - requires immediate attention'
 
   # ============================================================================
   # Database Alerts
@@ -130,35 +130,35 @@ groups:
     rules:
       - alert: DatabaseConnectionPoolExhausted
         expr: |
-          xinshoucai_db_pool_checked_out / xinshoucai_db_pool_size > 0.8
+          heartguardian_db_pool_checked_out / heartguardian_db_pool_size > 0.8
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Database connection pool near exhaustion"
-          description: "Connection pool is {{ $value | humanizePercentage }} utilized"
+          summary: 'Database connection pool near exhaustion'
+          description: 'Connection pool is {{ $value | humanizePercentage }} utilized'
 
       - alert: DatabaseConnectionPoolCritical
         expr: |
-          xinshoucai_db_pool_checked_out / xinshoucai_db_pool_size > 0.95
+          heartguardian_db_pool_checked_out / heartguardian_db_pool_size > 0.95
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "Database connection pool critically full"
-          description: "Connection pool is {{ $value | humanizePercentage }} utilized"
+          summary: 'Database connection pool critically full'
+          description: 'Connection pool is {{ $value | humanizePercentage }} utilized'
 
       - alert: DatabaseQueryLatencyHigh
         expr: |
           histogram_quantile(0.95,
-            sum(rate(xinshoucai_db_query_duration_seconds_bucket[5m])) by (le, operation)
+            sum(rate(heartguardian_db_query_duration_seconds_bucket[5m])) by (le, operation)
           ) > 0.5
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "High database query latency for {{ $labels.operation }}"
-          description: "P95 query latency is above 500ms"
+          summary: 'High database query latency for {{ $labels.operation }}'
+          description: 'P95 query latency is above 500ms'
 
   # ============================================================================
   # WebSocket Alerts
@@ -166,24 +166,24 @@ groups:
   - name: websocket
     rules:
       - alert: WebSocketConnectionsHigh
-        expr: xinshoucai_websocket_connections > 1000
+        expr: heartguardian_websocket_connections > 1000
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "High number of WebSocket connections"
-          description: "{{ $value }} active WebSocket connections"
+          summary: 'High number of WebSocket connections'
+          description: '{{ $value }} active WebSocket connections'
 
       - alert: WebSocketConnectionsDrop
         expr: |
-          decrease(xinshoucai_websocket_connections[5m]) /
-          xinshoucai_websocket_connections > 0.5
+          decrease(heartguardian_websocket_connections[5m]) /
+          heartguardian_websocket_connections > 0.5
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "Sudden drop in WebSocket connections"
-          description: "WebSocket connections dropped by more than 50% in 5 minutes"
+          summary: 'Sudden drop in WebSocket connections'
+          description: 'WebSocket connections dropped by more than 50% in 5 minutes'
 
   # ============================================================================
   # Email Alerts
@@ -191,24 +191,24 @@ groups:
   - name: email
     rules:
       - alert: EmailQueueBacklog
-        expr: xinshoucai_email_queue_size > 100
+        expr: heartguardian_email_queue_size > 100
         for: 15m
         labels:
           severity: warning
         annotations:
-          summary: "Email queue backlog growing"
-          description: "{{ $value }} emails in queue for more than 15 minutes"
+          summary: 'Email queue backlog growing'
+          description: '{{ $value }} emails in queue for more than 15 minutes'
 
       - alert: EmailDeliveryFailures
         expr: |
-          sum(rate(xinshoucai_emails_total{status="failure"}[1h])) /
-          sum(rate(xinshoucai_emails_total[1h])) > 0.1
+          sum(rate(heartguardian_emails_total{status="failure"}[1h])) /
+          sum(rate(heartguardian_emails_total[1h])) > 0.1
         for: 30m
         labels:
           severity: warning
         annotations:
-          summary: "High email delivery failure rate"
-          description: "Email failure rate is above 10%"
+          summary: 'High email delivery failure rate'
+          description: 'Email failure rate is above 10%'
 
   # ============================================================================
   # Business Metrics Alerts
@@ -217,22 +217,22 @@ groups:
     rules:
       - alert: LowUserActivity
         expr: |
-          sum(increase(xinshoucai_user_logins_total{status="success"}[1h])) < 5
+          sum(increase(heartguardian_user_logins_total{status="success"}[1h])) < 5
         for: 2h
         labels:
           severity: info
         annotations:
-          summary: "Low user activity detected"
-          description: "Less than 5 successful logins in the past hour"
+          summary: 'Low user activity detected'
+          description: 'Less than 5 successful logins in the past hour'
 
       - alert: AverageMoodScoreLow
-        expr: xinshoucai_average_mood_score < 3
+        expr: heartguardian_average_mood_score < 3
         for: 24h
         labels:
           severity: info
         annotations:
-          summary: "Average patient mood score is low"
-          description: "Average mood score has been below 3/10 for 24 hours"
+          summary: 'Average patient mood score is low'
+          description: 'Average mood score has been below 3/10 for 24 hours'
 
   # ============================================================================
   # Infrastructure Alerts
@@ -240,20 +240,20 @@ groups:
   - name: infrastructure
     rules:
       - alert: ServiceDown
-        expr: up{job="xinshoucai-backend"} == 0
+        expr: up{job="heartguardian-backend"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "XinShouCai backend is down"
-          description: "The backend service has been unreachable for 1 minute"
+          summary: 'XinShouCai backend is down'
+          description: 'The backend service has been unreachable for 1 minute'
 
       - alert: ServiceRestarted
         expr: |
-          changes(process_start_time_seconds{job="xinshoucai-backend"}[15m]) > 0
+          changes(process_start_time_seconds{job="heartguardian-backend"}[15m]) > 0
         for: 0m
         labels:
           severity: warning
         annotations:
-          summary: "XinShouCai backend restarted"
-          description: "The backend service has restarted in the last 15 minutes"
+          summary: 'XinShouCai backend restarted'
+          description: 'The backend service has restarted in the last 15 minutes'

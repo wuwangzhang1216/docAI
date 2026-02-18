@@ -81,7 +81,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "sum(rate(xinshoucai_http_requests_total[5m]))",
+          "expr": "sum(rate(heartguardian_http_requests_total[5m]))",
           "legendFormat": "Requests/s",
           "refId": "A"
         }
@@ -143,7 +143,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "sum(rate(xinshoucai_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(xinshoucai_http_requests_total[5m]))",
+          "expr": "sum(rate(heartguardian_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(heartguardian_http_requests_total[5m]))",
           "legendFormat": "Error Rate",
           "refId": "A"
         }
@@ -205,7 +205,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(xinshoucai_http_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(heartguardian_http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P95 Latency",
           "refId": "A"
         }
@@ -259,7 +259,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "xinshoucai_websocket_connections",
+          "expr": "heartguardian_websocket_connections",
           "legendFormat": "WS Connections",
           "refId": "A"
         }
@@ -321,7 +321,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "xinshoucai_risk_events_unreviewed",
+          "expr": "heartguardian_risk_events_unreviewed",
           "legendFormat": "Unreviewed Risks",
           "refId": "A"
         }
@@ -385,7 +385,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "xinshoucai_average_mood_score",
+          "expr": "heartguardian_average_mood_score",
           "legendFormat": "Avg Mood",
           "refId": "A"
         }
@@ -481,7 +481,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(xinshoucai_http_requests_total[5m])) by (endpoint)",
+          "expr": "sum(rate(heartguardian_http_requests_total[5m])) by (endpoint)",
           "legendFormat": "{{ endpoint }}",
           "refId": "A"
         }
@@ -572,22 +572,22 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(xinshoucai_http_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(heartguardian_http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P50",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.90, sum(rate(xinshoucai_http_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.90, sum(rate(heartguardian_http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P90",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(xinshoucai_http_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(heartguardian_http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P95",
           "refId": "C"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(xinshoucai_http_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(heartguardian_http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P99",
           "refId": "D"
         }
@@ -683,7 +683,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(xinshoucai_ai_requests_total[5m])) by (engine_type)",
+          "expr": "sum(rate(heartguardian_ai_requests_total[5m])) by (engine_type)",
           "legendFormat": "{{ engine_type }}",
           "refId": "A"
         }
@@ -766,7 +766,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(xinshoucai_ai_request_duration_seconds_bucket[5m])) by (le, engine_type))",
+          "expr": "histogram_quantile(0.95, sum(rate(heartguardian_ai_request_duration_seconds_bucket[5m])) by (le, engine_type))",
           "legendFormat": "{{ engine_type }} P95",
           "refId": "A"
         }
@@ -849,7 +849,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(xinshoucai_ai_tokens_total[1h])) by (token_type)",
+          "expr": "sum(increase(heartguardian_ai_tokens_total[1h])) by (token_type)",
           "legendFormat": "{{ token_type }}",
           "refId": "A"
         }
@@ -1006,7 +1006,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(xinshoucai_risk_events_total[1h])) by (level)",
+          "expr": "sum(increase(heartguardian_risk_events_total[1h])) by (level)",
           "legendFormat": "{{ level }}",
           "refId": "A"
         }
@@ -1089,12 +1089,12 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(xinshoucai_checkins_total[1h]))",
+          "expr": "sum(increase(heartguardian_checkins_total[1h]))",
           "legendFormat": "Check-ins",
           "refId": "A"
         },
         {
-          "expr": "sum(increase(xinshoucai_assessments_total[1h]))",
+          "expr": "sum(increase(heartguardian_assessments_total[1h]))",
           "legendFormat": "Assessments",
           "refId": "B"
         }
@@ -1177,7 +1177,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(xinshoucai_assessments_total[24h])) by (assessment_type)",
+          "expr": "sum(increase(heartguardian_assessments_total[24h])) by (assessment_type)",
           "legendFormat": "{{ assessment_type }}",
           "refId": "A"
         }
@@ -1283,7 +1283,7 @@
       },
       "targets": [
         {
-          "expr": "xinshoucai_db_pool_checked_out / xinshoucai_db_pool_size",
+          "expr": "heartguardian_db_pool_checked_out / heartguardian_db_pool_size",
           "legendFormat": "Pool Utilization",
           "refId": "A"
         }
@@ -1366,7 +1366,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(xinshoucai_db_query_duration_seconds_bucket[5m])) by (le, operation))",
+          "expr": "histogram_quantile(0.95, sum(rate(heartguardian_db_query_duration_seconds_bucket[5m])) by (le, operation))",
           "legendFormat": "{{ operation }} P95",
           "refId": "A"
         }
@@ -1449,7 +1449,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(xinshoucai_errors_total[1h])) by (error_type)",
+          "expr": "sum(increase(heartguardian_errors_total[1h])) by (error_type)",
           "legendFormat": "{{ error_type }}",
           "refId": "A"
         }
@@ -1461,7 +1461,7 @@
   "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["xinshoucai", "backend", "api"],
+  "tags": ["heartguardian", "backend", "api"],
   "templating": {
     "list": []
   },
@@ -1472,7 +1472,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "XinShouCai Overview",
-  "uid": "xinshoucai-overview",
+  "uid": "heartguardian-overview",
   "version": 1,
   "weekStart": ""
 }

@@ -13,15 +13,7 @@ from contextlib import asynccontextmanager
 from functools import wraps
 from typing import Any, Callable
 
-from prometheus_client import (
-    CONTENT_TYPE_LATEST,
-    CollectorRegistry,
-    Counter,
-    Gauge,
-    Histogram,
-    Info,
-    generate_latest,
-)
+from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, Counter, Gauge, Histogram, Info, generate_latest
 
 # Create a custom registry to avoid conflicts
 REGISTRY = CollectorRegistry()
@@ -31,7 +23,7 @@ REGISTRY = CollectorRegistry()
 # ============================================================================
 
 APP_INFO = Info(
-    "xinshoucai_app",
+    "heartguardian_app",
     "Application information",
     registry=REGISTRY,
 )
@@ -41,14 +33,14 @@ APP_INFO = Info(
 # ============================================================================
 
 REQUEST_COUNT = Counter(
-    "xinshoucai_http_requests_total",
+    "heartguardian_http_requests_total",
     "Total HTTP requests",
     ["method", "endpoint", "status_code"],
     registry=REGISTRY,
 )
 
 REQUEST_LATENCY = Histogram(
-    "xinshoucai_http_request_duration_seconds",
+    "heartguardian_http_request_duration_seconds",
     "HTTP request latency in seconds",
     ["method", "endpoint"],
     buckets=(0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0),
@@ -56,7 +48,7 @@ REQUEST_LATENCY = Histogram(
 )
 
 REQUEST_IN_PROGRESS = Gauge(
-    "xinshoucai_http_requests_in_progress",
+    "heartguardian_http_requests_in_progress",
     "Number of HTTP requests currently being processed",
     ["method", "endpoint"],
     registry=REGISTRY,
@@ -67,14 +59,14 @@ REQUEST_IN_PROGRESS = Gauge(
 # ============================================================================
 
 AI_REQUEST_COUNT = Counter(
-    "xinshoucai_ai_requests_total",
+    "heartguardian_ai_requests_total",
     "Total AI API requests",
     ["engine_type", "status"],  # engine_type: patient_chat, doctor_chat, risk_detection
     registry=REGISTRY,
 )
 
 AI_REQUEST_LATENCY = Histogram(
-    "xinshoucai_ai_request_duration_seconds",
+    "heartguardian_ai_request_duration_seconds",
     "AI API request latency in seconds",
     ["engine_type"],
     buckets=(0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 15.0, 30.0, 60.0),
@@ -82,7 +74,7 @@ AI_REQUEST_LATENCY = Histogram(
 )
 
 AI_TOKENS_USED = Counter(
-    "xinshoucai_ai_tokens_total",
+    "heartguardian_ai_tokens_total",
     "Total AI tokens used",
     ["engine_type", "token_type"],  # token_type: input, output
     registry=REGISTRY,
@@ -93,14 +85,14 @@ AI_TOKENS_USED = Counter(
 # ============================================================================
 
 RISK_EVENTS_DETECTED = Counter(
-    "xinshoucai_risk_events_total",
+    "heartguardian_risk_events_total",
     "Total risk events detected",
     ["level", "language"],  # level: CRITICAL, HIGH, MEDIUM, LOW
     registry=REGISTRY,
 )
 
 RISK_EVENTS_UNREVIEWED = Gauge(
-    "xinshoucai_risk_events_unreviewed",
+    "heartguardian_risk_events_unreviewed",
     "Number of unreviewed risk events",
     registry=REGISTRY,
 )
@@ -110,21 +102,21 @@ RISK_EVENTS_UNREVIEWED = Gauge(
 # ============================================================================
 
 ACTIVE_USERS = Gauge(
-    "xinshoucai_active_users",
+    "heartguardian_active_users",
     "Number of active users",
     ["role"],  # role: patient, doctor, admin
     registry=REGISTRY,
 )
 
 USER_REGISTRATIONS = Counter(
-    "xinshoucai_user_registrations_total",
+    "heartguardian_user_registrations_total",
     "Total user registrations",
     ["role"],
     registry=REGISTRY,
 )
 
 USER_LOGINS = Counter(
-    "xinshoucai_user_logins_total",
+    "heartguardian_user_logins_total",
     "Total user logins",
     ["role", "status"],  # status: success, failure
     registry=REGISTRY,
@@ -135,20 +127,20 @@ USER_LOGINS = Counter(
 # ============================================================================
 
 CHECKINS_SUBMITTED = Counter(
-    "xinshoucai_checkins_total",
+    "heartguardian_checkins_total",
     "Total daily check-ins submitted",
     registry=REGISTRY,
 )
 
 ASSESSMENTS_COMPLETED = Counter(
-    "xinshoucai_assessments_total",
+    "heartguardian_assessments_total",
     "Total assessments completed",
     ["assessment_type"],  # PHQ9, GAD7, PSS, ISI, PCL5
     registry=REGISTRY,
 )
 
 AVERAGE_MOOD_SCORE = Gauge(
-    "xinshoucai_average_mood_score",
+    "heartguardian_average_mood_score",
     "Average mood score across all patients (0-10)",
     registry=REGISTRY,
 )
@@ -158,14 +150,14 @@ AVERAGE_MOOD_SCORE = Gauge(
 # ============================================================================
 
 MESSAGES_SENT = Counter(
-    "xinshoucai_messages_total",
+    "heartguardian_messages_total",
     "Total messages sent",
     ["message_type"],  # text, image, file
     registry=REGISTRY,
 )
 
 WEBSOCKET_CONNECTIONS = Gauge(
-    "xinshoucai_websocket_connections",
+    "heartguardian_websocket_connections",
     "Number of active WebSocket connections",
     registry=REGISTRY,
 )
@@ -175,25 +167,25 @@ WEBSOCKET_CONNECTIONS = Gauge(
 # ============================================================================
 
 DB_POOL_SIZE = Gauge(
-    "xinshoucai_db_pool_size",
+    "heartguardian_db_pool_size",
     "Database connection pool size",
     registry=REGISTRY,
 )
 
 DB_POOL_CHECKED_IN = Gauge(
-    "xinshoucai_db_pool_checked_in",
+    "heartguardian_db_pool_checked_in",
     "Number of connections currently checked into the pool",
     registry=REGISTRY,
 )
 
 DB_POOL_CHECKED_OUT = Gauge(
-    "xinshoucai_db_pool_checked_out",
+    "heartguardian_db_pool_checked_out",
     "Number of connections currently checked out of the pool",
     registry=REGISTRY,
 )
 
 DB_QUERY_LATENCY = Histogram(
-    "xinshoucai_db_query_duration_seconds",
+    "heartguardian_db_query_duration_seconds",
     "Database query latency in seconds",
     ["operation"],  # select, insert, update, delete
     buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0),
@@ -205,14 +197,14 @@ DB_QUERY_LATENCY = Histogram(
 # ============================================================================
 
 EMAILS_SENT = Counter(
-    "xinshoucai_emails_total",
+    "heartguardian_emails_total",
     "Total emails sent",
     ["email_type", "status"],  # email_type: password_reset, risk_alert, appointment_reminder
     registry=REGISTRY,
 )
 
 EMAIL_QUEUE_SIZE = Gauge(
-    "xinshoucai_email_queue_size",
+    "heartguardian_email_queue_size",
     "Number of emails in queue",
     registry=REGISTRY,
 )
@@ -222,14 +214,14 @@ EMAIL_QUEUE_SIZE = Gauge(
 # ============================================================================
 
 STORAGE_UPLOADS = Counter(
-    "xinshoucai_storage_uploads_total",
+    "heartguardian_storage_uploads_total",
     "Total file uploads",
     ["file_type"],  # image, document, report
     registry=REGISTRY,
 )
 
 STORAGE_UPLOAD_SIZE = Histogram(
-    "xinshoucai_storage_upload_size_bytes",
+    "heartguardian_storage_upload_size_bytes",
     "Upload file size in bytes",
     buckets=(1024, 10240, 102400, 1048576, 10485760),  # 1KB, 10KB, 100KB, 1MB, 10MB
     registry=REGISTRY,
@@ -240,7 +232,7 @@ STORAGE_UPLOAD_SIZE = Histogram(
 # ============================================================================
 
 APPOINTMENTS_CREATED = Counter(
-    "xinshoucai_appointments_total",
+    "heartguardian_appointments_total",
     "Total appointments created",
     ["status"],  # pending, confirmed, cancelled, completed
     registry=REGISTRY,
@@ -251,7 +243,7 @@ APPOINTMENTS_CREATED = Counter(
 # ============================================================================
 
 ERRORS_TOTAL = Counter(
-    "xinshoucai_errors_total",
+    "heartguardian_errors_total",
     "Total errors",
     ["error_type", "endpoint"],  # error_type: validation, auth, internal, external
     registry=REGISTRY,
@@ -269,7 +261,7 @@ def init_app_info(version: str, environment: str) -> None:
         {
             "version": version,
             "environment": environment,
-            "name": "xinshoucai",
+            "name": "heartguardian",
         }
     )
 

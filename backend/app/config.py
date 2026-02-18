@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Database (默认使用 SQLite 进行本地开发)
-    DATABASE_URL: str = "sqlite+aiosqlite:///./xinshoucai.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./heartguardian.db"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     S3_ENDPOINT: str = "http://localhost:9000"
     S3_ACCESS_KEY: str = "minioadmin"
     S3_SECRET_KEY: str = "minioadmin"
-    S3_BUCKET: str = "xinshoucai"
+    S3_BUCKET: str = "heartguardian"
 
     # Authentication
     SECRET_KEY: str = "your-secret-key-change-in-production"
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # Application
     DEBUG: bool = True
-    APP_NAME: str = "心守AI"
+    APP_NAME: str = "HeartGuardianAI"
     API_V1_PREFIX: str = "/api/v1"
 
     # WebSocket
@@ -46,8 +46,8 @@ class Settings(BaseSettings):
     SMTP_USE_TLS: bool = False
     SMTP_START_TLS: bool = True
 
-    EMAIL_FROM: str = "noreply@xinshoucai.com"
-    EMAIL_FROM_NAME: str = "心守AI"
+    EMAIL_FROM: str = "noreply@heartguardian.com"
+    EMAIL_FROM_NAME: str = "Heart Guardian AI"
 
     # Frontend URL (for email links)
     FRONTEND_URL: str = "http://localhost:3000"
