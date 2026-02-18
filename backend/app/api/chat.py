@@ -10,10 +10,11 @@ from datetime import datetime
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import defer
 
 from app.database import get_db
 from app.models.conversation import Conversation, ConversationType
@@ -279,24 +280,49 @@ async def send_message_stream(
 
 
 @router.get("/conversations", response_model=List[ConversationListItem])
-async def list_conversations(patient: Patient = Depends(get_current_patient), db: AsyncSession = Depends(get_db)):
-    """List all conversations for the current patient."""
+async def list_conversations(
+    limit: int = Query(20, ge=1, le=100, description="Maximum number of results"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
+    patient: Patient = Depends(get_current_patient),
+    db: AsyncSession = Depends(get_db),
+):
+    """List conversations for the current patient with pagination.
+
+    Uses deferred loading to avoid fetching the full messages_json blob
+    for every conversation — only lightweight metadata columns are loaded.
+    """
+    # Query only the columns we need; defer the heavy messages_json
     result = await db.execute(
-        select(Conversation).where(Conversation.patient_id == patient.id).order_by(Conversation.updated_at.desc())
+        select(Conversation)
+        .options(defer(Conversation.messages_json))
+        .where(Conversation.patient_id == patient.id)
+        .order_by(Conversation.updated_at.desc())
+        .limit(limit)
+        .offset(offset)
     )
     conversations = result.scalars().all()
 
+    # For the listing, we need message_count and last_message_preview.
+    # We fetch messages_json only for the returned page (much smaller set).
+    conv_ids = [c.id for c in conversations]
+    msg_data = {}
+    if conv_ids:
+        # Use a lightweight query to get just the messages_json for the page
+        msg_result = await db.execute(
+            select(Conversation.id, Conversation.messages_json).where(Conversation.id.in_(conv_ids))
+        )
+        for cid, mjson in msg_result.fetchall():
+            messages = json.loads(mjson) if mjson else []
+            last_msg = messages[-1] if messages else None
+            preview = None
+            if last_msg:
+                content = last_msg.get("content", "")
+                preview = content[:50] + "..." if len(content) > 50 else content
+            msg_data[cid] = (len(messages), preview)
+
     items = []
     for conv in conversations:
-        messages = conv.messages or []
-        message_count = len(messages)
-        last_message = messages[-1] if messages else None
-        last_preview = (
-            last_message.get("content", "")[:50] + "..."
-            if last_message and len(last_message.get("content", "")) > 50
-            else last_message.get("content", "") if last_message else None
-        )
-
+        message_count, last_preview = msg_data.get(conv.id, (0, None))
         items.append(
             ConversationListItem(
                 id=conv.id,

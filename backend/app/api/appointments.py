@@ -4,6 +4,7 @@ Appointment management API endpoints.
 Provides endpoints for doctors and patients to manage appointments.
 """
 
+import asyncio
 import logging
 from datetime import date, datetime, timedelta
 from typing import List, Optional
@@ -445,16 +446,13 @@ async def get_doctor_appointment_stats(
     week_start = today - timedelta(days=today.weekday())
     month_start = today.replace(day=1)
 
-    # Get counts by status
-    result = await db.execute(
+    # Run all 4 independent count queries in parallel
+    status_task = db.execute(
         select(Appointment.status, func.count(Appointment.id))
         .where(Appointment.doctor_id == doctor.id)
         .group_by(Appointment.status)
     )
-    status_counts = dict(result.all())
-
-    # Get today's count
-    today_result = await db.execute(
+    today_task = db.execute(
         select(func.count(Appointment.id)).where(
             and_(
                 Appointment.doctor_id == doctor.id,
@@ -462,10 +460,7 @@ async def get_doctor_appointment_stats(
             )
         )
     )
-    today_count = today_result.scalar() or 0
-
-    # Get this week's count
-    week_result = await db.execute(
+    week_task = db.execute(
         select(func.count(Appointment.id)).where(
             and_(
                 Appointment.doctor_id == doctor.id,
@@ -474,10 +469,7 @@ async def get_doctor_appointment_stats(
             )
         )
     )
-    week_count = week_result.scalar() or 0
-
-    # Get this month's count
-    month_result = await db.execute(
+    month_task = db.execute(
         select(func.count(Appointment.id)).where(
             and_(
                 Appointment.doctor_id == doctor.id,
@@ -486,6 +478,14 @@ async def get_doctor_appointment_stats(
             )
         )
     )
+
+    result, today_result, week_result, month_result = await asyncio.gather(
+        status_task, today_task, week_task, month_task
+    )
+
+    status_counts = dict(result.all())
+    today_count = today_result.scalar() or 0
+    week_count = week_result.scalar() or 0
     month_count = month_result.scalar() or 0
 
     return AppointmentStats(

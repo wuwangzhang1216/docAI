@@ -38,7 +38,7 @@ class GeneratedReport(Base):
     )
     report_type = Column(Enum(ReportType), nullable=False)
     s3_key = Column(String(255), nullable=False)
-    generated_by_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    generated_by_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     metadata_json = Column(Text, nullable=True)  # Store generation options
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 

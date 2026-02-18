@@ -4,6 +4,7 @@ Aggregates all patient data (profile, check-ins, assessments, conversations,
 risk events) into a comprehensive context for doctor-AI discussions.
 """
 
+import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
@@ -66,12 +67,14 @@ class PatientContextAggregator:
         if not patient:
             raise ValueError(f"Patient not found: {patient_id}")
 
-        # Fetch all related data in parallel-style queries
-        checkins = await self._get_checkins(patient_id, cutoff_date)
-        assessments = await self._get_assessments(patient_id, cutoff_date)
-        conversations = await self._get_conversations(patient_id, cutoff_date)
-        risk_events = await self._get_risk_events(patient_id, cutoff_date)
-        clinical_notes = await self._get_clinical_notes(patient_id, cutoff_date)
+        # Fetch all related data in parallel using asyncio.gather
+        checkins, assessments, conversations, risk_events, clinical_notes = await asyncio.gather(
+            self._get_checkins(patient_id, cutoff_date),
+            self._get_assessments(patient_id, cutoff_date),
+            self._get_conversations(patient_id, cutoff_date),
+            self._get_risk_events(patient_id, cutoff_date),
+            self._get_clinical_notes(patient_id, cutoff_date),
+        )
 
         # Compute statistics
         mood_stats = self._compute_mood_stats(checkins)
@@ -151,6 +154,7 @@ class PatientContextAggregator:
                 )
             )
             .order_by(desc(RiskEvent.created_at))
+            .limit(50)
         )
         return list(result.scalars().all())
 

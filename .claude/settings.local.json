@@ -93,7 +93,10 @@
       "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
       "Bash(gh.exe auth status:*)",
       "Bash(powershell.exe -NoProfile -Command \"& ''C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe'' auth status\")",
-      "Bash(powershell.exe -NoProfile -Command \"Get-ChildItem ''C:\\\\Program Files'' | Where-Object { $_.Name -like ''*GitHub*'' }\")"
+      "Bash(powershell.exe -NoProfile -Command \"Get-ChildItem ''C:\\\\Program Files'' | Where-Object { $_.Name -like ''*GitHub*'' }\")",
+      "Bash(set SECRET_KEY=test-secret-key-for-ci)",
+      "Bash(set TESTING=true:*)",
+      "Bash(SECRET_KEY=test-secret-key-for-ci TESTING=true python -m pytest --cov=app --cov-report=term-missing -v --ignore=tests/load --ignore=tests/performance -x)"
     ],
     "deny": [],
     "ask": []

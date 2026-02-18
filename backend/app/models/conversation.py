@@ -28,7 +28,7 @@ class Conversation(Base):
         nullable=False,
         index=True,
     )
-    conv_type = Column(Enum(ConversationType), nullable=False)
+    conv_type = Column(Enum(ConversationType), nullable=False, index=True)
     messages_json = Column(Text, default="[]")  # JSON string for SQLite
     summary = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)

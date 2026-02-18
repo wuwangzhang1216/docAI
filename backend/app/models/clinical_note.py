@@ -19,7 +19,7 @@ class ClinicalNote(Base):
         nullable=False,
         index=True,
     )
-    doctor_id = Column(String(36), ForeignKey("doctors.id"), nullable=True)
+    doctor_id = Column(String(36), ForeignKey("doctors.id"), nullable=True, index=True)
     visit_date = Column(Date, nullable=True)
     transcript_url = Column(String(500), nullable=True)
     ai_draft = Column(Text, nullable=True)

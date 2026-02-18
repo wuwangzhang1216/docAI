@@ -2,8 +2,9 @@ from datetime import date, datetime, timedelta
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, case, func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import get_db
@@ -108,10 +109,12 @@ async def submit_checkin(
 async def get_checkins(
     start_date: date = Query(..., description="Start date (inclusive)"),
     end_date: date = Query(..., description="End date (inclusive)"),
+    limit: int = Query(100, ge=1, le=500, description="Maximum number of results"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
     patient: Patient = Depends(get_current_patient),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get check-ins for a date range."""
+    """Get check-ins for a date range with pagination."""
     result = await db.execute(
         select(DailyCheckin)
         .where(
@@ -122,6 +125,8 @@ async def get_checkins(
             )
         )
         .order_by(DailyCheckin.checkin_date)
+        .limit(limit)
+        .offset(offset)
     )
     checkins = result.scalars().all()
     return checkins
@@ -329,8 +334,74 @@ async def get_doctor_patients(
     """
     seven_days_ago = date.today() - timedelta(days=7)
 
-    # Build base query for patients
-    base_query = select(Patient).where(Patient.primary_doctor_id == doctor.id)
+    # Build subqueries for aggregated stats (eliminates N+1 queries)
+    mood_subq = (
+        select(
+            DailyCheckin.patient_id,
+            func.avg(DailyCheckin.mood_score).label("avg_mood"),
+        )
+        .where(DailyCheckin.checkin_date >= seven_days_ago)
+        .group_by(DailyCheckin.patient_id)
+        .subquery()
+    )
+
+    # Latest PHQ-9: use a correlated subquery for max created_at
+    phq9_latest = (
+        select(Assessment.total_score)
+        .where(
+            and_(
+                Assessment.patient_id == Patient.id,
+                Assessment.assessment_type == AssessmentType.PHQ9,
+            )
+        )
+        .order_by(Assessment.created_at.desc())
+        .limit(1)
+        .correlate(Patient)
+        .scalar_subquery()
+        .label("latest_phq9")
+    )
+
+    # Latest GAD-7
+    gad7_latest = (
+        select(Assessment.total_score)
+        .where(
+            and_(
+                Assessment.patient_id == Patient.id,
+                Assessment.assessment_type == AssessmentType.GAD7,
+            )
+        )
+        .order_by(Assessment.created_at.desc())
+        .limit(1)
+        .correlate(Patient)
+        .scalar_subquery()
+        .label("latest_gad7")
+    )
+
+    # Unreviewed risk count subquery
+    risk_subq = (
+        select(
+            RiskEvent.patient_id,
+            func.count(RiskEvent.id).label("unreviewed_risks"),
+        )
+        .where(RiskEvent.doctor_reviewed == False)
+        .group_by(RiskEvent.patient_id)
+        .subquery()
+    )
+
+    # Main query: single query with all stats via LEFT JOINs
+    base_query = (
+        select(
+            Patient.id,
+            (Patient.first_name + " " + Patient.last_name).label("patient_name"),
+            mood_subq.c.avg_mood,
+            phq9_latest,
+            gad7_latest,
+            func.coalesce(risk_subq.c.unreviewed_risks, literal(0)).label("unreviewed_risks"),
+        )
+        .outerjoin(mood_subq, mood_subq.c.patient_id == Patient.id)
+        .outerjoin(risk_subq, risk_subq.c.patient_id == Patient.id)
+        .where(Patient.primary_doctor_id == doctor.id)
+    )
 
     # Apply search filter
     if search:
@@ -341,90 +412,36 @@ async def get_doctor_patients(
     count_result = await db.execute(select(func.count()).select_from(base_query.subquery()))
     total = count_result.scalar() or 0
 
-    # Get all patients (we need to sort after computing stats)
-    result = await db.execute(base_query)
-    patients = result.scalars().all()
-
-    overviews = []
-    for patient in patients:
-        # Calculate recent mood average
-        mood_result = await db.execute(
-            select(func.avg(DailyCheckin.mood_score)).where(
-                and_(
-                    DailyCheckin.patient_id == patient.id,
-                    DailyCheckin.checkin_date >= seven_days_ago,
-                )
-            )
-        )
-        recent_mood_avg = mood_result.scalar()
-
-        # Get latest PHQ-9
-        phq9_result = await db.execute(
-            select(Assessment.total_score)
-            .where(
-                and_(
-                    Assessment.patient_id == patient.id,
-                    Assessment.assessment_type == AssessmentType.PHQ9,
-                )
-            )
-            .order_by(Assessment.created_at.desc())
-            .limit(1)
-        )
-        latest_phq9 = phq9_result.scalar()
-
-        # Get latest GAD-7
-        gad7_result = await db.execute(
-            select(Assessment.total_score)
-            .where(
-                and_(
-                    Assessment.patient_id == patient.id,
-                    Assessment.assessment_type == AssessmentType.GAD7,
-                )
-            )
-            .order_by(Assessment.created_at.desc())
-            .limit(1)
-        )
-        latest_gad7 = gad7_result.scalar()
-
-        # Count unreviewed risks
-        risk_result = await db.execute(
-            select(func.count(RiskEvent.id)).where(
-                and_(
-                    RiskEvent.patient_id == patient.id,
-                    RiskEvent.doctor_reviewed == False,
-                )
-            )
-        )
-        unreviewed_risks = risk_result.scalar() or 0
-
-        overviews.append(
-            PatientOverview(
-                patient_id=patient.id,
-                patient_name=patient.full_name,
-                recent_mood_avg=float(recent_mood_avg) if recent_mood_avg else None,
-                latest_phq9=latest_phq9,
-                latest_gad7=latest_gad7,
-                unreviewed_risks=unreviewed_risks,
-            )
-        )
-
-    # Sort overviews
+    # Apply sorting at database level
     reverse = sort_order.lower() == "desc"
     if sort_by == "name":
-        overviews.sort(key=lambda x: x.patient_name.lower(), reverse=reverse)
+        order_col = func.lower(Patient.first_name + " " + Patient.last_name)
+        base_query = base_query.order_by(order_col.desc() if reverse else order_col.asc())
     elif sort_by == "mood":
-        overviews.sort(
-            key=lambda x: x.recent_mood_avg if x.recent_mood_avg is not None else -1,
-            reverse=reverse,
-        )
-    elif sort_by == "risk":
-        overviews.sort(key=lambda x: x.unreviewed_risks, reverse=reverse)
+        order_col = func.coalesce(mood_subq.c.avg_mood, literal(-1))
+        base_query = base_query.order_by(order_col.desc() if reverse else order_col.asc())
     else:
-        # Default: sort by risk count descending
-        overviews.sort(key=lambda x: x.unreviewed_risks, reverse=True)
+        # Default: sort by risk count
+        order_col = func.coalesce(risk_subq.c.unreviewed_risks, literal(0))
+        base_query = base_query.order_by(order_col.desc() if reverse else order_col.asc())
 
-    # Apply pagination after sorting
-    paginated_items = overviews[offset : offset + limit]
+    # Apply pagination at database level
+    base_query = base_query.offset(offset).limit(limit)
+
+    result = await db.execute(base_query)
+    rows = result.fetchall()
+
+    paginated_items = [
+        PatientOverview(
+            patient_id=row.id,
+            patient_name=row.patient_name,
+            recent_mood_avg=float(row.avg_mood) if row.avg_mood is not None else None,
+            latest_phq9=row.latest_phq9,
+            latest_gad7=row.latest_gad7,
+            unreviewed_risks=row.unreviewed_risks,
+        )
+        for row in rows
+    ]
 
     return PaginatedResponse(
         items=paginated_items,
@@ -488,46 +505,8 @@ async def get_risk_queue(
         search_term = f"%{search.lower()}%"
         base_query = base_query.where(func.lower(RiskEvent.trigger_text).like(search_term))
 
-    # Get total count
-    count_query = select(func.count()).select_from(
-        select(RiskEvent.id)
-        .join(Patient, RiskEvent.patient_id == Patient.id)
-        .where(
-            and_(
-                RiskEvent.patient_id.in_(patient_ids),
-                RiskEvent.doctor_reviewed == False,
-            )
-        )
-        .subquery()
-    )
-
-    # Apply same filters for count
-    count_base = (
-        select(RiskEvent.id)
-        .join(Patient, RiskEvent.patient_id == Patient.id)
-        .where(
-            and_(
-                RiskEvent.patient_id.in_(patient_ids),
-                RiskEvent.doctor_reviewed == False,
-            )
-        )
-    )
-
-    if risk_level:
-        try:
-            level_enum = RiskLevel(risk_level.upper())
-            count_base = count_base.where(RiskEvent.risk_level == level_enum)
-        except ValueError:
-            pass
-
-    if patient_id:
-        count_base = count_base.where(RiskEvent.patient_id == patient_id)
-
-    if search:
-        search_term = f"%{search.lower()}%"
-        count_base = count_base.where(func.lower(RiskEvent.trigger_text).like(search_term))
-
-    count_result = await db.execute(select(func.count()).select_from(count_base.subquery()))
+    # Get total count - reuse base_query filters to avoid duplication
+    count_result = await db.execute(select(func.count()).select_from(base_query.subquery()))
     total = count_result.scalar() or 0
 
     # Apply ordering and pagination
@@ -602,10 +581,12 @@ async def get_patient_checkins(
     patient_id: str,
     start_date: date = Query(...),
     end_date: date = Query(...),
+    limit: int = Query(100, ge=1, le=500, description="Maximum number of results"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
     doctor: Doctor = Depends(get_current_doctor),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get check-ins for a specific patient (doctor view)."""
+    """Get check-ins for a specific patient (doctor view) with pagination."""
     # Verify patient belongs to doctor
     patient_result = await db.execute(
         select(Patient).where(and_(Patient.id == patient_id, Patient.primary_doctor_id == doctor.id))
@@ -626,6 +607,8 @@ async def get_patient_checkins(
             )
         )
         .order_by(DailyCheckin.checkin_date)
+        .limit(limit)
+        .offset(offset)
     )
 
     return result.scalars().all()
@@ -656,10 +639,12 @@ async def get_patient_profile(
 @router.get("/doctor/patients/{patient_id}/pre-visit-summaries")
 async def get_patient_pre_visit_summaries(
     patient_id: str,
+    limit: int = Query(20, ge=1, le=100, description="Maximum number of results"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
     doctor: Doctor = Depends(get_current_doctor),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get all pre-visit summaries for a patient (doctor view)."""
+    """Get pre-visit summaries for a patient (doctor view) with pagination."""
     from sqlalchemy import desc
 
     from app.models.pre_visit_summary import PreVisitSummary
@@ -676,11 +661,13 @@ async def get_patient_pre_visit_summaries(
             detail="Not authorized to view this patient",
         )
 
-    # Get pre-visit summaries
+    # Get pre-visit summaries with pagination
     summaries_result = await db.execute(
         select(PreVisitSummary)
         .where(PreVisitSummary.patient_id == patient_id)
         .order_by(desc(PreVisitSummary.created_at))
+        .limit(limit)
+        .offset(offset)
     )
     summaries = summaries_result.scalars().all()
 
@@ -923,10 +910,13 @@ async def cancel_connection_request(
 
 @router.get("/patient/connection-requests", response_model=List[PatientConnectionRequestView])
 async def get_patient_connection_requests(
-    patient: Patient = Depends(get_current_patient), db: AsyncSession = Depends(get_db)
+    limit: int = Query(20, ge=1, le=50, description="Maximum number of results"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
+    patient: Patient = Depends(get_current_patient),
+    db: AsyncSession = Depends(get_db),
 ):
     """
-    Get pending connection requests for the current patient.
+    Get pending connection requests for the current patient with pagination.
 
     Only returns PENDING requests.
     """
@@ -940,6 +930,8 @@ async def get_patient_connection_requests(
             )
         )
         .order_by(PatientConnectionRequest.created_at.desc())
+        .limit(limit)
+        .offset(offset)
     )
     rows = result.fetchall()
 

@@ -7,7 +7,7 @@ import uuid
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import and_, desc, select
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -203,13 +203,13 @@ class PreVisitReportService:
         Returns:
             Dict with reports list and total count
         """
-        # Build query
-        stmt = select(GeneratedReport).order_by(desc(GeneratedReport.created_at))
+        # Build base filter conditions
+        conditions = []
 
         if patient_id:
             # Verify access to patient
             await self._verify_access(db, patient_id, user.id)
-            stmt = stmt.where(GeneratedReport.patient_id == patient_id)
+            conditions.append(GeneratedReport.patient_id == patient_id)
         else:
             # Get all patients for this doctor
             doctor_stmt = select(Doctor).where(Doctor.user_id == user.id)
@@ -217,39 +217,44 @@ class PreVisitReportService:
             doctor = doctor_result.scalar_one_or_none()
 
             if doctor:
-                patient_stmt = select(Patient.id).where(Patient.primary_doctor_id == doctor.id)
-                patient_result = await db.execute(patient_stmt)
-                patient_ids = [p.id for p in patient_result.fetchall()]
-                stmt = stmt.where(GeneratedReport.patient_id.in_(patient_ids))
+                patient_subq = select(Patient.id).where(Patient.primary_doctor_id == doctor.id)
+                conditions.append(GeneratedReport.patient_id.in_(patient_subq))
 
-        # Count total
-        count_stmt = (
-            select(GeneratedReport).where(stmt.whereclause) if stmt.whereclause is not None else select(GeneratedReport)
-        )
+        # Count total using func.count() instead of loading all rows
+        count_stmt = select(func.count(GeneratedReport.id))
+        if conditions:
+            for cond in conditions:
+                count_stmt = count_stmt.where(cond)
         count_result = await db.execute(count_stmt)
-        total = len(count_result.scalars().all())
+        total = count_result.scalar() or 0
 
-        # Apply pagination
-        stmt = stmt.limit(limit).offset(offset)
-        result = await db.execute(stmt)
-        reports = result.scalars().all()
-
-        # Fetch patient names
-        report_list = []
-        for report in reports:
-            patient_stmt = select(Patient).where(Patient.id == report.patient_id)
-            patient_result = await db.execute(patient_stmt)
-            patient = patient_result.scalar_one_or_none()
-
-            report_list.append(
-                {
-                    "report_id": report.id,
-                    "patient_id": report.patient_id,
-                    "patient_name": patient.full_name if patient else "Unknown",
-                    "report_type": report.report_type,
-                    "generated_at": report.created_at,
-                }
+        # Query reports with patient name via JOIN (eliminates N+1)
+        stmt = (
+            select(
+                GeneratedReport,
+                (Patient.first_name + " " + Patient.last_name).label("patient_name"),
             )
+            .join(Patient, GeneratedReport.patient_id == Patient.id)
+            .order_by(desc(GeneratedReport.created_at))
+        )
+        if conditions:
+            for cond in conditions:
+                stmt = stmt.where(cond)
+        stmt = stmt.limit(limit).offset(offset)
+
+        result = await db.execute(stmt)
+        rows = result.fetchall()
+
+        report_list = [
+            {
+                "report_id": report.id,
+                "patient_id": report.patient_id,
+                "patient_name": patient_name or "Unknown",
+                "report_type": report.report_type,
+                "generated_at": report.created_at,
+            }
+            for report, patient_name in rows
+        ]
 
         return {
             "reports": report_list,

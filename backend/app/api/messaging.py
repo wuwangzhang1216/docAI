@@ -111,18 +111,30 @@ async def check_can_send_message(thread: DoctorPatientThread, db: AsyncSession) 
 
 
 async def build_message_response(
-    message: DirectMessage, thread: DoctorPatientThread, db: AsyncSession
+    message: DirectMessage,
+    thread: DoctorPatientThread,
+    db: AsyncSession,
+    sender_cache: dict = None,
 ) -> MessageResponse:
-    """Build a MessageResponse from a DirectMessage."""
-    # Get sender name
-    if message.sender_type == "DOCTOR":
-        result = await db.execute(select(Doctor).where(Doctor.id == message.sender_id))
-        sender = result.scalar_one_or_none()
-        sender_name = f"{sender.first_name} {sender.last_name}" if sender else "Unknown"
-    else:
-        result = await db.execute(select(Patient).where(Patient.id == message.sender_id))
-        sender = result.scalar_one_or_none()
-        sender_name = f"{sender.first_name} {sender.last_name}" if sender else "Unknown"
+    """Build a MessageResponse from a DirectMessage.
+
+    Args:
+        sender_cache: Optional dict mapping (sender_type, sender_id) -> name.
+            Pass a shared dict across calls to avoid repeated sender lookups.
+    """
+    cache = sender_cache if sender_cache is not None else {}
+    cache_key = (message.sender_type, message.sender_id)
+
+    if cache_key not in cache:
+        if message.sender_type == "DOCTOR":
+            result = await db.execute(select(Doctor).where(Doctor.id == message.sender_id))
+            sender = result.scalar_one_or_none()
+        else:
+            result = await db.execute(select(Patient).where(Patient.id == message.sender_id))
+            sender = result.scalar_one_or_none()
+        cache[cache_key] = f"{sender.first_name} {sender.last_name}" if sender else "Unknown"
+
+    sender_name = cache[cache_key]
 
     # Get attachments
     attachments = []
@@ -173,6 +185,28 @@ async def get_threads(
     threads = []
     total = 0
 
+    # Subquery: get the latest message per thread (eliminates N+1 for last message)
+    latest_msg_subq = (
+        select(
+            DirectMessage.thread_id,
+            func.max(DirectMessage.created_at).label("max_created"),
+        )
+        .group_by(DirectMessage.thread_id)
+        .subquery()
+    )
+    # Alias to join back for the actual message content
+    latest_msg = (
+        select(DirectMessage)
+        .join(
+            latest_msg_subq,
+            and_(
+                DirectMessage.thread_id == latest_msg_subq.c.thread_id,
+                DirectMessage.created_at == latest_msg_subq.c.max_created,
+            ),
+        )
+        .subquery()
+    )
+
     if current_user.user_type == UserType.PATIENT:
         # Get patient profile
         patient_result = await db.execute(select(Patient).where(Patient.user_id == current_user.id))
@@ -180,10 +214,11 @@ async def get_threads(
         if not patient:
             return PaginatedResponse(items=[], total=0, limit=limit, offset=offset, has_more=False)
 
-        # Build base query
+        # Build base query with last message joined
         base_query = (
-            select(DoctorPatientThread, Doctor)
+            select(DoctorPatientThread, Doctor, latest_msg.c.content, latest_msg.c.message_type)
             .join(Doctor, DoctorPatientThread.doctor_id == Doctor.id)
+            .outerjoin(latest_msg, latest_msg.c.thread_id == DoctorPatientThread.id)
             .where(DoctorPatientThread.patient_id == patient.id)
         )
 
@@ -203,25 +238,14 @@ async def get_threads(
         count_result = await db.execute(count_query)
         total = count_result.scalar() or 0
 
-        # Get paginated threads
+        # Get paginated threads - single query, no N+1
         result = await db.execute(
             base_query.order_by(desc(DoctorPatientThread.last_message_at)).offset(offset).limit(limit)
         )
         rows = result.fetchall()
 
-        for thread, doctor in rows:
-            # Get last message
-            msg_result = await db.execute(
-                select(DirectMessage)
-                .where(DirectMessage.thread_id == thread.id)
-                .order_by(desc(DirectMessage.created_at))
-                .limit(1)
-            )
-            last_msg = msg_result.scalar_one_or_none()
-
-            # Check if connection is still active
+        for thread, doctor, last_content, last_type in rows:
             can_send = patient.primary_doctor_id == doctor.id
-
             threads.append(
                 ThreadSummary(
                     id=thread.id,
@@ -229,12 +253,10 @@ async def get_threads(
                     other_party_name=f"{doctor.first_name} {doctor.last_name}",
                     other_party_type="DOCTOR",
                     last_message_preview=(
-                        last_msg.content[:100]
-                        if last_msg and last_msg.content
-                        else (f"[{last_msg.message_type.value}]" if last_msg else None)
+                        last_content[:100] if last_content else (f"[{last_type}]" if last_type else None)
                     ),
                     last_message_at=thread.last_message_at,
-                    last_message_type=last_msg.message_type if last_msg else None,
+                    last_message_type=last_type,
                     unread_count=thread.patient_unread_count,
                     can_send_message=can_send,
                     created_at=thread.created_at,
@@ -248,10 +270,11 @@ async def get_threads(
         if not doctor:
             return PaginatedResponse(items=[], total=0, limit=limit, offset=offset, has_more=False)
 
-        # Build base query
+        # Build base query with last message joined
         base_query = (
-            select(DoctorPatientThread, Patient)
+            select(DoctorPatientThread, Patient, latest_msg.c.content, latest_msg.c.message_type)
             .join(Patient, DoctorPatientThread.patient_id == Patient.id)
+            .outerjoin(latest_msg, latest_msg.c.thread_id == DoctorPatientThread.id)
             .where(DoctorPatientThread.doctor_id == doctor.id)
         )
 
@@ -271,25 +294,14 @@ async def get_threads(
         count_result = await db.execute(count_query)
         total = count_result.scalar() or 0
 
-        # Get paginated threads
+        # Get paginated threads - single query, no N+1
         result = await db.execute(
             base_query.order_by(desc(DoctorPatientThread.last_message_at)).offset(offset).limit(limit)
         )
         rows = result.fetchall()
 
-        for thread, patient in rows:
-            # Get last message
-            msg_result = await db.execute(
-                select(DirectMessage)
-                .where(DirectMessage.thread_id == thread.id)
-                .order_by(desc(DirectMessage.created_at))
-                .limit(1)
-            )
-            last_msg = msg_result.scalar_one_or_none()
-
-            # Check if connection is still active
+        for thread, patient, last_content, last_type in rows:
             can_send = patient.primary_doctor_id == doctor.id
-
             threads.append(
                 ThreadSummary(
                     id=thread.id,
@@ -297,12 +309,10 @@ async def get_threads(
                     other_party_name=f"{patient.first_name} {patient.last_name}",
                     other_party_type="PATIENT",
                     last_message_preview=(
-                        last_msg.content[:100]
-                        if last_msg and last_msg.content
-                        else (f"[{last_msg.message_type.value}]" if last_msg else None)
+                        last_content[:100] if last_content else (f"[{last_type}]" if last_type else None)
                     ),
                     last_message_at=thread.last_message_at,
-                    last_message_type=last_msg.message_type if last_msg else None,
+                    last_message_type=last_type,
                     unread_count=thread.doctor_unread_count,
                     can_send_message=can_send,
                     created_at=thread.created_at,
@@ -364,10 +374,25 @@ async def get_thread(
     if has_more:
         messages_raw = messages_raw[:limit]
 
+    # Pre-load sender names for all messages in bulk (eliminates N+1)
+    sender_cache = {}
+    doctor_ids = {msg.sender_id for msg in messages_raw if msg.sender_type == "DOCTOR"}
+    patient_ids = {msg.sender_id for msg in messages_raw if msg.sender_type == "PATIENT"}
+
+    if doctor_ids:
+        dr_result = await db.execute(select(Doctor).where(Doctor.id.in_(doctor_ids)))
+        for dr in dr_result.scalars().all():
+            sender_cache[("DOCTOR", dr.id)] = f"{dr.first_name} {dr.last_name}"
+
+    if patient_ids:
+        pt_result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
+        for pt in pt_result.scalars().all():
+            sender_cache[("PATIENT", pt.id)] = f"{pt.first_name} {pt.last_name}"
+
     # Build response (reverse to chronological order)
     messages = []
     for msg in reversed(messages_raw):
-        messages.append(await build_message_response(msg, thread, db))
+        messages.append(await build_message_response(msg, thread, db, sender_cache=sender_cache))
 
     # Check if can send message
     can_send = await check_can_send_message(thread, db)
@@ -599,14 +624,21 @@ async def get_unread_count(
         if not patient:
             return UnreadCountResponse(total_unread=0, threads=[])
 
-        # Get threads with unread messages
-        result = await db.execute(select(DoctorPatientThread).where(DoctorPatientThread.patient_id == patient.id))
-        threads = result.scalars().all()
-
-        for thread in threads:
-            if thread.patient_unread_count > 0:
-                threads_unread.append(ThreadUnreadCount(thread_id=thread.id, unread_count=thread.patient_unread_count))
-                total += thread.patient_unread_count
+        # Single query: only threads with unread > 0, with SUM aggregation
+        result = await db.execute(
+            select(
+                DoctorPatientThread.id,
+                DoctorPatientThread.patient_unread_count,
+            ).where(
+                and_(
+                    DoctorPatientThread.patient_id == patient.id,
+                    DoctorPatientThread.patient_unread_count > 0,
+                )
+            )
+        )
+        for row in result.fetchall():
+            threads_unread.append(ThreadUnreadCount(thread_id=row[0], unread_count=row[1]))
+            total += row[1]
 
     elif current_user.user_type == UserType.DOCTOR:
         # Get doctor profile
@@ -615,14 +647,21 @@ async def get_unread_count(
         if not doctor:
             return UnreadCountResponse(total_unread=0, threads=[])
 
-        # Get threads with unread messages
-        result = await db.execute(select(DoctorPatientThread).where(DoctorPatientThread.doctor_id == doctor.id))
-        threads = result.scalars().all()
-
-        for thread in threads:
-            if thread.doctor_unread_count > 0:
-                threads_unread.append(ThreadUnreadCount(thread_id=thread.id, unread_count=thread.doctor_unread_count))
-                total += thread.doctor_unread_count
+        # Single query: only threads with unread > 0
+        result = await db.execute(
+            select(
+                DoctorPatientThread.id,
+                DoctorPatientThread.doctor_unread_count,
+            ).where(
+                and_(
+                    DoctorPatientThread.doctor_id == doctor.id,
+                    DoctorPatientThread.doctor_unread_count > 0,
+                )
+            )
+        )
+        for row in result.fetchall():
+            threads_unread.append(ThreadUnreadCount(thread_id=row[0], unread_count=row[1]))
+            total += row[1]
 
     return UnreadCountResponse(total_unread=total, threads=threads_unread)
 

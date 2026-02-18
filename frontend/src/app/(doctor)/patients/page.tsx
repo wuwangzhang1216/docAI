@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import { api, type PatientOverview } from '@/lib/api';
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { api, type PatientOverview } from '@/lib/api'
 import {
   AlertTriangleIcon,
   UsersIcon,
@@ -15,39 +15,40 @@ import {
   MessageSquareIcon,
   ArrowUpDownIcon,
   SparklesIcon,
-} from '@/components/ui/icons';
-import { cn } from '@/lib/utils';
-import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@/components/ui/dialog';
-import { PatientTableSkeleton } from '@/components/ui/skeleton';
-import { SearchInput } from '@/components/ui/search-input';
-import { Pagination, PaginationInfo } from '@/components/ui/pagination';
-import { Button } from '@/components/ui/button';
+} from '@/components/ui/icons'
+import { cn } from '@/lib/utils'
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@/components/ui/dialog'
+import { PatientTableSkeleton } from '@/components/ui/skeleton'
+import { SearchInput } from '@/components/ui/search-input'
+import { Input } from '@/components/ui/input'
+import { Pagination, PaginationInfo } from '@/components/ui/pagination'
+import { Button } from '@/components/ui/button'
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 10
 
 export default function PatientsPage() {
-  const [patients, setPatients] = useState<PatientOverview[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [patientEmail, setPatientEmail] = useState('');
-  const [requestMessage, setRequestMessage] = useState('');
-  const [sendingRequest, setSendingRequest] = useState(false);
-  const [requestError, setRequestError] = useState('');
-  const [requestSuccess, setRequestSuccess] = useState('');
-  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [patients, setPatients] = useState<PatientOverview[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [patientEmail, setPatientEmail] = useState('')
+  const [requestMessage, setRequestMessage] = useState('')
+  const [sendingRequest, setSendingRequest] = useState(false)
+  const [requestError, setRequestError] = useState('')
+  const [requestSuccess, setRequestSuccess] = useState('')
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
 
   // Pagination & search state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'risk' | 'name' | 'mood'>('risk');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'risk' | 'name' | 'mood'>('risk')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-  const t = useTranslations('doctor.patients');
-  const common = useTranslations('common');
+  const t = useTranslations('doctor.patients')
+  const common = useTranslations('common')
 
   const fetchPatients = useCallback(async () => {
-    setLoading(true);
+    setLoading(true)
     try {
       const data = await api.getDoctorPatients({
         limit: PAGE_SIZE,
@@ -55,105 +56,144 @@ export default function PatientsPage() {
         search: searchQuery || undefined,
         sort_by: sortBy,
         sort_order: sortOrder,
-      });
-      setPatients(data.items);
-      setTotalItems(data.total);
+      })
+      setPatients(data.items)
+      setTotalItems(data.total)
     } catch (error) {
-      console.error('Error fetching patients:', error);
+      console.error('Error fetching patients:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [currentPage, searchQuery, sortBy, sortOrder]);
+  }, [currentPage, searchQuery, sortBy, sortOrder])
 
   useEffect(() => {
-    fetchPatients();
-  }, [fetchPatients]);
+    fetchPatients()
+  }, [fetchPatients])
 
   useEffect(() => {
     const fetchPendingRequests = async () => {
       try {
-        const response = await api.getConnectionRequests({ status: 'PENDING', limit: 1 });
-        setPendingRequestsCount(response.total);
+        const response = await api.getConnectionRequests({ status: 'PENDING', limit: 1 })
+        setPendingRequestsCount(response.total)
       } catch (error) {
-        console.error('Error fetching pending requests:', error);
+        console.error('Error fetching pending requests:', error)
       }
-    };
-    fetchPendingRequests();
-  }, []);
+    }
+    fetchPendingRequests()
+  }, [])
 
   // Reset to page 1 when search or sort changes
   const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
-  };
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
 
   const handleSortChange = (newSortBy: 'risk' | 'name' | 'mood') => {
     if (sortBy === newSortBy) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
-      setSortBy(newSortBy);
-      setSortOrder('desc');
+      setSortBy(newSortBy)
+      setSortOrder('desc')
     }
-    setCurrentPage(1);
-  };
+    setCurrentPage(1)
+  }
 
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE)
 
   const handleSendRequest = async () => {
     if (!patientEmail.trim()) {
-      setRequestError(t('addPatient.emailRequired'));
-      return;
+      setRequestError(t('addPatient.emailRequired'))
+      return
     }
 
-    setSendingRequest(true);
-    setRequestError('');
-    setRequestSuccess('');
+    setSendingRequest(true)
+    setRequestError('')
+    setRequestSuccess('')
 
     try {
-      await api.sendConnectionRequest(patientEmail.trim(), requestMessage.trim() || undefined);
-      setRequestSuccess(t('addPatient.success'));
-      setPatientEmail('');
-      setRequestMessage('');
-      setPendingRequestsCount(prev => prev + 1);
+      await api.sendConnectionRequest(patientEmail.trim(), requestMessage.trim() || undefined)
+      setRequestSuccess(t('addPatient.success'))
+      setPatientEmail('')
+      setRequestMessage('')
+      setPendingRequestsCount((prev) => prev + 1)
       setTimeout(() => {
-        setShowAddModal(false);
-        setRequestSuccess('');
-      }, 2000);
+        setShowAddModal(false)
+        setRequestSuccess('')
+      }, 2000)
     } catch (error) {
-      setRequestError(error instanceof Error ? error.message : t('addPatient.error'));
+      setRequestError(error instanceof Error ? error.message : t('addPatient.error'))
     } finally {
-      setSendingRequest(false);
+      setSendingRequest(false)
     }
-  };
+  }
 
   const handleCloseModal = () => {
-    setShowAddModal(false);
-    setPatientEmail('');
-    setRequestMessage('');
-    setRequestError('');
-    setRequestSuccess('');
-  };
+    setShowAddModal(false)
+    setPatientEmail('')
+    setRequestMessage('')
+    setRequestError('')
+    setRequestSuccess('')
+  }
 
   const getSeverityBadge = (score: number | null) => {
-    if (score === null) return <span className="bg-muted text-muted-foreground px-2.5 py-1 rounded-md text-xs font-medium">{t('notAssessed')}</span>;
-    if (score <= 4) return <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-md text-xs font-medium">{t('severity.normal')}</span>;
-    if (score <= 9) return <span className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20 px-2.5 py-1 rounded-md text-xs font-medium">{t('severity.mild')}</span>;
-    if (score <= 14) return <span className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 px-2.5 py-1 rounded-md text-xs font-medium">{t('severity.moderate')}</span>;
-    return <span className="bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-2.5 py-1 rounded-md text-xs font-medium">{t('severity.severe')}</span>;
-  };
+    if (score === null)
+      return (
+        <span
+          aria-label={t('notAssessed')}
+          className="bg-muted text-muted-foreground px-2.5 py-1 rounded-md text-xs font-medium"
+        >
+          {t('notAssessed')}
+        </span>
+      )
+    if (score <= 4)
+      return (
+        <span
+          aria-label={`Severity: ${t('severity.normal')}`}
+          className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-md text-xs font-medium"
+        >
+          {t('severity.normal')}
+        </span>
+      )
+    if (score <= 9)
+      return (
+        <span
+          aria-label={`Severity: ${t('severity.mild')}`}
+          className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20 px-2.5 py-1 rounded-md text-xs font-medium"
+        >
+          {t('severity.mild')}
+        </span>
+      )
+    if (score <= 14)
+      return (
+        <span
+          aria-label={`Severity: ${t('severity.moderate')}`}
+          className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 px-2.5 py-1 rounded-md text-xs font-medium"
+        >
+          {t('severity.moderate')}
+        </span>
+      )
+    return (
+      <span
+        aria-label={`Severity: ${t('severity.severe')}`}
+        className="bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-2.5 py-1 rounded-md text-xs font-medium"
+      >
+        {t('severity.severe')}
+      </span>
+    )
+  }
 
   const getMoodColor = (mood: number | null) => {
-    if (mood === null) return 'text-muted-foreground';
-    if (mood < 4) return 'text-red-500 font-medium';
-    if (mood < 6) return 'text-yellow-500 font-medium';
-    return 'text-emerald-500 font-medium';
-  };
+    if (mood === null) return 'text-muted-foreground'
+    if (mood < 4) return 'text-red-500 font-medium'
+    if (mood < 6) return 'text-yellow-500 font-medium'
+    return 'text-emerald-500 font-medium'
+  }
 
   // Show initial loading skeleton only on first load
-  const isInitialLoading = loading && patients.length === 0 && !searchQuery;
+  const isInitialLoading = loading && patients.length === 0 && !searchQuery
 
   // Calculate risk count from current page patients
-  const riskCount = patients.reduce((sum, p) => sum + p.unreviewed_risks, 0);
+  const riskCount = patients.reduce((sum, p) => sum + p.unreviewed_risks, 0)
 
   if (isInitialLoading) {
     return (
@@ -170,7 +210,7 @@ export default function PatientsPage() {
           <PatientTableSkeleton rows={5} />
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -181,34 +221,34 @@ export default function PatientsPage() {
           <p className="text-sm text-muted-foreground mt-1">{t('subtitle')}</p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center flex-wrap gap-2">
           <Link
             href="/patients/create"
-            className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md"
+            className="flex items-center space-x-2 px-3 md:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md"
           >
             <UserPlusIcon className="w-4 h-4" />
-            <span>Create Patient</span>
+            <span className="hidden md:inline">Create Patient</span>
           </Link>
 
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md"
+            className="flex items-center space-x-2 px-3 md:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md"
           >
             <UserPlusIcon className="w-4 h-4" />
-            <span>{t('addPatient.button')}</span>
+            <span className="hidden md:inline">{t('addPatient.button')}</span>
           </button>
 
           <Link
             href="/pending-requests"
             className={cn(
-              "flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm",
+              'flex items-center space-x-2 px-3 md:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm',
               pendingRequestsCount > 0
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20"
-                : "bg-card text-muted-foreground border border-border hover:bg-muted"
+                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20'
+                : 'bg-card text-muted-foreground border border-border hover:bg-muted'
             )}
           >
             <ClockIcon className="w-4 h-4" />
-            <span>{t('pendingRequests')}</span>
+            <span className="hidden md:inline">{t('pendingRequests')}</span>
             {pendingRequestsCount > 0 && (
               <span className="bg-amber-500 text-white px-2 py-0.5 rounded-full text-xs font-bold leading-none min-w-[20px] text-center">
                 {pendingRequestsCount}
@@ -219,14 +259,14 @@ export default function PatientsPage() {
           <Link
             href="/risk-queue"
             className={cn(
-              "flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm",
+              'flex items-center space-x-2 px-3 md:px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm',
               riskCount > 0
-                ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 hover:bg-red-500/20"
-                : "bg-card text-muted-foreground border border-border hover:bg-muted"
+                ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 hover:bg-red-500/20'
+                : 'bg-card text-muted-foreground border border-border hover:bg-muted'
             )}
           >
-            <AlertTriangleIcon className={cn("w-4 h-4", riskCount > 0 && "fill-current")} />
-            <span>{t('riskQueue')}</span>
+            <AlertTriangleIcon className={cn('w-4 h-4', riskCount > 0 && 'fill-current')} />
+            <span className="hidden md:inline">{t('riskQueue')}</span>
             {riskCount > 0 && (
               <span className="bg-red-600 text-white px-2 py-0.5 rounded-full text-xs font-bold leading-none min-w-[20px] text-center">
                 {riskCount}
@@ -330,18 +370,25 @@ export default function PatientsPage() {
                 </tr>
               ) : (
                 patients.map((patient) => (
-                  <tr key={patient.patient_id} className="group hover:bg-muted/50 transition-colors">
+                  <tr
+                    key={patient.patient_id}
+                    className="group hover:bg-muted/50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold mr-3">
                           {patient.patient_name[0]}
                         </div>
-                        <span className="font-semibold text-foreground">{patient.patient_name}</span>
+                        <span className="font-semibold text-foreground">
+                          {patient.patient_name}
+                        </span>
                       </div>
                     </td>
                     <td className="text-center px-6 py-4">
                       {patient.recent_mood_avg !== null ? (
-                        <span className={cn("text-lg font-bold", getMoodColor(patient.recent_mood_avg))}>
+                        <span
+                          className={cn('text-lg font-bold', getMoodColor(patient.recent_mood_avg))}
+                        >
                           {patient.recent_mood_avg.toFixed(1)}
                         </span>
                       ) : (
@@ -352,7 +399,9 @@ export default function PatientsPage() {
                       <div className="flex justify-center flex-col items-center space-y-1">
                         {patient.latest_phq9 !== null ? (
                           <>
-                            <span className="font-mono font-medium text-foreground">{patient.latest_phq9}</span>
+                            <span className="font-mono font-medium text-foreground">
+                              {patient.latest_phq9}
+                            </span>
                             {getSeverityBadge(patient.latest_phq9)}
                           </>
                         ) : (
@@ -364,7 +413,9 @@ export default function PatientsPage() {
                       <div className="flex justify-center flex-col items-center space-y-1">
                         {patient.latest_gad7 !== null ? (
                           <>
-                            <span className="font-mono font-medium text-foreground">{patient.latest_gad7}</span>
+                            <span className="font-mono font-medium text-foreground">
+                              {patient.latest_gad7}
+                            </span>
                             {getSeverityBadge(patient.latest_gad7)}
                           </>
                         ) : (
@@ -434,7 +485,9 @@ export default function PatientsPage() {
 
       {/* Legend - Updated to be cleaner */}
       <div className="bg-muted/50 p-4 rounded-xl border border-border/50">
-        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">{t('legend')}</p>
+        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
+          {t('legend')}
+        </p>
         <div className="flex flex-wrap gap-3 text-xs">
           <div className="flex items-center space-x-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -469,21 +522,19 @@ export default function PatientsPage() {
             </button>
           </div>
 
-          <p className="text-sm text-muted-foreground mb-4">
-            {t('addPatient.description')}
-          </p>
+          <p className="text-sm text-muted-foreground mb-4">{t('addPatient.description')}</p>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
                 {t('addPatient.emailLabel')}
               </label>
-              <input
+              <Input
                 type="email"
                 value={patientEmail}
                 onChange={(e) => setPatientEmail(e.target.value)}
                 placeholder={t('addPatient.emailPlaceholder')}
-                className="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                autoFocus
               />
             </div>
 
@@ -496,7 +547,7 @@ export default function PatientsPage() {
                 onChange={(e) => setRequestMessage(e.target.value)}
                 placeholder={t('addPatient.messagePlaceholder')}
                 rows={3}
-                className="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all duration-200 resize-none"
               />
             </div>
 
@@ -513,27 +564,20 @@ export default function PatientsPage() {
             )}
 
             <div className="flex space-x-3 pt-2">
-              <button
-                onClick={handleCloseModal}
-                className="flex-1 px-4 py-2 border border-border text-muted-foreground rounded-lg hover:bg-muted transition-colors"
-              >
+              <Button variant="outline" onClick={handleCloseModal} className="flex-1">
                 {common('cancel')}
-              </button>
-              <button
-                onClick={handleSendRequest}
-                disabled={sendingRequest}
-                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
+              </Button>
+              <Button onClick={handleSendRequest} disabled={sendingRequest} className="flex-1">
                 {sendingRequest ? (
                   <Loader2Icon className="w-4 h-4 animate-spin" />
                 ) : (
                   t('addPatient.send')
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </DialogPanel>
       </Dialog>
     </div>
-  );
+  )
 }
