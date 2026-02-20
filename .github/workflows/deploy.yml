@@ -1,0 +1,60 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          timeout: 300s
+          command_timeout: 10m
+          script: |
+            set -e
+            cd /opt/docAI
+
+            echo "=== Pulling latest code ==="
+            sudo git pull origin main
+
+            echo "=== Setting environment variables ==="
+            TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+            export PUBLIC_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4)
+            export SECRET_KEY="${{ secrets.SECRET_KEY }}"
+            export ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}"
+
+            echo "=== Rebuilding and restarting services ==="
+            sudo -E docker-compose -f docker-compose.prod.yml up -d --build
+
+            echo "=== Waiting for health check ==="
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost/health > /dev/null 2>&1; then
+                echo "Health check passed!"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "Health check failed after 30 attempts"
+                sudo docker ps
+                sudo docker logs docai-backend --tail 20
+                exit 1
+              fi
+              echo "Attempt $i/30 - waiting..."
+              sleep 5
+            done
+
+            echo "=== Deploy complete ==="
+            sudo docker ps --format 'table {{.Names}}\t{{.Status}}'
