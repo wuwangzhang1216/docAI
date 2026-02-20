@@ -11,7 +11,6 @@ import {
   Stethoscope,
   Mail,
   Lock,
-  UserCircle2,
   Loader2,
   ArrowRight,
   AlertCircle,
@@ -19,6 +18,7 @@ import {
   EyeOff,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { HeartGuardianLogo } from '@/components/ui/HeartGuardianLogo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -90,8 +90,8 @@ export default function LoginPage() {
       <div className="max-w-[400px] w-full relative z-10">
         {/* Logo and Title */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary shadow-lg shadow-primary/30 mb-4">
-            <UserCircle2 className="w-6 h-6 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-muted/60 dark:bg-white/[0.06] mb-4">
+            <HeartGuardianLogo size={28} />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('title')}</h1>
           <p className="text-muted-foreground text-sm mt-2">{t('subtitle')}</p>

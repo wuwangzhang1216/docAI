@@ -7,7 +7,8 @@ import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { ThemeToggle } from '@/components/ThemeSwitcher'
-import { MessageCircle, Heart, UserCircle2, User, Calendar, Home, LogOut } from 'lucide-react'
+import { MessageCircle, Heart, User, Calendar, Home, LogOut } from 'lucide-react'
+import { HeartGuardianLogo } from '@/components/ui/HeartGuardianLogo'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { OnboardingModal } from '@/components/OnboardingModal'
@@ -76,8 +77,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
       <aside className="hidden md:flex flex-col w-[260px] shrink-0 h-full bg-background/70 backdrop-blur-xl backdrop-saturate-150 border-r border-border/40 z-50">
         {/* App Logo */}
         <div className="px-5 py-5 flex items-center space-x-3">
-          <div className="bg-primary/10 p-2 rounded-xl">
-            <UserCircle2 className="w-5 h-5 text-primary" />
+          <div className="bg-muted/60 dark:bg-white/[0.06] p-2 rounded-xl">
+            <HeartGuardianLogo className="w-5 h-5" />
           </div>
           <h1 className="text-lg font-bold text-foreground tracking-tight">{common('appName')}</h1>
         </div>
@@ -143,8 +144,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         <header className="md:hidden absolute top-0 w-full bg-background/70 backdrop-blur-xl backdrop-saturate-150 border-b border-border/40 z-50">
           <div className="max-w-lg mx-auto px-4 py-3 flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="bg-primary/10 p-2 rounded-xl">
-                <UserCircle2 className="w-5 h-5 text-primary" />
+              <div className="bg-muted/60 dark:bg-white/[0.06] p-2 rounded-xl">
+                <HeartGuardianLogo className="w-5 h-5" />
               </div>
               <h1 className="text-lg font-bold text-foreground tracking-tight">
                 {common('appName')}

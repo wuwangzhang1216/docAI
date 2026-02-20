@@ -720,6 +720,11 @@
     "headerFeatures": "المميزات",
     "headerAbout": "حول",
     "headerSignIn": "تسجيل الدخول",
-    "footerCopyright": "© 2024 Heart Guardian AI. جميع الحقوق محفوظة."
+    "footerCopyright": "© 2026 Heart Guardian AI. جميع الحقوق محفوظة.",
+    "footerPrivacy": "سياسة الخصوصية",
+    "footerTerms": "شروط الخدمة",
+    "footerCrisisResources": "موارد الأزمات",
+    "footerContact": "اتصل بنا",
+    "footerDisclaimer": "Heart Guardian AI ليس بديلاً عن الاستشارة الطبية المهنية أو التشخيص أو العلاج."
   }
 }

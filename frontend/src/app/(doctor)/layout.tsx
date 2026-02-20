@@ -12,11 +12,11 @@ import {
   UsersIcon,
   AlertTriangleIcon,
   LogOutIcon,
-  StethoscopeIcon,
   UserIcon,
   MailIcon,
   CalendarIcon,
 } from '@/components/ui/icons'
+import { HeartGuardianLogo } from '@/components/ui/HeartGuardianLogo'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
@@ -103,8 +103,8 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
         <div className="max-w-6xl mx-auto px-4 md:px-6">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <div className="bg-primary p-1.5 rounded-lg shadow-sm">
-                <StethoscopeIcon className="w-5 h-5 text-primary-foreground" />
+              <div className="bg-muted/60 dark:bg-white/[0.06] p-1.5 rounded-lg">
+                <HeartGuardianLogo className="w-5 h-5" />
               </div>
               <h1 className="text-lg font-bold text-foreground tracking-tight">
                 {common('appName')}{' '}

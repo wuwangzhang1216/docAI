@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    --background: 0 0% 99%;
+    --background: 240 20% 99%;
     --foreground: 240 10% 3.9%;
 
-    --card: 0 0% 100%;
+    --card: 240 14% 100%;
     --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
@@ -16,13 +16,13 @@
     --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 214 32% 91.4%;
+    --secondary: 230 25% 92%;
     --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 240 12% 96.5%;
+    --muted-foreground: 240 5% 44%;
 
-    --accent: 270 5% 95%;
+    --accent: 260 10% 95.5%;
     --accent-foreground: 240 5.9% 10%;
 
     --destructive: 0 84.2% 60.2%;
@@ -35,11 +35,20 @@
     --info: 217 91% 60%;
     --info-foreground: 0 0% 100%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --border: 240 10% 91%;
+    --input: 240 10% 91%;
     --ring: 221.2 83.2% 53.3%;
 
     --radius: 0.875rem;
+
+    /* Brand gradient (rose → purple → blue) */
+    --gradient-brand: linear-gradient(135deg, #f43f5e, #a855f7, #3b82f6);
+    --gradient-brand-subtle: linear-gradient(
+      135deg,
+      rgba(244, 63, 94, 0.08),
+      rgba(168, 85, 247, 0.06),
+      rgba(59, 130, 246, 0.08)
+    );
 
     /* Apple-style multi-layer shadows */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -66,13 +75,13 @@
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 215 14% 18%;
+    --secondary: 230 12% 18%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 3.7% 15.9%;
+    --muted: 250 6% 14%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 270 4% 16%;
+    --accent: 260 6% 15%;
     --accent-foreground: 0 0% 98%;
 
     --success: 142 70% 45%;
@@ -85,9 +94,18 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 250 5% 16%;
+    --input: 250 5% 16%;
     --ring: 217.2 91.2% 59.8%;
+
+    /* Brand gradient (rose → purple → blue) */
+    --gradient-brand: linear-gradient(135deg, #f43f5e, #a855f7, #3b82f6);
+    --gradient-brand-subtle: linear-gradient(
+      135deg,
+      rgba(244, 63, 94, 0.12),
+      rgba(168, 85, 247, 0.08),
+      rgba(59, 130, 246, 0.12)
+    );
 
     /* Dark mode shadows with subtle glow */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -284,9 +302,9 @@ input:-webkit-autofill:active {
   padding: 1px;
   background: linear-gradient(
     135deg,
-    hsl(var(--primary) / 0.3),
-    transparent 50%,
-    hsl(var(--primary) / 0.1)
+    rgba(244, 63, 94, 0.2),
+    rgba(168, 85, 247, 0.15) 50%,
+    rgba(59, 130, 246, 0.2)
   );
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,

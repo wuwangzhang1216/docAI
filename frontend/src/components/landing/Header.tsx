@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
-import { UserCircle2 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeSwitcher'
+import { HeartGuardianLogo } from '@/components/ui/HeartGuardianLogo'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 export function Header() {
@@ -15,8 +15,8 @@ export function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-primary/10 p-2 rounded-xl">
-              <UserCircle2 className="w-6 h-6 text-primary" />
+            <div className="bg-muted/60 dark:bg-white/[0.06] p-2 rounded-xl">
+              <HeartGuardianLogo className="w-6 h-6" />
             </div>
             <span className="text-xl font-bold tracking-tight">{t('brandName')}</span>
           </div>

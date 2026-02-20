@@ -722,6 +722,11 @@
     "headerFeatures": "ویژگی‌ها",
     "headerAbout": "درباره ما",
     "headerSignIn": "ورود",
-    "footerCopyright": "© 2024 Heart Guardian AI. تمامی حقوق محفوظ است."
+    "footerCopyright": "© 2026 Heart Guardian AI. تمامی حقوق محفوظ است.",
+    "footerPrivacy": "سیاست حفظ حریم خصوصی",
+    "footerTerms": "شرایط استفاده",
+    "footerCrisisResources": "منابع بحران",
+    "footerContact": "تماس",
+    "footerDisclaimer": "Heart Guardian AI جایگزین مشاوره پزشکی حرفه‌ای، تشخیص یا درمان نیست."
   }
 }

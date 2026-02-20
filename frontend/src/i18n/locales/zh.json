@@ -717,6 +717,11 @@
     "headerFeatures": "功能",
     "headerAbout": "关于",
     "headerSignIn": "登录",
-    "footerCopyright": "© 2024 Heart Guardian AI. 保留所有权利。"
+    "footerCopyright": "© 2026 Heart Guardian AI. 保留所有权利。",
+    "footerPrivacy": "隐私政策",
+    "footerTerms": "服务条款",
+    "footerCrisisResources": "危机资源",
+    "footerContact": "联系我们",
+    "footerDisclaimer": "Heart Guardian AI 不能替代专业医疗建议、诊断或治疗。"
   }
 }
