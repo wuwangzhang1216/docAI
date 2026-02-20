@@ -174,7 +174,16 @@
       "aiTyping": "AI টাইপ করছে",
       "sendMessageForm": "বার্তা পাঠানোর ফর্ম",
       "messageInput": "আপনার বার্তা লিখুন",
-      "sendButton": "বার্তা পাঠান"
+      "sendButton": "বার্তা পাঠান",
+      "attachImage": "ছবি সংযুক্ত করুন",
+      "removeImage": "ছবি সরান",
+      "imageAttached": "[ছবি]",
+      "copyMessage": "কপি",
+      "copiedMessage": "কপি হয়েছে!",
+      "suggestedPrompt1": "সম্প্রতি আমি উদ্বিগ্ন বোধ করছি, কথা বলতে পারি?",
+      "suggestedPrompt2": "এই সপ্তাহের আমার মেজাজের ধরন বুঝতে সাহায্য করুন",
+      "suggestedPrompt3": "স্ট্রেস ম্যানেজমেন্টের কৌশল দরকার",
+      "suggestedPrompt4": "ঘুম হচ্ছে না, কী করব?"
     },
     "checkin": {
       "title": "আজকের মেজাজ",

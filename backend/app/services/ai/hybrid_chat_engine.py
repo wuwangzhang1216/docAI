@@ -162,6 +162,7 @@ class HybridChatEngine:
         history: List[Dict[str, str]],
         patient_id: str,
         conversation_type: ConversationType = ConversationType.SUPPORTIVE_CHAT,
+        images: Optional[List[Dict[str, str]]] = None,
     ) -> Tuple[str, Optional[RiskResult]]:
         """
         Process a chat message with hybrid context retrieval.
@@ -201,6 +202,7 @@ class HybridChatEngine:
                 patient=patient,
                 patient_id=patient_id,
                 conversation_type=conversation_type,
+                images=images,
             )
 
             return response, risk if risk.level != RiskLevel.LOW else None
@@ -221,6 +223,7 @@ class HybridChatEngine:
         patient: Patient,
         patient_id: str,
         conversation_type: ConversationType,
+        images: Optional[List[Dict[str, str]]] = None,
     ) -> str:
         """
         Generate AI response with tool support.
@@ -241,7 +244,7 @@ class HybridChatEngine:
         system_prompt = base_prompt.format(essential_context=essential_context)
 
         # Build initial messages
-        messages = self._build_messages(history, message)
+        messages = self._build_messages(history, message, images=images)
 
         # Initialize tool executor
         tool_executor = PatientContextTools(self.db, patient_id)
@@ -319,13 +322,19 @@ class HybridChatEngine:
 
         return self._fallback_response()
 
-    def _build_messages(self, history: List[Dict[str, str]], new_message: str) -> List[Dict[str, Any]]:
+    def _build_messages(
+        self,
+        history: List[Dict[str, str]],
+        new_message: str,
+        images: Optional[List[Dict[str, str]]] = None,
+    ) -> List[Dict[str, Any]]:
         """
         Build messages list for API call.
 
         Args:
             history: Previous messages
             new_message: New user message
+            images: Optional list of images [{media_type, data}] for the new message
 
         Returns:
             List of messages for API call
@@ -336,8 +345,24 @@ class HybridChatEngine:
         for h in history[-20:]:
             messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
 
-        # Add new message
-        messages.append({"role": "user", "content": new_message})
+        # Build new user message with optional images
+        if images:
+            content_blocks: List[Dict[str, Any]] = []
+            for img in images:
+                content_blocks.append(
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": img["media_type"],
+                            "data": img["data"],
+                        },
+                    }
+                )
+            content_blocks.append({"type": "text", "text": new_message})
+            messages.append({"role": "user", "content": content_blocks})
+        else:
+            messages.append({"role": "user", "content": new_message})
 
         return messages
 
@@ -355,6 +380,7 @@ class HybridChatEngine:
         history: List[Dict[str, str]],
         patient_id: str,
         conversation_type: ConversationType = ConversationType.SUPPORTIVE_CHAT,
+        images: Optional[List[Dict[str, str]]] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Process a chat message with streaming response.
@@ -432,6 +458,7 @@ class HybridChatEngine:
                 patient=patient,
                 patient_id=patient_id,
                 conversation_type=conversation_type,
+                images=images,
             ):
                 yield event
 
@@ -451,6 +478,7 @@ class HybridChatEngine:
         patient: Patient,
         patient_id: str,
         conversation_type: ConversationType,
+        images: Optional[List[Dict[str, str]]] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Generate streaming AI response with tool support.
@@ -471,7 +499,7 @@ class HybridChatEngine:
         system_prompt = base_prompt.format(essential_context=essential_context)
 
         # Build initial messages
-        messages = self._build_messages(history, message)
+        messages = self._build_messages(history, message, images=images)
 
         # Initialize tool executor
         tool_executor = PatientContextTools(self.db, patient_id)

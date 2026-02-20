@@ -1,83 +1,193 @@
-'use client';
+'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { api } from '@/lib/api';
-import { Send, UserCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@/components/ui/dialog';
-import { StreamingMessage, ErrorMessage } from '@/components/chat/StreamingMessage';
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
+import { api } from '@/lib/api'
+import { Send, ImagePlus, X, UserCheck } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@/components/ui/dialog'
+import { StreamingMessage, ErrorMessage } from '@/components/chat/StreamingMessage'
+import { HeartGuardianLogo } from '@/components/ui/HeartGuardianLogo'
 
 interface ToolCall {
-  id: string;
-  name: string;
-  status: 'running' | 'completed';
-  resultPreview?: string;
+  id: string
+  name: string
+  status: 'running' | 'completed'
+  resultPreview?: string
+}
+
+interface ImageAttachment {
+  id: string
+  previewUrl: string
+  media_type: string
+  data: string // base64
 }
 
 interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  isStreaming?: boolean;
-  toolCalls?: ToolCall[];
-  error?: string;
+  role: 'user' | 'assistant'
+  content: string
+  isStreaming?: boolean
+  toolCalls?: ToolCall[]
+  error?: string
+  images?: string[] // preview URLs for display
 }
 
 interface DoctorInfo {
-  id: string;
-  full_name: string;
-  specialty?: string;
+  id: string
+  full_name: string
+  specialty?: string
+}
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_IMAGES = 4
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      const base64 = result.split(',')[1]
+      resolve(base64)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [showCrisisModal, setShowCrisisModal] = useState(false);
-  const [connectedDoctor, setConnectedDoctor] = useState<DoctorInfo | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const t = useTranslations('patient.chat');
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [showCrisisModal, setShowCrisisModal] = useState(false)
+  const [connectedDoctor, setConnectedDoctor] = useState<DoctorInfo | null>(null)
+  const [imageAttachments, setImageAttachments] = useState<ImageAttachment[]>([])
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const t = useTranslations('patient.chat')
+
+  // Suggested prompts
+  const suggestedPrompts = [
+    t('suggestedPrompt1', {
+      defaultValue: "I've been feeling anxious lately, can we talk about it?",
+    }),
+    t('suggestedPrompt2', { defaultValue: 'Help me understand my mood patterns this week' }),
+    t('suggestedPrompt3', { defaultValue: 'I need some coping strategies for stress' }),
+    t('suggestedPrompt4', { defaultValue: 'I had trouble sleeping, what can I do?' }),
+  ]
 
   // Check if user has a connected doctor
   useEffect(() => {
     const checkConnectedDoctor = async () => {
       try {
-        const doctor = await api.getMyDoctor();
-        setConnectedDoctor(doctor);
+        const doctor = await api.getMyDoctor()
+        setConnectedDoctor(doctor)
       } catch {
-        setConnectedDoctor(null);
+        setConnectedDoctor(null)
       }
-    };
-    checkConnectedDoctor();
-  }, []);
+    }
+    checkConnectedDoctor()
+  }, [])
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    scrollToBottom()
+  }, [messages, scrollToBottom])
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current
+    if (textarea) {
+      textarea.style.height = 'auto'
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
+    }
+  }, [input])
 
-    const userMessage = input.trim();
-    setInput('');
-    setLoading(true);
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      imageAttachments.forEach((att) => URL.revokeObjectURL(att.previewUrl))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-    // Add user message and placeholder assistant message
+  const handleImageSelect = useCallback(
+    async (files: FileList | null) => {
+      if (!files || files.length === 0) return
+
+      const newAttachments: ImageAttachment[] = []
+
+      for (const file of Array.from(files)) {
+        if (imageAttachments.length + newAttachments.length >= MAX_IMAGES) break
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) continue
+        if (file.size > MAX_IMAGE_SIZE) continue
+
+        const base64 = await fileToBase64(file)
+        newAttachments.push({
+          id: crypto.randomUUID(),
+          previewUrl: URL.createObjectURL(file),
+          media_type: file.type,
+          data: base64,
+        })
+      }
+
+      if (newAttachments.length > 0) {
+        setImageAttachments((prev) => [...prev, ...newAttachments])
+      }
+
+      if (imageInputRef.current) {
+        imageInputRef.current.value = ''
+      }
+    },
+    [imageAttachments.length]
+  )
+
+  const removeImage = useCallback((id: string) => {
+    setImageAttachments((prev) => {
+      const att = prev.find((a) => a.id === id)
+      if (att) URL.revokeObjectURL(att.previewUrl)
+      return prev.filter((a) => a.id !== id)
+    })
+  }, [])
+
+  const sendMessage = async (overrideMessage?: string) => {
+    const messageText = overrideMessage || input.trim()
+    if ((!messageText && imageAttachments.length === 0) || loading) return
+
+    const userMessage = messageText || t('imageAttached', { defaultValue: '[Image]' })
+    const currentImages = [...imageAttachments]
+    const imagePreviewUrls = currentImages.map((a) => a.previewUrl)
+
+    setInput('')
+    setImageAttachments([])
+    setLoading(true)
+
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
+
     setMessages((prev) => [
       ...prev,
-      { role: 'user', content: userMessage },
+      {
+        role: 'user',
+        content: userMessage,
+        images: imagePreviewUrls.length > 0 ? imagePreviewUrls : undefined,
+      },
       { role: 'assistant', content: '', isStreaming: true, toolCalls: [] },
-    ]);
+    ])
 
-    // Index of the assistant message we're updating
-    const assistantIndex = messages.length + 1;
+    const assistantIndex = messages.length + 1
+
+    const apiImages =
+      currentImages.length > 0
+        ? currentImages.map((a) => ({ media_type: a.media_type, data: a.data }))
+        : undefined
 
     try {
       await api.sendMessageStream(
@@ -85,106 +195,109 @@ export default function ChatPage() {
         conversationId || undefined,
         {
           onRiskCheck: (level, riskType) => {
-            console.log('Risk check:', level, riskType);
+            console.log('Risk check:', level, riskType)
           },
 
           onToolStart: (toolId, toolName) => {
             setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastMsg = newMessages[assistantIndex];
+              const newMessages = [...prev]
+              const lastMsg = newMessages[assistantIndex]
               if (lastMsg?.role === 'assistant') {
                 lastMsg.toolCalls = [
                   ...(lastMsg.toolCalls || []),
                   { id: toolId, name: toolName, status: 'running' },
-                ];
+                ]
               }
-              return [...newMessages];
-            });
+              return [...newMessages]
+            })
           },
 
           onToolEnd: (toolId, toolName, resultPreview) => {
             setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastMsg = newMessages[assistantIndex];
+              const newMessages = [...prev]
+              const lastMsg = newMessages[assistantIndex]
               if (lastMsg?.role === 'assistant' && lastMsg.toolCalls) {
                 lastMsg.toolCalls = lastMsg.toolCalls.map((tc) =>
-                  tc.id === toolId
-                    ? { ...tc, status: 'completed' as const, resultPreview }
-                    : tc
-                );
+                  tc.id === toolId ? { ...tc, status: 'completed' as const, resultPreview } : tc
+                )
               }
-              return [...newMessages];
-            });
+              return [...newMessages]
+            })
           },
 
           onTextDelta: (text) => {
             setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastMsg = newMessages[assistantIndex];
+              const newMessages = [...prev]
+              const lastMsg = newMessages[assistantIndex]
               if (lastMsg?.role === 'assistant') {
-                lastMsg.content += text;
+                lastMsg.content += text
               }
-              return [...newMessages];
-            });
+              return [...newMessages]
+            })
           },
 
           onMessageComplete: (content) => {
             setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastMsg = newMessages[assistantIndex];
+              const newMessages = [...prev]
+              const lastMsg = newMessages[assistantIndex]
               if (lastMsg?.role === 'assistant') {
-                lastMsg.content = content;
-                lastMsg.isStreaming = false;
+                lastMsg.content = content
+                lastMsg.isStreaming = false
               }
-              return [...newMessages];
-            });
+              return [...newMessages]
+            })
           },
 
           onMetadata: (newConversationId, riskAlert) => {
-            setConversationId(newConversationId);
+            setConversationId(newConversationId)
             if (riskAlert) {
-              setShowCrisisModal(true);
+              setShowCrisisModal(true)
             }
           },
 
           onError: (errorMessage) => {
             setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastMsg = newMessages[assistantIndex];
+              const newMessages = [...prev]
+              const lastMsg = newMessages[assistantIndex]
               if (lastMsg?.role === 'assistant') {
-                lastMsg.error = errorMessage;
-                lastMsg.isStreaming = false;
+                lastMsg.error = errorMessage
+                lastMsg.isStreaming = false
               }
-              return [...newMessages];
-            });
+              return [...newMessages]
+            })
           },
-        }
-      );
+        },
+        apiImages
+      )
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error('Chat error:', error)
       setMessages((prev) => {
-        const newMessages = [...prev];
-        const lastMsg = newMessages[assistantIndex];
+        const newMessages = [...prev]
+        const lastMsg = newMessages[assistantIndex]
         if (lastMsg?.role === 'assistant') {
-          lastMsg.error = t('errorMessage');
-          lastMsg.isStreaming = false;
+          lastMsg.error = t('errorMessage')
+          lastMsg.isStreaming = false
         }
-        return [...newMessages];
-      });
+        return [...newMessages]
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+      e.preventDefault()
+      sendMessage()
     }
-  };
+  }
 
   return (
-    <div className="flex flex-col h-full bg-background" role="main" aria-label={t('chatTitle', { defaultValue: 'AI Chat' })}>
+    <div
+      className="flex flex-col h-full bg-background"
+      role="main"
+      aria-label={t('chatTitle', { defaultValue: 'AI Chat' })}
+    >
       {/* Messages */}
       <div
         className="flex-1 overflow-y-auto"
@@ -193,14 +306,26 @@ export default function ChatPage() {
         aria-live="polite"
         aria-relevant="additions"
       >
-        <div className="flex flex-col min-h-full p-4 space-y-6">
+        <div className="flex flex-col min-h-full max-w-3xl mx-auto px-4 py-6 space-y-6">
           {messages.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground p-8">
-              <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4" aria-hidden="true">
-                <span className="text-3xl">👋</span>
+            /* Welcome screen with suggested prompts */
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 max-w-lg mx-auto">
+              <HeartGuardianLogo size={48} className="mb-5" />
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('welcomeTitle')}</h3>
+              <p className="text-muted-foreground text-sm mb-8 max-w-xs">{t('welcomeMessage')}</p>
+
+              {/* Suggested prompt chips */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">
+                {suggestedPrompts.map((prompt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => sendMessage(prompt)}
+                    className="text-left p-3.5 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors text-sm leading-relaxed"
+                  >
+                    <p className="text-foreground line-clamp-2">{prompt}</p>
+                  </button>
+                ))}
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">{t('welcomeTitle')}</h3>
-              <p className="max-w-xs text-sm">{t('welcomeMessage')}</p>
             </div>
           ) : (
             <>
@@ -209,30 +334,37 @@ export default function ChatPage() {
                   return (
                     <div
                       key={idx}
-                      className="flex gap-3 flex-row-reverse animate-message-right"
+                      className="flex justify-end animate-message-right"
                       role="article"
                       aria-label={t('yourMessage', { defaultValue: 'Your message' })}
                     >
-                      <Avatar className="w-8 h-8" aria-hidden="true">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          ME
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm bg-primary text-primary-foreground rounded-tr-sm">
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      <div className="max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed bg-muted text-foreground">
+                        {msg.images && msg.images.length > 0 && (
+                          <div
+                            className={`flex gap-1.5 mb-2 ${msg.images.length === 1 ? '' : 'flex-wrap'}`}
+                          >
+                            {msg.images.map((url, imgIdx) => (
+                              <img
+                                key={imgIdx}
+                                src={url}
+                                alt=""
+                                className="rounded-lg max-h-48 max-w-full object-cover"
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {msg.content &&
+                          msg.content !== t('imageAttached', { defaultValue: '[Image]' }) && (
+                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                          )}
                       </div>
                     </div>
-                  );
+                  )
                 }
 
                 // Assistant message with error
                 if (msg.error) {
-                  return (
-                    <ErrorMessage
-                      key={idx}
-                      message={msg.error}
-                    />
-                  );
+                  return <ErrorMessage key={idx} message={msg.error} />
                 }
 
                 // Assistant message - streaming or complete
@@ -243,7 +375,7 @@ export default function ChatPage() {
                     content={msg.content}
                     toolCalls={msg.toolCalls || []}
                   />
-                );
+                )
               })}
               <div ref={messagesEndRef} />
             </>
@@ -251,38 +383,94 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Input */}
-      <div className="bg-background/80 backdrop-blur-md p-4 pb-2 border-t border-border">
-        <form
-          className="flex items-end space-x-2 max-w-2xl mx-auto"
-          onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
-          role="form"
-          aria-label={t('sendMessageForm', { defaultValue: 'Send message form' })}
-        >
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t('placeholder')}
-            className="rounded-full pl-6 pr-6 py-6 border-0 bg-muted/50 focus-visible:ring-1 focus-visible:bg-background shadow-inner resize-none"
-            disabled={loading}
-            aria-label={t('messageInput', { defaultValue: 'Type your message' })}
-          />
-          <Button
-            type="submit"
-            onClick={sendMessage}
-            disabled={loading || !input.trim()}
-            size="icon"
-            className="h-12 w-12 rounded-full shrink-0 shadow-sm"
-            aria-label={t('sendButton', { defaultValue: 'Send message' })}
+      {/* Input area */}
+      <div className="bg-background/80 backdrop-blur-md px-4 pb-3 pt-2">
+        <div className="max-w-3xl mx-auto">
+          {/* Image previews */}
+          {imageAttachments.length > 0 && (
+            <div className="flex gap-2 mb-2 overflow-x-auto pb-1">
+              {imageAttachments.map((att) => (
+                <div key={att.id} className="relative flex-shrink-0 group/img">
+                  <img
+                    src={att.previewUrl}
+                    alt=""
+                    className="w-16 h-16 rounded-lg object-cover ring-1 ring-border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(att.id)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity shadow-sm"
+                    aria-label={t('removeImage', { defaultValue: 'Remove image' })}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Input container */}
+          <form
+            className="relative flex items-end gap-1 border border-border rounded-2xl bg-muted/30 px-2 py-1.5 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm"
+            onSubmit={(e) => {
+              e.preventDefault()
+              sendMessage()
+            }}
+            role="form"
+            aria-label={t('sendMessageForm', { defaultValue: 'Send message form' })}
           >
-            <Send className="w-5 h-5 ml-0.5" aria-hidden="true" />
-          </Button>
-        </form>
-        {/* Disclaimer */}
-        <p className="text-xs text-muted-foreground text-center mt-2 max-w-2xl mx-auto">
-          {t('disclaimer')}
-        </p>
+            {/* Hidden file input */}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept={ALLOWED_IMAGE_TYPES.join(',')}
+              multiple
+              className="hidden"
+              onChange={(e) => handleImageSelect(e.target.files)}
+              disabled={loading}
+            />
+
+            {/* Image attach button */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={loading || imageAttachments.length >= MAX_IMAGES}
+              className="h-9 w-9 rounded-full shrink-0 text-muted-foreground hover:text-foreground"
+              aria-label={t('attachImage', { defaultValue: 'Attach image' })}
+            >
+              <ImagePlus className="w-5 h-5" aria-hidden="true" />
+            </Button>
+
+            {/* Auto-expanding textarea */}
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t('placeholder')}
+              rows={1}
+              className="flex-1 resize-none bg-transparent border-0 outline-none text-sm leading-relaxed placeholder:text-muted-foreground max-h-[200px] py-2 px-2"
+              disabled={loading}
+              aria-label={t('messageInput', { defaultValue: 'Type your message' })}
+            />
+
+            {/* Send button */}
+            <Button
+              type="submit"
+              disabled={loading || (!input.trim() && imageAttachments.length === 0)}
+              size="icon"
+              className="h-9 w-9 rounded-full shrink-0"
+              aria-label={t('sendButton', { defaultValue: 'Send message' })}
+            >
+              <Send className="w-4 h-4" aria-hidden="true" />
+            </Button>
+          </form>
+
+          {/* Disclaimer */}
+          <p className="text-[11px] text-muted-foreground text-center mt-2">{t('disclaimer')}</p>
+        </div>
       </div>
 
       {/* Crisis Modal */}
@@ -292,12 +480,16 @@ export default function ChatPage() {
           <DialogTitle className="text-destructive flex items-center">
             <span className="mr-2">🚨</span> {t('crisisTitle')}
           </DialogTitle>
-          <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
-            {t('crisisMessage')}
-          </p>
+          <p className="text-muted-foreground mb-4 text-sm leading-relaxed">{t('crisisMessage')}</p>
           <ul className="space-y-2 mb-4 text-sm font-medium bg-muted/50 p-4 rounded-lg">
-            <li className="flex items-center text-foreground"><span className="w-1.5 h-1.5 rounded-full bg-destructive mr-2" />{t('crisisLine1')}</li>
-            <li className="flex items-center text-foreground"><span className="w-1.5 h-1.5 rounded-full bg-destructive mr-2" />{t('crisisLine2')}</li>
+            <li className="flex items-center text-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-destructive mr-2" />
+              {t('crisisLine1')}
+            </li>
+            <li className="flex items-center text-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-destructive mr-2" />
+              {t('crisisLine2')}
+            </li>
           </ul>
           {connectedDoctor && (
             <div className="mb-4 p-3 bg-primary/10 rounded-lg flex items-center gap-2 text-sm">
@@ -305,7 +497,7 @@ export default function ChatPage() {
               <span className="text-foreground">
                 {t('doctorNotified', {
                   doctorName: connectedDoctor.full_name,
-                  defaultValue: `Dr. ${connectedDoctor.full_name} has been notified and will follow up with you.`
+                  defaultValue: `Dr. ${connectedDoctor.full_name} has been notified and will follow up with you.`,
                 })}
               </span>
             </div>
@@ -319,5 +511,5 @@ export default function ChatPage() {
         </DialogPanel>
       </Dialog>
     </div>
-  );
+  )
 }

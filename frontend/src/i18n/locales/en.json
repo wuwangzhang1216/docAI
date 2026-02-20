@@ -174,7 +174,16 @@
       "aiTyping": "AI is typing",
       "sendMessageForm": "Send message form",
       "messageInput": "Type your message",
-      "sendButton": "Send message"
+      "sendButton": "Send message",
+      "attachImage": "Attach image",
+      "removeImage": "Remove image",
+      "imageAttached": "[Image]",
+      "copyMessage": "Copy",
+      "copiedMessage": "Copied!",
+      "suggestedPrompt1": "I've been feeling anxious lately, can we talk about it?",
+      "suggestedPrompt2": "Help me understand my mood patterns this week",
+      "suggestedPrompt3": "I need some coping strategies for stress",
+      "suggestedPrompt4": "I had trouble sleeping, what can I do?"
     },
     "checkin": {
       "title": "Today's Mood",

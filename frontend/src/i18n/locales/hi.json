@@ -174,7 +174,16 @@
       "aiTyping": "AI टाइप कर रहा है",
       "sendMessageForm": "संदेश भेजें फॉर्म",
       "messageInput": "अपना संदेश टाइप करें",
-      "sendButton": "संदेश भेजें"
+      "sendButton": "संदेश भेजें",
+      "attachImage": "छवि संलग्न करें",
+      "removeImage": "छवि हटाएं",
+      "imageAttached": "[छवि]",
+      "copyMessage": "कॉपी",
+      "copiedMessage": "कॉपी हो गया!",
+      "suggestedPrompt1": "हाल ही में मुझे चिंता हो रही है, क्या हम बात कर सकते हैं?",
+      "suggestedPrompt2": "इस हफ्ते मेरे मूड पैटर्न समझने में मदद करें",
+      "suggestedPrompt3": "मुझे तनाव प्रबंधन के उपाय चाहिए",
+      "suggestedPrompt4": "नींद नहीं आ रही, क्या करूँ?"
     },
     "checkin": {
       "title": "आज का मूड",

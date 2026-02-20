@@ -174,7 +174,16 @@
       "aiTyping": "AI ਟਾਈਪ ਕਰ ਰਿਹਾ ਹੈ",
       "sendMessageForm": "ਸੁਨੇਹਾ ਭੇਜਣ ਫਾਰਮ",
       "messageInput": "ਆਪਣਾ ਸੁਨੇਹਾ ਲਿਖੋ",
-      "sendButton": "ਸੁਨੇਹਾ ਭੇਜੋ"
+      "sendButton": "ਸੁਨੇਹਾ ਭੇਜੋ",
+      "attachImage": "ਤਸਵੀਰ ਜੋੜੋ",
+      "removeImage": "ਤਸਵੀਰ ਹਟਾਓ",
+      "imageAttached": "[ਤਸਵੀਰ]",
+      "copyMessage": "ਕਾਪੀ",
+      "copiedMessage": "ਕਾਪੀ ਹੋ ਗਿਆ!",
+      "suggestedPrompt1": "ਮੈਨੂੰ ਹਾਲ ਹੀ ਵਿੱਚ ਚਿੰਤਾ ਹੋ ਰਹੀ ਹੈ, ਕੀ ਅਸੀਂ ਗੱਲ ਕਰ ਸਕਦੇ ਹਾਂ?",
+      "suggestedPrompt2": "ਇਸ ਹਫ਼ਤੇ ਮੇਰੇ ਮੂਡ ਪੈਟਰਨ ਸਮਝਣ ਵਿੱਚ ਮਦਦ ਕਰੋ",
+      "suggestedPrompt3": "ਮੈਨੂੰ ਤਣਾਅ ਪ੍ਰਬੰਧਨ ਲਈ ਸੁਝਾਅ ਚਾਹੀਦੇ ਹਨ",
+      "suggestedPrompt4": "ਨੀਂਦ ਨਹੀਂ ਆ ਰਹੀ, ਕੀ ਕਰਾਂ?"
     },
     "checkin": {
       "title": "ਅੱਜ ਦਾ ਮੂਡ",

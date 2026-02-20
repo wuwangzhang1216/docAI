@@ -174,7 +174,16 @@
       "aiTyping": "L'IA écrit",
       "sendMessageForm": "Formulaire d'envoi de message",
       "messageInput": "Tapez votre message",
-      "sendButton": "Envoyer le message"
+      "sendButton": "Envoyer le message",
+      "attachImage": "Joindre une image",
+      "removeImage": "Supprimer l'image",
+      "imageAttached": "[Image]",
+      "copyMessage": "Copier",
+      "copiedMessage": "Copié !",
+      "suggestedPrompt1": "Je me sens anxieux(se) ces derniers temps, on peut en parler ?",
+      "suggestedPrompt2": "Aide-moi à comprendre mes tendances d'humeur cette semaine",
+      "suggestedPrompt3": "J'ai besoin de stratégies pour gérer le stress",
+      "suggestedPrompt4": "J'ai du mal à dormir, que puis-je faire ?"
     },
     "checkin": {
       "title": "Humeur d'aujourd'hui",

@@ -71,17 +71,20 @@ async def send_message(
 
     # Process message through hybrid chat engine
     chat_engine = get_chat_engine(db)
+    images = [{"media_type": img.media_type, "data": img.data} for img in request.images] if request.images else None
     reply, risk = await chat_engine.chat(
         message=request.message,
         history=history,
         patient_id=str(patient.id),
         conversation_type=conversation.conv_type,
+        images=images,
     )
 
     # Update conversation messages
     now = datetime.utcnow().isoformat()
+    has_images = bool(request.images)
     new_messages = history + [
-        {"role": "user", "content": request.message, "timestamp": now},
+        {"role": "user", "content": request.message, "timestamp": now, "has_images": has_images},
         {
             "role": "assistant",
             "content": reply,
@@ -179,6 +182,7 @@ async def send_message_stream(
     # Get conversation history
     history = conversation.messages or []
     chat_engine = get_chat_engine(db)
+    images = [{"media_type": img.media_type, "data": img.data} for img in request.images] if request.images else None
 
     async def generate_sse():
         """Generate Server-Sent Events from chat stream."""
@@ -192,6 +196,7 @@ async def send_message_stream(
                 history=history,
                 patient_id=str(patient.id),
                 conversation_type=conversation.conv_type,
+                images=images,
             ):
                 event_type = event.get("event", "unknown")
                 event_data = event.get("data", {})
@@ -212,8 +217,9 @@ async def send_message_stream(
 
             # Save conversation after streaming completes
             now = datetime.utcnow().isoformat()
+            has_images = bool(request.images)
             new_messages = history + [
-                {"role": "user", "content": request.message, "timestamp": now},
+                {"role": "user", "content": request.message, "timestamp": now, "has_images": has_images},
                 {
                     "role": "assistant",
                     "content": full_response,

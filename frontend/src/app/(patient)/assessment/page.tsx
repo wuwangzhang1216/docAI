@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/lib/i18n'
 import { api } from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import { ArrowLeft, FileText, Brain, ShieldAlert, Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 type AssessmentType = 'PHQ9' | 'GAD7' | 'PCL5'
 
@@ -217,43 +220,71 @@ export default function AssessmentPage() {
   // Type selection screen
   if (!selectedType) {
     return (
-      <div className="h-full overflow-y-auto p-4 space-y-4 max-w-2xl md:mx-auto">
-        <h1 className="text-xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
+      <div className="h-full overflow-y-auto p-4 space-y-4 max-w-2xl md:mx-auto pb-24 md:pb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="bg-primary/10 p-2.5 rounded-xl">
+            <FileText className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">{t('title')}</h1>
+            <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
+          </div>
+        </div>
 
         {/* Privacy notice */}
         <div className="bg-info/10 rounded-xl p-4 border border-info/20">
           <p className="text-xs text-info">🔒 {t('privacyNotice')}</p>
         </div>
 
-        <div className="space-y-4 mt-6">
+        <div className="space-y-3 mt-4">
           <button
             onClick={() => setSelectedType('PHQ9')}
-            className="w-full bg-card border border-border rounded-xl p-6 shadow-sm text-left hover:shadow-md transition-shadow"
+            className="w-full bg-card border border-border rounded-xl p-5 text-left hover:border-primary/40 hover:shadow-md transition-all group"
           >
-            <h3 className="font-semibold text-lg text-foreground">{t('phq9Title')}</h3>
-            <p className="text-muted-foreground text-sm mt-1">{t('phq9Desc')}</p>
+            <div className="flex items-start gap-4">
+              <div className="bg-blue-500/10 p-2.5 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
+                <Brain className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">{t('phq9Title')}</h3>
+                <p className="text-muted-foreground text-sm mt-1">{t('phq9Desc')}</p>
+              </div>
+            </div>
           </button>
 
           <button
             onClick={() => setSelectedType('GAD7')}
-            className="w-full bg-card border border-border rounded-xl p-6 shadow-sm text-left hover:shadow-md transition-shadow"
+            className="w-full bg-card border border-border rounded-xl p-5 text-left hover:border-primary/40 hover:shadow-md transition-all group"
           >
-            <h3 className="font-semibold text-lg text-foreground">{t('gad7Title')}</h3>
-            <p className="text-muted-foreground text-sm mt-1">{t('gad7Desc')}</p>
+            <div className="flex items-start gap-4">
+              <div className="bg-amber-500/10 p-2.5 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
+                <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">{t('gad7Title')}</h3>
+                <p className="text-muted-foreground text-sm mt-1">{t('gad7Desc')}</p>
+              </div>
+            </div>
           </button>
 
           <button
             onClick={() => setSelectedType('PCL5')}
-            className="w-full bg-card border-2 border-purple-500/30 rounded-xl p-6 shadow-sm text-left hover:shadow-md transition-shadow"
+            className="w-full bg-card border border-purple-500/30 rounded-xl p-5 text-left hover:border-purple-500/50 hover:shadow-md transition-all group"
           >
-            <h3 className="font-semibold text-lg text-purple-700 dark:text-purple-400">
-              {t('pcl5Title')}
-            </h3>
-            <p className="text-muted-foreground text-sm mt-1">{t('pcl5Desc')}</p>
-            <p className="text-purple-600 dark:text-purple-400 text-xs mt-2">
-              {t('pcl5Recommend')}
-            </p>
+            <div className="flex items-start gap-4">
+              <div className="bg-purple-500/10 p-2.5 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
+                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-purple-700 dark:text-purple-400">
+                  {t('pcl5Title')}
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">{t('pcl5Desc')}</p>
+                <p className="text-purple-600 dark:text-purple-400 text-xs mt-2">
+                  {t('pcl5Recommend')}
+                </p>
+              </div>
+            </div>
           </button>
         </div>
 
@@ -305,12 +336,9 @@ export default function AssessmentPage() {
           </div>
         )}
 
-        <button
-          onClick={resetAssessment}
-          className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
-        >
+        <Button onClick={resetAssessment} className="w-full py-5">
           {common('done')}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -332,21 +360,24 @@ export default function AssessmentPage() {
     <div className="h-full overflow-y-auto p-4 space-y-4 max-w-2xl md:mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={resetAssessment}
-          className="text-muted-foreground hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground gap-1 -ml-2"
         >
-          ← {common('back')}
-        </button>
-        <span className="text-sm text-muted-foreground">
+          <ArrowLeft className="w-4 h-4" />
+          {common('back')}
+        </Button>
+        <span className="text-sm font-medium text-muted-foreground">
           {currentQuestion + 1} / {questions.length}
         </span>
       </div>
 
       {/* Progress Bar */}
-      <div className="h-1 bg-muted rounded-full overflow-hidden">
+      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
         <div
-          className="h-full bg-primary transition-all duration-300"
+          className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
           style={{ width: `${progress * 100}%` }}
         />
       </div>
@@ -358,16 +389,17 @@ export default function AssessmentPage() {
       </div>
 
       {/* Options */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {currentOptions.map((opt) => (
           <button
             key={opt.value}
             onClick={() => handleSelectOption(currentQ.id, opt.value)}
-            className={`w-full py-4 px-4 rounded-xl text-left transition-colors ${
+            className={cn(
+              'w-full py-4 px-4 rounded-xl text-left transition-all text-sm',
               responses[currentQ.id] === opt.value
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-card border border-border text-foreground hover:bg-muted'
-            }`}
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-card border border-border text-foreground hover:bg-muted hover:border-primary/30'
+            )}
           >
             {opt.label}
           </button>
@@ -375,31 +407,29 @@ export default function AssessmentPage() {
       </div>
 
       {/* Navigation */}
-      <div className="flex space-x-4 mt-6">
+      <div className="flex gap-3 mt-6">
         {currentQuestion > 0 && (
-          <button
+          <Button
+            variant="outline"
             onClick={() => setCurrentQuestion((prev) => prev - 1)}
-            className="flex-1 py-3 border border-border rounded-xl text-muted-foreground hover:bg-muted transition-colors"
+            className="flex-1 py-5"
           >
             {t('previous')}
-          </button>
+          </Button>
         )}
         {currentQuestion < questions.length - 1 ? (
-          <button
+          <Button
             onClick={() => setCurrentQuestion((prev) => prev + 1)}
             disabled={responses[currentQ.id] === undefined}
-            className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl disabled:opacity-50 hover:bg-primary/90 transition-colors"
+            className="flex-1 py-5"
           >
             {common('next')}
-          </button>
+          </Button>
         ) : (
-          <button
-            onClick={handleSubmit}
-            disabled={!allAnswered || loading}
-            className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl disabled:opacity-50 hover:bg-primary/90 transition-colors"
-          >
+          <Button onClick={handleSubmit} disabled={!allAnswered || loading} className="flex-1 py-5">
+            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {loading ? t('submitting') : common('submit')}
-          </button>
+          </Button>
         )}
       </div>
     </div>

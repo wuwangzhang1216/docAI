@@ -177,7 +177,16 @@
       "aiTyping": "AI தட்டச்சு செய்கிறது",
       "sendMessageForm": "செய்தி அனுப்பு படிவம்",
       "messageInput": "உங்கள் செய்தியை தட்டச்சு செய்யவும்",
-      "sendButton": "செய்தி அனுப்பு"
+      "sendButton": "செய்தி அனுப்பு",
+      "attachImage": "படம் இணைக்கவும்",
+      "removeImage": "படத்தை நீக்கவும்",
+      "imageAttached": "[படம்]",
+      "copyMessage": "நகல்",
+      "copiedMessage": "நகலெடுக்கப்பட்டது!",
+      "suggestedPrompt1": "சமீபத்தில் கவலையாக உணர்கிறேன், பேசலாமா?",
+      "suggestedPrompt2": "இந்த வாரம் என் மனநிலை முறைகளைப் புரிந்துகொள்ள உதவுங்கள்",
+      "suggestedPrompt3": "மன அழுத்தத்தை சமாளிக்க உத்திகள் தேவை",
+      "suggestedPrompt4": "தூக்கம் வரவில்லை, என்ன செய்வது?"
     },
     "checkin": {
       "title": "இன்றைய மனநிலை",

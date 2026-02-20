@@ -177,7 +177,16 @@
       "aiTyping": "IA está escribiendo",
       "sendMessageForm": "Formulario de envío de mensaje",
       "messageInput": "Escribe tu mensaje",
-      "sendButton": "Enviar mensaje"
+      "sendButton": "Enviar mensaje",
+      "attachImage": "Adjuntar imagen",
+      "removeImage": "Eliminar imagen",
+      "imageAttached": "[Imagen]",
+      "copyMessage": "Copiar",
+      "copiedMessage": "¡Copiado!",
+      "suggestedPrompt1": "Últimamente me siento ansioso/a, ¿podemos hablar?",
+      "suggestedPrompt2": "Ayúdame a entender mis patrones de ánimo esta semana",
+      "suggestedPrompt3": "Necesito estrategias para manejar el estrés",
+      "suggestedPrompt4": "He tenido problemas para dormir, ¿qué puedo hacer?"
     },
     "checkin": {
       "title": "Estado de ánimo de hoy",

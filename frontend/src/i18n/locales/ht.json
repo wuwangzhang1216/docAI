@@ -174,7 +174,16 @@
       "aiTyping": "AI ap tape",
       "sendMessageForm": "Fòm voye mesaj",
       "messageInput": "Tape mesaj ou",
-      "sendButton": "Voye mesaj"
+      "sendButton": "Voye mesaj",
+      "attachImage": "Atache imaj",
+      "removeImage": "Retire imaj",
+      "imageAttached": "[Imaj]",
+      "copyMessage": "Kopye",
+      "copiedMessage": "Kopye!",
+      "suggestedPrompt1": "Dènyèman mwen santi m enkyete, èske nou ka pale?",
+      "suggestedPrompt2": "Ede m konprann modèl imè mwen semèn sa a",
+      "suggestedPrompt3": "Mwen bezwen estrateji pou jere estrès",
+      "suggestedPrompt4": "Mwen gen pwoblèm dòmi, kisa mwen ka fè?"
     },
     "checkin": {
       "title": "Imè Jodi a",

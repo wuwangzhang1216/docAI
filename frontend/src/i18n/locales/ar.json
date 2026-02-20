@@ -174,7 +174,16 @@
       "aiTyping": "الذكاء الاصطناعي يكتب",
       "sendMessageForm": "نموذج إرسال الرسالة",
       "messageInput": "اكتب رسالتك",
-      "sendButton": "إرسال الرسالة"
+      "sendButton": "إرسال الرسالة",
+      "attachImage": "إرفاق صورة",
+      "removeImage": "إزالة الصورة",
+      "imageAttached": "[صورة]",
+      "copyMessage": "نسخ",
+      "copiedMessage": "تم النسخ!",
+      "suggestedPrompt1": "أشعر بالقلق مؤخراً، هل يمكننا التحدث؟",
+      "suggestedPrompt2": "ساعدني في فهم أنماط مزاجي هذا الأسبوع",
+      "suggestedPrompt3": "أحتاج استراتيجيات للتعامل مع التوتر",
+      "suggestedPrompt4": "أواجه صعوبة في النوم، ماذا أفعل؟"
     },
     "checkin": {
       "title": "مزاج اليوم",

@@ -255,6 +255,24 @@ input:-webkit-autofill:active {
   }
 }
 
+/* Cursor blink for streaming text */
+@keyframes cursorBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@layer utilities {
+  .animate-cursor-blink {
+    animation: cursorBlink 1s step-end infinite;
+  }
+}
+
 /* Apple-style shimmer skeleton effect */
 .animate-shimmer {
   background: linear-gradient(

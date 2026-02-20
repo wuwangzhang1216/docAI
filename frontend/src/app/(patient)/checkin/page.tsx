@@ -6,7 +6,9 @@ import { api } from '@/lib/api'
 import { CheckCircle2, Moon, Pill, FileText, TrendingUp, Loader2 } from 'lucide-react'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@/components/ui/disclosure'
 import { CheckinFormSkeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/useToast'
+import { cn } from '@/lib/utils'
 
 interface CheckinRecord {
   id: string
@@ -205,15 +207,16 @@ export default function CheckinPage() {
         )}
 
         {/* Edit Button */}
-        <button
+        <Button
+          variant="outline"
           onClick={() => {
             setIsEditing(true)
             setSubmitted(false)
           }}
-          className="w-full bg-muted text-foreground py-3 rounded-xl font-medium hover:bg-muted/80 transition-colors"
+          className="w-full py-5"
         >
           {t('updateButton')}
-        </button>
+        </Button>
 
         {/* Recent History */}
         {recentCheckins.length > 1 && (
@@ -284,10 +287,10 @@ export default function CheckinPage() {
             className="absolute -top-1 transform -translate-x-1/2 transition-all duration-150"
             style={{ left: `${(mood / 10) * 100}%` }}
           >
-            <div className="bg-blue-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-lg">
+            <div className="bg-primary text-primary-foreground text-sm font-bold px-3 py-1 rounded-full shadow-lg">
               {mood}
             </div>
-            <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-blue-500 mx-auto" />
+            <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-primary mx-auto" />
           </div>
 
           <input
@@ -297,9 +300,9 @@ export default function CheckinPage() {
             step="1"
             value={mood}
             onChange={(e) => setMood(Number(e.target.value))}
-            className="w-full h-2 bg-gradient-to-r from-red-300 via-yellow-300 to-green-300 rounded-lg appearance-none cursor-pointer
+            className="w-full h-2 bg-gradient-to-r from-red-400/60 via-amber-400/60 to-emerald-400/60 dark:from-red-500/40 dark:via-amber-500/40 dark:to-emerald-500/40 rounded-lg appearance-none cursor-pointer
                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
-                       [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-500
+                       [&::-webkit-slider-thumb]:bg-background [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary
                        [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer
                        [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
             aria-label={t('moodQuestion')}
@@ -330,7 +333,7 @@ export default function CheckinPage() {
             min="0"
             max="24"
             step="0.5"
-            className="w-20 border border-input bg-background text-foreground rounded-lg px-3 py-2 text-center"
+            className="w-20 border border-input bg-background text-foreground rounded-xl px-3 py-2 text-center focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <span className="text-muted-foreground">{t('hours')}</span>
         </div>
@@ -393,14 +396,10 @@ export default function CheckinPage() {
       </div>
 
       {/* Submit */}
-      <button
-        onClick={handleSubmit}
-        disabled={loading}
-        className="w-full bg-blue-500 text-white py-4 rounded-xl text-lg font-semibold disabled:opacity-50 hover:bg-blue-600 transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]"
-      >
+      <Button onClick={handleSubmit} disabled={loading} className="w-full py-6 text-lg">
         {loading ? (
           <>
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
             {t('submitting')}
           </>
         ) : isEditing ? (
@@ -408,7 +407,7 @@ export default function CheckinPage() {
         ) : (
           t('submitButton')
         )}
-      </button>
+      </Button>
     </div>
   )
 }

@@ -177,7 +177,16 @@
       "aiTyping": "AI ٹائپ کر رہا ہے",
       "sendMessageForm": "پیغام بھیجنے کا فارم",
       "messageInput": "اپنا پیغام ٹائپ کریں",
-      "sendButton": "پیغام بھیجیں"
+      "sendButton": "پیغام بھیجیں",
+      "attachImage": "تصویر منسلک کریں",
+      "removeImage": "تصویر ہٹائیں",
+      "imageAttached": "[تصویر]",
+      "copyMessage": "کاپی",
+      "copiedMessage": "کاپی ہو گیا!",
+      "suggestedPrompt1": "حال ہی میں مجھے پریشانی ہو رہی ہے، کیا ہم بات کر سکتے ہیں؟",
+      "suggestedPrompt2": "اس ہفتے میرے موڈ پیٹرن سمجھنے میں مدد کریں",
+      "suggestedPrompt3": "مجھے تناؤ سے نمٹنے کی حکمت عملی چاہیے",
+      "suggestedPrompt4": "نیند نہیں آ رہی، کیا کروں؟"
     },
     "checkin": {
       "title": "آج کا موڈ",

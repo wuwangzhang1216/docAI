@@ -176,7 +176,16 @@
       "aiTyping": "هوش مصنوعی در حال تایپ است",
       "sendMessageForm": "فرم ارسال پیام",
       "messageInput": "پیام خود را بنویسید",
-      "sendButton": "ارسال پیام"
+      "sendButton": "ارسال پیام",
+      "attachImage": "پیوست تصویر",
+      "removeImage": "حذف تصویر",
+      "imageAttached": "[تصویر]",
+      "copyMessage": "کپی",
+      "copiedMessage": "کپی شد!",
+      "suggestedPrompt1": "اخیراً احساس اضطراب می‌کنم، می‌توانیم صحبت کنیم؟",
+      "suggestedPrompt2": "کمکم کن الگوهای خلق و خویم را این هفته بفهمم",
+      "suggestedPrompt3": "به راهکارهایی برای مدیریت استرس نیاز دارم",
+      "suggestedPrompt4": "مشکل خواب دارم، چه کاری می‌توانم انجام دهم؟"
     },
     "checkin": {
       "title": "حال امروز",

@@ -171,7 +171,16 @@
       "aiTyping": "AI 正在输入",
       "sendMessageForm": "发送消息表单",
       "messageInput": "输入你的消息",
-      "sendButton": "发送消息"
+      "sendButton": "发送消息",
+      "attachImage": "添加图片",
+      "removeImage": "移除图片",
+      "imageAttached": "[图片]",
+      "copyMessage": "复制",
+      "copiedMessage": "已复制！",
+      "suggestedPrompt1": "最近感到焦虑，可以聊聊吗？",
+      "suggestedPrompt2": "帮我分析一下这周的情绪变化",
+      "suggestedPrompt3": "我需要一些压力管理建议",
+      "suggestedPrompt4": "最近睡眠不好，有什么建议吗？"
     },
     "checkin": {
       "title": "今日心情",

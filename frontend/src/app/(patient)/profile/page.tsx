@@ -410,8 +410,8 @@ export default function ProfilePage() {
           <Disclosure defaultOpen={true}>
             <DisclosureButton>
               <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <User className="w-5 h-5 text-blue-600" />
+                <div className="bg-blue-500/10 p-2 rounded-lg">
+                  <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <span className="font-semibold">
                   {t('personalInfo', { defaultValue: 'Personal Information' })}
@@ -512,8 +512,8 @@ export default function ProfilePage() {
           <Disclosure defaultOpen={false}>
             <DisclosureButton>
               <div className="flex items-center gap-3">
-                <div className="bg-red-100 p-2 rounded-lg">
-                  <Phone className="w-5 h-5 text-red-600" />
+                <div className="bg-red-500/10 p-2 rounded-lg">
+                  <Phone className="w-5 h-5 text-red-600 dark:text-red-400" />
                 </div>
                 <span className="font-semibold">
                   {t('emergencyContact', { defaultValue: 'Emergency Contact' })}
@@ -565,8 +565,8 @@ export default function ProfilePage() {
           <Disclosure defaultOpen={false}>
             <DisclosureButton>
               <div className="flex items-center gap-3">
-                <div className="bg-green-100 p-2 rounded-lg">
-                  <Pill className="w-5 h-5 text-green-600" />
+                <div className="bg-emerald-500/10 p-2 rounded-lg">
+                  <Pill className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <span className="font-semibold">
                   {t('medicalInfo', { defaultValue: 'Medical Information' })}
@@ -625,8 +625,8 @@ export default function ProfilePage() {
           <Disclosure defaultOpen={false}>
             <DisclosureButton>
               <div className="flex items-center gap-3">
-                <div className="bg-purple-100 p-2 rounded-lg">
-                  <Heart className="w-5 h-5 text-purple-600" />
+                <div className="bg-purple-500/10 p-2 rounded-lg">
+                  <Heart className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <span className="font-semibold">
                   {t('mentalHealthInfo', { defaultValue: 'Mental Health Context' })}
