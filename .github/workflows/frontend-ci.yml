@@ -2,7 +2,7 @@ name: Frontend CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [develop]
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-ci.yml'
@@ -11,6 +11,7 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-ci.yml'
+  workflow_call:
 
 env:
   NODE_VERSION: '20'

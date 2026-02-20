@@ -2,7 +2,7 @@ name: Backend CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [develop]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
@@ -11,6 +11,7 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
+  workflow_call:
 
 env:
   PYTHON_VERSION: '3.11'

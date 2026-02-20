@@ -18,11 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.utils.monitoring import (
-    get_metrics,
-    get_metrics_content_type,
-    update_db_pool_stats,
-)
+from app.utils.monitoring import get_metrics, get_metrics_content_type, update_db_pool_stats
 
 router = APIRouter(tags=["Health"])
 
@@ -130,12 +126,14 @@ async def check_s3() -> DependencyHealth:
 
 
 @router.get("/health", response_model=HealthStatus)
+@router.get("/healthz", response_model=HealthStatus)
 async def health_check() -> HealthStatus:
     """
     Basic health check endpoint.
 
     Returns 200 OK if the application is running.
     Used for basic liveness checks.
+    /healthz is an alias used by the deploy health check.
     """
     return HealthStatus(
         status="healthy",
