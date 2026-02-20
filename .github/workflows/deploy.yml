@@ -39,6 +39,9 @@ jobs:
             echo "=== Rebuilding and restarting services ==="
             sudo -E docker-compose -f docker-compose.prod.yml up -d --build
 
+            echo "=== Reloading nginx config ==="
+            sudo docker exec docai-nginx nginx -s reload || true
+
             echo "=== Running database migrations ==="
             sudo docker exec docai-backend python -c "import asyncio; from app.models import *; from app.database import init_db; asyncio.run(init_db()); print('DB migration complete')"
 

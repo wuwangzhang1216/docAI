@@ -270,7 +270,7 @@ class HybridChatEngine:
                 tool_results = await self._process_tool_calls(response.content, tool_executor)
 
                 # Add assistant response and tool results to messages
-                messages.append({"role": "assistant", "content": response.content})
+                messages.append({"role": "assistant", "content": self._serialize_content_blocks(response.content)})
                 messages.append({"role": "user", "content": tool_results})
 
                 # Continue the loop for Claude to process results
@@ -311,6 +311,34 @@ class HybridChatEngine:
                 )
 
         return tool_results
+
+    @staticmethod
+    def _serialize_content_blocks(content: List[Any]) -> List[Dict[str, Any]]:
+        """Convert Anthropic SDK content blocks to plain dicts.
+
+        Avoids passing Pydantic model objects back into messages, which
+        can trigger 'by_alias' serialization errors with certain
+        Pydantic v2 / Anthropic SDK version combinations.
+        """
+        result = []
+        for block in content:
+            if isinstance(block, dict):
+                result.append(block)
+            elif hasattr(block, "type"):
+                if block.type == "text":
+                    result.append({"type": "text", "text": block.text})
+                elif block.type == "tool_use":
+                    result.append(
+                        {
+                            "type": "tool_use",
+                            "id": block.id,
+                            "name": block.name,
+                            "input": block.input,
+                        }
+                    )
+            else:
+                result.append(block)
+        return result
 
     def _extract_text_response(self, content: List[Any]) -> str:
         """Extract text from response content blocks."""
@@ -515,6 +543,8 @@ class HybridChatEngine:
             current_content_blocks = []
             current_tool_use = None
             current_tool_input = ""
+            current_text = ""
+            stop_reason = None
 
             # Stream the response
             async with self.client.messages.stream(
@@ -546,6 +576,7 @@ class HybridChatEngine:
                         if delta.type == "text_delta":
                             yield {"event": "text_delta", "data": {"text": delta.text}}
                             full_response += delta.text
+                            current_text += delta.text
 
                         elif delta.type == "input_json_delta":
                             current_tool_input += delta.partial_json
@@ -568,12 +599,15 @@ class HybridChatEngine:
                             )
                             current_tool_use = None
                             current_tool_input = ""
+                        elif current_text:
+                            current_content_blocks.append({"type": "text", "text": current_text})
+                            current_text = ""
 
-                # Get the final message
-                final_message = await stream.get_final_message()
+                    elif event.type == "message_delta":
+                        stop_reason = event.delta.stop_reason
 
             # Check if we need to handle tool use
-            if final_message.stop_reason == "tool_use":
+            if stop_reason == "tool_use":
                 # Execute tools and yield results
                 tool_results = []
 
@@ -603,7 +637,7 @@ class HybridChatEngine:
                         )
 
                 # Add assistant response and tool results to messages
-                messages.append({"role": "assistant", "content": final_message.content})
+                messages.append({"role": "assistant", "content": current_content_blocks})
                 messages.append({"role": "user", "content": tool_results})
 
                 # Reset for next iteration
