@@ -39,6 +39,7 @@ jobs:
             cd /opt/docAI
 
             echo "=== Pulling latest code ==="
+            sudo rm -f deploy/nginx.conf
             sudo git pull origin main
 
             echo "=== Setting environment variables ==="
