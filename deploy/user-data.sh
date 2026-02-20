@@ -202,9 +202,10 @@ server {
         proxy_read_timeout 86400;
     }
 
-    # Health check endpoint
-    location /health {
-        proxy_pass http://backend;
+    # Health check endpoint (use /healthz to avoid conflict with frontend /health page)
+    location /healthz {
+        proxy_pass http://backend/health;
+        proxy_set_header Host $host;
     }
 
     # Frontend (everything else)
