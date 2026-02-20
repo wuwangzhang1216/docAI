@@ -40,16 +40,7 @@ jobs:
             sudo -E docker-compose -f docker-compose.prod.yml up -d --build
 
             echo "=== Running database migrations ==="
-            sudo docker exec docai-backend python -c "
-import asyncio
-from app.database import engine, Base
-from app.models import *
-async def migrate():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-asyncio.run(migrate())
-print('DB migration complete')
-"
+            sudo docker exec docai-backend python -c "import asyncio; from app.models import *; from app.database import init_db; asyncio.run(init_db()); print('DB migration complete')"
 
             echo "=== Waiting for health check ==="
             for i in $(seq 1 30); do
