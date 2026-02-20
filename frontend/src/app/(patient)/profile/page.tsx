@@ -97,6 +97,7 @@ interface ConnectionRequest {
 
 export default function ProfilePage() {
   const t = useTranslations('patient.profile')
+  const tDataExport = useTranslations('patient.dataExport')
   const common = useTranslations('common')
 
   const [profile, setProfile] = useState<PatientProfile | null>(null)
@@ -748,14 +749,8 @@ export default function ProfilePage() {
                 <Download className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div>
-                <p className="font-semibold text-foreground">
-                  {t('dataExport.title', { defaultValue: 'Export My Data' })}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {t('dataExport.description', {
-                    defaultValue: 'Download a copy of your personal data',
-                  })}
-                </p>
+                <p className="font-semibold text-foreground">{tDataExport('title')}</p>
+                <p className="text-sm text-muted-foreground">{tDataExport('subtitle')}</p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />

@@ -174,7 +174,7 @@ export default function PendingRequestsPage() {
           <SearchInput
             value={searchQuery}
             onChange={handleSearchChange}
-            placeholder={t('searchPlaceholder', { defaultValue: 'Search by name or email...' })}
+            placeholder={t('searchPlaceholder')}
           />
         </div>
         <div className="flex items-center gap-2">

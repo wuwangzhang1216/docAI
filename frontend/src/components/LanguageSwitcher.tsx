@@ -1,23 +1,23 @@
-'use client';
+'use client'
 
-import { useI18n, type Locale } from '@/lib/i18n';
-import { locales, localeNames } from '@/i18n/config';
-import { cn } from '@/lib/utils';
+import { useI18n, type Locale } from '@/lib/i18n'
+import { locales, localeNames } from '@/i18n/config'
+import { cn } from '@/lib/utils'
 import {
   Listbox,
   ListboxButton,
   ListboxOptions,
   ListboxOption,
   Transition,
-} from '@headlessui/react';
-import { ChevronDown } from 'lucide-react';
+} from '@headlessui/react'
+import { ChevronDown } from 'lucide-react'
 
 interface LanguageSwitcherProps {
-  className?: string;
+  className?: string
 }
 
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
-  const { locale, setLocale } = useI18n();
+  const { locale, setLocale } = useI18n()
 
   return (
     <Listbox value={locale} onChange={(value) => setLocale(value as Locale)}>
@@ -37,9 +37,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <ListboxOptions
-            className="absolute top-full mt-1 right-0 bg-card border border-border rounded-lg shadow-lg py-1 z-50 min-w-[160px] focus:outline-none"
-          >
+          <ListboxOptions className="absolute top-full mt-1 right-0 bg-card border border-border rounded-lg shadow-lg py-1 z-50 min-w-[160px] max-h-[320px] overflow-y-auto focus:outline-none">
             {locales.map((loc) => (
               <ListboxOption
                 key={loc}
@@ -59,5 +57,5 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         </Transition>
       </div>
     </Listbox>
-  );
+  )
 }

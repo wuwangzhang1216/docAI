@@ -148,7 +148,7 @@ export default function RiskQueuePage() {
           <SearchInput
             value={searchQuery}
             onChange={handleSearchChange}
-            placeholder={t('searchPlaceholder', { defaultValue: 'Search trigger text...' })}
+            placeholder={t('searchTrigger')}
           />
         </div>
         <div className="flex items-center gap-2">
@@ -171,7 +171,7 @@ export default function RiskQueuePage() {
                 onClick={() => handleRiskLevelFilter(level)}
                 className={riskLevelFilter === level ? getRiskLevelColor(level) : ''}
               >
-                {level}
+                {t(`riskLevels.${level.toLowerCase()}`)}
               </Button>
             ))}
           </div>
@@ -221,7 +221,7 @@ export default function RiskQueuePage() {
                           event.risk_level
                         )}`}
                       >
-                        {event.risk_level}
+                        {t(`riskLevels.${event.risk_level.toLowerCase()}`)}
                       </span>
                       {event.risk_type && (
                         <span className="text-sm text-muted-foreground">
@@ -289,7 +289,7 @@ export default function RiskQueuePage() {
                       selectedEvent.risk_level
                     )}`}
                   >
-                    {selectedEvent.risk_level}
+                    {t(`riskLevels.${selectedEvent.risk_level.toLowerCase()}`)}
                   </span>
                   {selectedEvent.risk_type && (
                     <span className="text-muted-foreground">

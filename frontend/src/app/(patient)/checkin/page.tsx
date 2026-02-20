@@ -59,10 +59,7 @@ export default function CheckinPage() {
         setRecentCheckins(history)
       } catch (error) {
         console.error('Error fetching checkin data:', error)
-        toast.error(
-          common('error'),
-          t('fetchError', { defaultValue: 'Failed to load check-in data' })
-        )
+        toast.error(common('error'), t('fetchError'))
       } finally {
         setInitialLoading(false)
       }
@@ -86,10 +83,7 @@ export default function CheckinPage() {
       toast.success(t('successTitle'), t('successMessage'))
     } catch (error) {
       console.error('Checkin error:', error)
-      toast.error(
-        common('error'),
-        t('submitError', { defaultValue: 'Failed to submit check-in. Please try again.' })
-      )
+      toast.error(common('error'), t('submitError'))
     } finally {
       setLoading(false)
     }
